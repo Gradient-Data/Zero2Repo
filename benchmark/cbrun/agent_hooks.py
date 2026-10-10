@@ -63,6 +63,16 @@ def claude_code_env(*, model: str, environ: dict[str, str], spec: Any) -> dict[s
             out["CLAUDE_CODE_OAUTH_TOKEN"] = token
         for key in _CLAUDE_OAUTH_STRIP_KEYS:
             out.pop(key, None)
+    # Claude Code caps each reply at 32000 output tokens unless this is raised;
+    # a reply that hits the cap ends the session before it can submit.
+    output_max = (environ.get("CLAUDE_CODE_MAX_OUTPUT_TOKENS") or "").strip()
+    if output_max:
+        if not output_max.isdigit() or int(output_max) <= 0:
+            raise RuntimeError(
+                "cbrun: CLAUDE_CODE_MAX_OUTPUT_TOKENS must be a positive integer, "
+                f"got {output_max!r}"
+            )
+        out["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = output_max
     return out
 
 

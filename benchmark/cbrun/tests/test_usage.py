@@ -305,6 +305,19 @@ def test_opencode_output_cap_reaches_the_container():
         raise AssertionError("a non-numeric cap must be rejected")
 
 
+def test_claude_code_output_cap_reaches_the_container():
+    env = {"ANTHROPIC_API_KEY": "k", "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000"}
+    invocation = resolve_agent(backend="claude-code", model="anthropic/claude-opus-5-5", environ=env)
+    assert invocation.env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] == "128000"
+    try:
+        resolve_agent(backend="claude-code", model="anthropic/claude-opus-5-5",
+                      environ={**env, "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "lots"})
+    except RuntimeError as exc:
+        assert "positive integer" in str(exc)
+    else:
+        raise AssertionError("a non-numeric cap must be rejected")
+
+
 def test_opencode_zero_self_cost_is_not_recorded(tmp_path: Path):
     # A custom provider has no price in OpenCode, so its self-reported cost is 0.
     _write(tmp_path / "agent.log", _step_finish(10, 100, 0, 30, 7, 0.0))
