@@ -1,8 +1,8 @@
 # feature: F02
 """FP-02: HMAC-based one-time passwords (HOTP).
 
-Assertions follow Full_PRD.original.md FP-02 (L119–L144) plus the
-shared defaults at L19–L25, L55–L60, L68–L77, and L82. Failure message
+Assertions follow the Full PRD FP-02 plus the PRD's shared defaults
+(Terminology, Non-functional constraints). Failure message
 text, exception class names, SHA256/SHA512/eight-digit HMAC strings,
 and URI / clock-window behavior are not pinned.
 """
@@ -56,7 +56,7 @@ WRONG_CANDIDATE = "000000"
 
 
 # ---------------------------------------------------------------------------
-# A. RFC 4226 ten codes and 520489 at 9 / 10 (L125, L143; F02-cap-01)
+# A. RFC 4226 ten codes and 520489 at 9 / 10
 # ---------------------------------------------------------------------------
 
 
@@ -80,7 +80,7 @@ def test_rfc4226_secret_emits_ten_named_codes_and_checks_520489():
 
 
 # ---------------------------------------------------------------------------
-# B. README secret, leading zero, 1401 / 1402 (L126, L20, L55, L132)
+# B. README secret, leading zero, 1401 / 1402
 # ---------------------------------------------------------------------------
 
 
@@ -146,7 +146,7 @@ def test_n3ov_with_restored_padding_matches_named_five_codes():
 
 
 # ---------------------------------------------------------------------------
-# D. Lowercase secret equals uppercase; wrn3 is usable (L19, L128)
+# D. Lowercase secret equals uppercase; wrn3 is usable
 # ---------------------------------------------------------------------------
 
 
@@ -175,7 +175,7 @@ def test_wrn3_lowercase_is_usable_and_matches_uppercase():
 
 
 # ---------------------------------------------------------------------------
-# E. Default digits 6 and digest SHA1; explicit SHA1 / 6 match (L23–L24)
+# E. Default digits 6 and digest SHA1; explicit SHA1 / 6 match
 # ---------------------------------------------------------------------------
 
 
@@ -210,7 +210,7 @@ def test_explicit_sha1_and_digit_6_match_defaults():
 
 
 # ---------------------------------------------------------------------------
-# F. Starting counter maps relative 0 onto default relative N (L25, L130)
+# F. Starting counter maps relative 0 onto default relative N
 # ---------------------------------------------------------------------------
 
 
@@ -279,7 +279,7 @@ def test_unpublished_starting_counter_matches_default_at_offset():
 
 
 # ---------------------------------------------------------------------------
-# G. Compatibility-equivalent check; generated codes are text (L131–L132)
+# G. Compatibility-equivalent check; generated codes are text
 # ---------------------------------------------------------------------------
 
 
@@ -312,7 +312,7 @@ def test_fullwidth_candidate_accepted_non_equivalent_rejected_codes_are_text():
 
 
 # ---------------------------------------------------------------------------
-# H. Negative relative count aborts; wrong check does not (L136, L144)
+# H. Negative relative count aborts; wrong check does not
 # ---------------------------------------------------------------------------
 
 
@@ -396,7 +396,7 @@ def test_digit_count_11_refused_6_and_8_accepted():
 
 
 # ---------------------------------------------------------------------------
-# J. MD5 / SHAKE-128 refused; SHA1 / SHA256 / SHA512 accepted (L24, L138)
+# J. MD5 / SHAKE-128 refused; SHA1 / SHA256 / SHA512 accepted
 # ---------------------------------------------------------------------------
 
 
@@ -451,7 +451,7 @@ def test_md5_and_shake128_refused_sha_family_accepted():
 
 
 # ---------------------------------------------------------------------------
-# K. Wrong-counter fails; helper does not store or advance (L82, L139)
+# K. Wrong-counter fails; helper does not store or advance
 # ---------------------------------------------------------------------------
 
 
@@ -473,7 +473,7 @@ def test_helper_does_not_store_or_advance_counter():
 
 
 # ---------------------------------------------------------------------------
-# L. Emit at a supplied count ignores the process clock (L121, L144)
+# L. Emit at a supplied count ignores the process clock
 # ---------------------------------------------------------------------------
 
 
@@ -521,7 +521,7 @@ def test_unpublished_relative_count_round_trips_and_rejects_neighbor():
 
 
 # ---------------------------------------------------------------------------
-# N. Account name and issuer may be supplied (L121)
+# N. Account name and issuer may be supplied
 # ---------------------------------------------------------------------------
 
 
@@ -543,12 +543,12 @@ def test_account_and_issuer_may_be_supplied_without_changing_rfc_code():
 
 
 # ---------------------------------------------------------------------------
-# O. Present-package HMAC baseline (L77)
+# O. Present-package HMAC baseline
 # ---------------------------------------------------------------------------
 
 
-def test_hmac_helper_fails_when_package_not_importable():
-    """L77: when the interpreter is present and the package is imported,
+def test_hmac_helper_emits_and_accepts_code_in_child_process_with_package_present():
+    """When the interpreter is present and the package is imported,
     an HMAC-based helper with secret GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ
     yields 755224 at relative count 0, and checking that string at
     relative count 0 succeeds.

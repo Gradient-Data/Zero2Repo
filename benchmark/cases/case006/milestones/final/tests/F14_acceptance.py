@@ -44,9 +44,6 @@ from _helpers import (
     unrelated_dispatch_token,
 )
 
-PUBLIC_SAMPLE_NAME = "Peter"
-
-
 def _word() -> str:
     return "k" + uuid.uuid4().hex[:8]
 
@@ -54,6 +51,11 @@ def _word() -> str:
 def _letters(n: int = 8) -> str:
     alphabet = "abcdefghijkmnpqrstuvwxyz"
     return "".join(alphabet[uuid.uuid4().int % len(alphabet)] for _ in range(n))
+
+
+def _plain_name() -> str:
+    """A capitalised alphabetic word, like an ordinary personal name."""
+    return _letters(1).upper() + _letters(7)
 
 
 def _greeting() -> str:
@@ -118,25 +120,26 @@ def _observe(label: str, result) -> tuple[int, str, str]:
 # ---------------------------------------------------------------------------
 
 
-def test_invoke_public_sample_greets_peter():
+def test_invoke_plain_name_token_greets_that_name():
     prefix = _greeting()
+    plain_name = _plain_name()
     cli = _hello(prefix)
-    result = CliRunner().invoke(cli, [PUBLIC_SAMPLE_NAME])
-    _observe("peter", result)
+    result = CliRunner().invoke(cli, [plain_name])
+    _observe("plain-name", result)
     require_runner_success_with_marker(result, prefix)
     _, stdout, _stderr = product_runner_streams(result)
-    assert PUBLIC_SAMPLE_NAME in stdout, (
-        f"public sample token {PUBLIC_SAMPLE_NAME!r} missing from greeting; "
+    assert plain_name in stdout, (
+        f"name token {plain_name!r} missing from greeting; "
         f"stdout={stdout!r}"
     )
 
 
-def test_invoke_runtime_token_greets_that_token_not_peter():
+def test_invoke_runtime_token_greets_that_token_not_another_name():
     prefix = _greeting()
     name = _token()
-    while PUBLIC_SAMPLE_NAME in name or PUBLIC_SAMPLE_NAME in prefix:
-        name = _token()
-        prefix = _greeting()
+    other_name = _plain_name()
+    while other_name in name or other_name in prefix:
+        other_name = _plain_name()
     cli = _hello(prefix)
     result = CliRunner().invoke(cli, [name])
     _observe("runtime-name", result)
@@ -145,8 +148,8 @@ def test_invoke_runtime_token_greets_that_token_not_peter():
     assert name in stdout, (
         f"runtime token {name!r} missing from greeting; stdout={stdout!r}"
     )
-    assert PUBLIC_SAMPLE_NAME not in stdout, (
-        f"runtime token run still greeted {PUBLIC_SAMPLE_NAME!r}; "
+    assert other_name not in stdout, (
+        f"runtime token run also greeted the unrelated name {other_name!r}; "
         f"stdout={stdout!r}"
     )
 

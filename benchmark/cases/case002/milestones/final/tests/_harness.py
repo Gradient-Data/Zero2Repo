@@ -29,8 +29,7 @@ Surfaces
   child exit is a classified outcome on :class:`RunResult`.
 * Child interpreter — :func:`run_python` / :func:`run_script` /
   :func:`run_command` for observations that need a separate process: the
-  library-substrate negative control (package removed from the import
-  path), or location that walks from the calling script (a real
+  a run with the package removed from the import path, or location that walks from the calling script (a real
   ``__file__``, no debugger trace, not an interactive session).
 
 Each isolated call starts from a whitelist of substrate environment

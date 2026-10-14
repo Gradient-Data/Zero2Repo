@@ -1,9 +1,9 @@
 # feature: F01
 """FP-01: cryptographic signing of byte values.
 
-Assertions follow Full_PRD.original.md FP-01 (L88–L119). Exception class
-names, failure message text, and failure-object attribute spellings are
-not pinned.
+Assertions follow Full_PRD.original.md FP-01 (L88–L119). Failure objects are read
+through the exception classes and attributes the Interface Contract
+states.
 """
 
 from __future__ import annotations

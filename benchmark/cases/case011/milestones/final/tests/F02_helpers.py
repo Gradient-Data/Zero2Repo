@@ -182,77 +182,6 @@ def assert_field_compile_is_value_error(expression: str) -> ValueError:
     return exc
 
 
-def field_failure_record(exc: BaseException) -> str:
-    """Collect a failure observation: text plus public scalar attributes.
-
-    Does not record ``type(exc)``, ``__name__``, or the MRO. Unreadable
-    attributes raise rather than being skipped as absence.
-    """
-    if not isinstance(exc, BaseException):
-        raise HarnessError(
-            f"field_failure_record expected an exception; got {type(exc)!r}"
-        )
-    pieces = [str(exc)]
-    try:
-        names = dir(exc)
-    except Exception as err:
-        raise HarnessError(f"cannot list attributes of {exc!r}: {err}") from err
-    for name in sorted(names):
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception as err:
-            raise HarnessError(
-                f"cannot read attribute {name!r} from {type(exc).__name__}: {err}"
-            ) from err
-        if callable(value):
-            continue
-        if value is None or isinstance(value, (str, int, float)):
-            pieces.append(repr(value))
-    record = "\n".join(pieces)
-    print(f"failure_record_len={len(record)}", flush=True)
-    return record
-
-
-def field_leftover_strip(record: str, *texts: str) -> str:
-    """Remove each non-empty expression text from *record*.
-
-    Empty strings are not stripped: replacing ``''`` would rewrite every
-    gap between characters and is not a classified observation.
-    """
-    if not isinstance(record, str):
-        raise HarnessError(
-            f"field_leftover_strip requires str record, got {type(record)!r}"
-        )
-    leftover = record
-    for text in texts:
-        if not isinstance(text, str):
-            raise HarnessError(
-                f"field_leftover_strip texts must be str, got {type(text)!r}"
-            )
-        if text:
-            leftover = leftover.replace(text, "")
-    return leftover
-
-
-def assert_field_leftovers_differ(
-    left: BaseException, right: BaseException, *texts: str
-) -> None:
-    """Assert two value-error leftovers differ after stripping *texts*.
-
-    The contrast is the leftover, not exception class identity.
-    """
-    left_rec = field_leftover_strip(field_failure_record(left), *texts)
-    right_rec = field_leftover_strip(field_failure_record(right), *texts)
-    print(f"leftover_left={left_rec!r}", flush=True)
-    print(f"leftover_right={right_rec!r}", flush=True)
-    assert left_rec != right_rec, (
-        "failure leftovers are not distinct after stripping "
-        f"expression texts {texts!r}: {left_rec!r}"
-    )
-
-
 def field_kind_marker(exc: BaseException) -> type:
     """Caller-visible FP-01 kind marker of a captured value error.
 
@@ -624,28 +553,6 @@ def compile_once_then_search(expression: str, document: Any) -> Any:
         f"({first!r} vs {second!r}); a new compile must not be required"
     )
     return first
-
-
-def assert_search_syntax_not_empty_or_incomplete(
-    expression: str, document: Any
-) -> ValueError:
-    """Search *expression* is a value error whose leftover is not empty or '('."""
-    observed = assert_field_search_is_value_error(expression, document)
-    empty = assert_field_search_is_value_error("", document)
-    incomplete = assert_field_search_is_value_error("(", document)
-    assert_field_leftovers_differ(observed, empty, expression, "")
-    assert_field_leftovers_differ(observed, incomplete, expression, "(")
-    return observed
-
-
-def assert_compile_syntax_not_empty_or_incomplete(expression: str) -> ValueError:
-    """Compile *expression* is a value error whose leftover is not empty or '('."""
-    observed = assert_field_compile_is_value_error(expression)
-    empty = assert_field_compile_is_value_error("")
-    incomplete = assert_field_compile_is_value_error("(")
-    assert_field_leftovers_differ(observed, empty, expression, "")
-    assert_field_leftovers_differ(observed, incomplete, expression, "(")
-    return observed
 
 
 def assert_search_shares_foo_syntax_kind(

@@ -144,6 +144,7 @@ def rejudge_workspace(
     enforce_denylist: bool = True,
     image: str | None = None,
     tests_dir: Path | None = None,
+    test_seed: str | None = None,
 ) -> float:
     case = load_case(case_dir)
     # Same import ban as a real trial; otherwise a control that delegates to
@@ -209,6 +210,7 @@ def rejudge_workspace(
                     artifacts_dir=out_dir,
                     denylist=denylist,
                     judge_bans=case.judge_bans,
+                    test_seed=test_seed,
                 )
             finally:
                 container.remove()
@@ -264,6 +266,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Host milestones/final directory copied into the container as /tests/final.",
     )
+    parser.add_argument(
+        "--test-seed",
+        default=None,
+        help="Pin the hidden tests' runtime randomisation (CB_TEST_SEED), e.g. to replay an earlier judge.",
+    )
     args = parser.parse_args(argv)
 
     expect = parse_expect_reward(args.expect_reward)
@@ -294,6 +301,7 @@ def main(argv: list[str] | None = None) -> int:
             enforce_denylist=args.enforce_denylist,
             image=args.image,
             tests_dir=args.tests_dir,
+            test_seed=args.test_seed,
         )
     except Exception as exc:  # noqa: BLE001
         print(f"error: {exc}", flush=True)

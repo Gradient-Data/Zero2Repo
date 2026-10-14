@@ -2,7 +2,7 @@
 """YAML 1.2 exponent-only float text for default-dump quoting.
 
 Integer mantissa, then ``e``, then decimal digits. No decimal point
-and no exponent sign. Not the public ``12e03``. Draw failure raises.
+and no exponent sign. Not the suite-named ``12e03``. Draw failure raises.
 
 Pad-inside-brackets off-state: no inner space after ``[`` or before ``]``.
 """
@@ -14,7 +14,7 @@ import uuid
 from _harness import HarnessError
 from _helpers import flow_square_inner_space
 
-_PUBLIC = "12e03"
+_SUITE_NAMED = "12e03"
 
 
 def exponent_only_float_token() -> str:
@@ -22,21 +22,21 @@ def exponent_only_float_token() -> str:
 
     Form is digits, then ``e``, then digits. Exponent width is not
     pinned. Raises if 64 draws cannot produce a token that is not the
-    public sample and not dotted or signed.
+    suite-named constant and not dotted or signed.
     """
     for _ in range(64):
         bits = uuid.uuid4().int
         mantissa_width = 1 + (bits % 2)
         mantissa = 1 + ((bits >> 2) % (10 ** mantissa_width - 1))
         exp_bits = uuid.uuid4().int
-        # Public sample is 12e03. Keep the magnitude a finite Core float
+        # The suite-named constant is 12e03. Keep the magnitude a finite Core float
         # (overflow such as 1e999 stays a string, so it would not need quotes).
         exponent = 1 + (exp_bits % 20)
         exp_width = 1 + ((exp_bits >> 8) % 3)
         if exponent >= 10 ** exp_width:
             exp_width = len(str(exponent))
         text = f"{mantissa}e{exponent:0{exp_width}d}"
-        if text == _PUBLIC:
+        if text == _SUITE_NAMED:
             continue
         if "." in text or "+" in text or "-" in text:
             continue

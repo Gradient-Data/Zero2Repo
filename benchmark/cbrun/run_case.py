@@ -25,11 +25,13 @@ from .agent_spec import (
     AgentInvocation,
     resolve_agent,
 )
+from .access_monitor import AccessMonitor, AccessMonitorError
 from .assets import AdapterError, CaseSpec, load_case
 from .denylist import (
     DEFAULT_FIX_RETRIES,
-    GITHUB_BLOCK_HOSTS,
+    CODE_HOST_BLOCK_HOSTS,
     ScanResult,
+    build_access_fix_instruction,
     build_fix_instruction,
     load_denylist,
     require_denylist,
@@ -62,6 +64,11 @@ from .limits import (
 from .results import TrialResult
 from .steps import Step, discover_steps
 from .submit import CONTAINER_SUBMIT_PATH, NO_SUBMIT_ERROR, is_valid_submit
+from .pricing import trial_cost
+from .usage import AGENT_LOG_NAMES, USAGE_ARCHIVE_DIR, collect_trial_usage
+from .transcript_scan import scan_trial as scan_transcript
+from .transcript_scan import summarize as summarize_transcript_scan
+from .transcript_scan import write_report as write_transcript_report
 
 __all__ = ["run_trial"]
 
@@ -71,6 +78,7 @@ _CLI_BIN = {
     "opencode": "opencode",
     "claude-code": "claude",
     "cursor": "cursor-agent",
+    "openhands": "openhands",
 }
 
 
@@ -223,7 +231,8 @@ def run_trial(
     result.provenance["agent_image"] = result.agent_image_id
     result.provenance["deliverable_image"] = result.deliverable_image_id
 
-    block_hosts = GITHUB_BLOCK_HOSTS if block_github else None
+    block_hosts = CODE_HOST_BLOCK_HOSTS if block_github else None
+    result.blocked_hosts = list(block_hosts or ())
     container = Container.start(
         image.agent_image,
         gpus=gpus,
@@ -254,18 +263,76 @@ def run_trial(
                 break
         result.passed_steps = passed_steps
     finally:
-        _archive_trial(container, out_dir=out_dir, result=result)
+        _archive_trial(container, out_dir=out_dir, result=result, invocation=invocation)
+        _record_token_usage(out_dir, result)
+        _record_transcript_scan(out_dir, result, case_dir)
         result.finished_at = utc_now()
 
     return result
 
 
-def _archive_trial(container: Container, *, out_dir: Path, result: TrialResult) -> None:
+def _harvest_usage_files(container: Container, invocation: AgentInvocation) -> str | None:
+    """Copy the CLI's session files into ``/logs/agent/usage`` before archiving."""
+    paths = invocation.spec.usage_paths
+    if not paths:
+        return None
+    dest = f"/logs/agent/{USAGE_ARCHIVE_DIR}"
+    lines = [f"mkdir -p {dest}"]
+    for index, raw in enumerate(paths):
+        lines.append(
+            f'src="{raw}"; if [ -d "$src" ]; then mkdir -p {dest}/{index} && cp -a "$src"/. {dest}/{index}/; fi'
+        )
+    res = container.exec(
+        "; ".join(lines),
+        env=invocation.env,
+        timeout_sec=120.0,
+        user=invocation.run_as,
+    )
+    if res.exit_code != 0:
+        return f"usage files: exit {res.exit_code}: {(res.tail or '').strip()[-200:]}"
+    return None
+
+
+def _record_token_usage(out_dir: Path, result: TrialResult) -> None:
+    try:
+        usage = collect_trial_usage(out_dir)
+        usage.update(trial_cost(usage, result.resolved_model or result.model))
+        result.token_usage = usage
+    except Exception as exc:  # noqa: BLE001
+        result.token_usage = {"complete": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def _record_transcript_scan(out_dir: Path, result: TrialResult, case_dir: Path) -> None:
+    """Scan the archived transcript; flag the trial for review, never rescore it."""
+    try:
+        report = scan_transcript(out_dir, case_dir)
+        path = write_transcript_report(out_dir, report)
+        result.logs["transcript_scan"] = str(path)
+        result.transcript_scan = summarize_transcript_scan(report, report_path=str(path))
+        result.needs_review = bool(report.get("needs_review"))
+    except Exception as exc:  # noqa: BLE001
+        result.transcript_scan = {"verdict": "error", "error": f"{type(exc).__name__}: {exc}"}
+
+
+def _archive_trial(
+    container: Container,
+    *,
+    out_dir: Path,
+    result: TrialResult,
+    invocation: AgentInvocation | None = None,
+) -> None:
     """Freeze the container, archive ``/app`` and ``/logs/agent``, then remove it.
 
     Every failure is recorded on ``result.artifact_errors``; nothing raises.
     """
     try:
+        if invocation is not None and not container.paused:
+            try:
+                harvest_error = _harvest_usage_files(container, invocation)
+            except Exception as exc:  # noqa: BLE001
+                harvest_error = f"usage files: {type(exc).__name__}: {exc}"
+            if harvest_error:
+                result.artifact_errors.append(harvest_error)
         # ``docker exec`` is refused on a paused container, so probe the log
         # directory before pausing; ``docker cp`` still works afterwards.
         has_agent_logs = False if container.paused else container.path_exists("/logs/agent")
@@ -401,6 +468,7 @@ def _run_solve(
     out_dir: Path,
     log_name: str,
     wall_timeout_sec: float | None = None,
+    abort=None,
 ) -> ExecResult:
     log_path = out_dir / log_name
     return container.exec_solve(
@@ -413,7 +481,68 @@ def _run_solve(
         stall_marker=CONTAINER_AGENT_LOG,
         activity_path=CONTAINER_WORKDIR,
         user=invocation.run_as,
+        abort=abort,
     )
+
+
+def _round_log_name(index: int) -> str:
+    return AGENT_LOG_NAMES[index] if index < len(AGENT_LOG_NAMES) else f"agent_fix_{index}.log"
+
+
+def _run_round(
+    container: Container,
+    invocation: AgentInvocation,
+    *,
+    limits: Limits,
+    out_dir: Path,
+    round_index: int,
+    wall_timeout_sec: float | None,
+    monitored: bool,
+) -> tuple[ExecResult, list[dict]]:
+    """One solve round, under the access monitor when the case has a denylist.
+
+    The monitor must be ready before the agent starts; a monitor that cannot
+    start raises ``AccessMonitorError`` so no round ever runs unmonitored. An
+    access or interference event stops the agent at once.
+    """
+    log_name = _round_log_name(round_index)
+    if not monitored:
+        solve = _run_solve(
+            container, invocation, limits=limits, out_dir=out_dir,
+            log_name=log_name, wall_timeout_sec=wall_timeout_sec,
+        )
+        return solve, []
+    monitor = AccessMonitor(
+        container.container_id,
+        round_index=round_index,
+        log_path=out_dir / f"access_monitor_{round_index}.jsonl",
+    )
+    monitor.start()
+    try:
+        solve = _run_solve(
+            container, invocation, limits=limits, out_dir=out_dir,
+            log_name=log_name, wall_timeout_sec=wall_timeout_sec, abort=monitor.violated,
+        )
+    finally:
+        events = monitor.stop()
+    if events:
+        state = "stopped" if solve.aborted else "ended"
+        print(
+            f"[cbrun] access monitor: round {round_index} {state} with "
+            f"{len(events)} event(s): {events[0].get('message')}",
+            flush=True,
+        )
+    return solve, events
+
+
+def _fail_denylist(result: TrialResult, message: str, solve_start: float) -> bool:
+    print(f"[cbrun] denylist violation: {message}", flush=True)
+    result.denylist_violation = message
+    result.reward = 0.0
+    result.terminal_status = TerminalStatus.ERROR.value
+    result.error = message
+    result.solve_seconds = round(time.monotonic() - solve_start, 2)
+    return False
 
 
 def _read_submit_text(container: Container) -> str | None:
@@ -501,69 +630,94 @@ def _run_step(
         result.reward = 0.0
         return False
 
+    monitored = denylist is not None and denylist.enabled
     solve_start = time.monotonic()
-    solve = _run_solve(container, invocation, limits=limits, out_dir=out_dir, log_name="agent.log")
-    result.agent_exit_code = solve.exit_code
-    result.logs["agent_log"] = str(out_dir / "agent.log")
-    if not _record_submit_outcome(
-        container, result, solve=solve, solve_start=solve_start, out_dir=out_dir
-    ):
-        return False
-
-    if denylist is not None and denylist.enabled:
-        scratch = out_dir / "denylist_scratch"
-        retries_left = denylist_fix_retries
-        while True:
-            scan = _scan_denylist(container, case_dir=case_dir, spec=denylist, scratch=scratch)
-            _write_scan_report(out_dir, scan, label="initial" if retries_left == denylist_fix_retries else "rescan")
-            result.denylist_warnings = [
-                f"installed:{hit.package}" for hit in scan.installed_warnings
-            ]
-            if not scan.has_hard_violation:
-                break
-            if retries_left <= 0:
-                summary = "; ".join(
-                    f"{hit.token}@{hit.path}:{hit.line}" for hit in scan.import_hits[:5]
-                )
-                result.denylist_violation = (
-                    f"upstream import/symbol still present after {denylist_fix_retries} fix attempt(s): {summary}"
-                )
-                result.reward = 0.0
-                result.terminal_status = TerminalStatus.ERROR.value
-                result.error = result.denylist_violation
-                result.logs["denylist_scan"] = str(out_dir / "denylist_scan_rescan.json")
-                result.solve_seconds = round(time.monotonic() - solve_start, 2)
-                return False
-            fix_instruction = build_fix_instruction(base_instruction, scan.import_hits)
-            _inject_instruction(container, fix_instruction, invocation)
-            elapsed = time.monotonic() - solve_start
-            remaining = limits.max_agent_timeout_sec - elapsed
-            if remaining < 60:
-                result.denylist_violation = (
-                    "upstream import/symbol detected but insufficient wall-clock budget for fix retry"
-                )
-                result.reward = 0.0
-                result.terminal_status = TerminalStatus.ERROR.value
-                result.error = result.denylist_violation
-                result.solve_seconds = round(time.monotonic() - solve_start, 2)
-                return False
-            _clear_submit(container)
-            fix_solve = _run_solve(
+    round_index = 0
+    access_offenses = 0
+    import_retries_left = denylist_fix_retries
+    wall: float | None = None
+    while True:
+        try:
+            solve, access = _run_round(
                 container,
                 invocation,
                 limits=limits,
                 out_dir=out_dir,
-                log_name="agent_fix.log",
-                wall_timeout_sec=remaining,
+                round_index=round_index,
+                wall_timeout_sec=wall,
+                monitored=monitored,
             )
-            result.denylist_fix_attempts += 1
-            retries_left -= 1
-            result.logs["agent_fix_log"] = str(out_dir / "agent_fix.log")
-            result.agent_exit_code = fix_solve.exit_code
-            if not _record_submit_outcome(
-                container, result, solve=fix_solve, solve_start=solve_start, out_dir=out_dir
-            ):
-                return False
+        except AccessMonitorError as exc:
+            message = f"access monitor failed to start before round {round_index}: {exc}"
+            print(f"[cbrun] {message}", flush=True)
+            result.error = message
+            result.run_valid = False
+            result.invalid_reason = f"access_monitor: {exc}"
+            result.reward = 0.0
+            result.terminal_status = TerminalStatus.ERROR.value
+            return False
+        log_name = _round_log_name(round_index)
+        result.logs[log_name.removesuffix(".log") + "_log"] = str(out_dir / log_name)
+        result.agent_exit_code = solve.exit_code
+        round_index += 1
+        remaining = limits.max_agent_timeout_sec - (time.monotonic() - solve_start)
+
+        if access:
+            result.access_events.extend(access)
+            result.access_rounds_stopped += 1
+            access_offenses += 1
+            first = access[0].get("message") or access[0].get("kind")
+            if access_offenses > denylist_fix_retries:
+                return _fail_denylist(
+                    result,
+                    f"access monitor violation after {access_offenses - 1} warning(s): "
+                    f"{first}; see access_events",
+                    solve_start,
+                )
+            if remaining < 60:
+                return _fail_denylist(
+                    result,
+                    "access monitor violation with no wall-clock budget left for another "
+                    f"round: {first}; see access_events",
+                    solve_start,
+                )
+            _inject_instruction(container, build_access_fix_instruction(base_instruction, access), invocation)
+            _clear_submit(container)
+            wall = remaining
+            continue
+
+        if not _record_submit_outcome(
+            container, result, solve=solve, solve_start=solve_start, out_dir=out_dir
+        ):
+            return False
+        if not monitored:
+            break
+
+        first_scan = import_retries_left == denylist_fix_retries
+        scan = _scan_denylist(container, case_dir=case_dir, spec=denylist, scratch=out_dir / "denylist_scratch")
+        _write_scan_report(out_dir, scan, label="initial" if first_scan else "rescan")
+        result.denylist_warnings = [f"installed:{hit.package}" for hit in scan.installed_warnings]
+        if not scan.has_hard_violation:
+            break
+        if import_retries_left <= 0:
+            summary = "; ".join(f"{hit.token}@{hit.path}:{hit.line}" for hit in scan.import_hits[:5])
+            result.logs["denylist_scan"] = str(out_dir / "denylist_scan_rescan.json")
+            return _fail_denylist(
+                result,
+                f"upstream import/symbol still present after {denylist_fix_retries} fix attempt(s): {summary}",
+                solve_start,
+            )
+        if remaining < 60:
+            return _fail_denylist(
+                result,
+                "upstream import/symbol detected but insufficient wall-clock budget for fix retry",
+                solve_start,
+            )
+        _inject_instruction(container, build_fix_instruction(base_instruction, scan.import_hits), invocation)
+        _clear_submit(container)
+        result.denylist_fix_attempts += 1
+        import_retries_left -= 1
+        wall = remaining
 
     task_toml = synthesize_task_toml(case, step)
     outcome = run_isolated_judge(
@@ -613,14 +767,9 @@ def _apply_judge_outcome(result: TrialResult, outcome: JudgeOutcome) -> None:
 
 
 def _record_infra_signals(out_dir: Path, result: TrialResult, *, submitted: bool) -> None:
-    agent_log = out_dir / "agent.log"
-    fix_log = out_dir / "agent_fix.log"
-    result.infra_signals = count_infra_signals(agent_log, fix_log if fix_log.is_file() else None)
-    text = ""
-    if agent_log.is_file():
-        text += agent_log.read_text(encoding="utf-8", errors="replace")
-    if fix_log.is_file():
-        text += "\n" + fix_log.read_text(encoding="utf-8", errors="replace")
+    logs = [out_dir / name for name in AGENT_LOG_NAMES if (out_dir / name).is_file()]
+    result.infra_signals = count_infra_signals(*logs)
+    text = "\n".join(log.read_text(encoding="utf-8", errors="replace") for log in logs)
     reason = invalid_reason(submitted=submitted, log_text=text)
     if reason:
         result.run_valid = False

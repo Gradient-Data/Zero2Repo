@@ -9,6 +9,7 @@ A helper that cannot classify its input raises; it never returns
 
 from __future__ import annotations
 
+import collections
 from collections.abc import Mapping
 from typing import Any, Callable
 
@@ -218,31 +219,29 @@ def compile_once_then_search_with_options(
 
 
 def order_preserving_mapping_type() -> type:
-    """Process-local order-preserving mapping type that is not ``type({})``.
+    """The order-preserving mapping type ``collections.OrderedDict``.
 
-    The class name is a host object name the language already treats as
-    an object (so a constructed hash remains a legal object argument).
-    A type that cannot be contrasted with the host ordinary mapping raises.
+    It is the order-preserving mapping type the PRD (FP-08) names as an
+    object for every purpose of the language, including built-in function
+    arguments. A type that cannot be contrasted with the host ordinary
+    mapping raises.
     """
-
-    class OrderedDict(dict):
-        pass
-
-    if OrderedDict is type({}):
+    mapping_type = collections.OrderedDict
+    if mapping_type is type({}):
         raise HarnessError(
             "order-preserving mapping type is the host ordinary mapping"
         )
-    sample = OrderedDict()
+    sample = mapping_type()
     if type(sample) is type({}):
         raise HarnessError(
             "order-preserving mapping type instances are host ordinary mappings"
         )
-    if type(sample) is not OrderedDict:
+    if type(sample) is not mapping_type:
         raise HarnessError(
             "order-preserving mapping type did not construct its own instances"
         )
-    print(f"order_preserving_mapping_type={OrderedDict!r}", flush=True)
-    return OrderedDict
+    print(f"order_preserving_mapping_type={mapping_type!r}", flush=True)
+    return mapping_type
 
 
 def require_mapping_of_type(value: Any, mapping_type: type) -> Mapping:

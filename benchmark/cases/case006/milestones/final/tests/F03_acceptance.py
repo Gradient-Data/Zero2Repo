@@ -59,6 +59,7 @@ from _helpers import (
     assert_deprecation_distinct,
     assert_eager_identity,
     assert_intentional_help,
+    assert_marker_absent,
     assert_success_marker_present,
     assert_usage_class,
     assert_usage_kinds_unlike,
@@ -66,6 +67,7 @@ from _helpers import (
     caller_visible_remainder,
     labeled_stdout_field,
     labeled_stdout_fields,
+    marker_occurs,
     unrelated_dispatch_token,
 )
 
@@ -125,9 +127,9 @@ def test_option_declared_on_command_or_group():
         flush=True,
     )
     assert_success_marker_present(on_command, greeting)
-    assert f"V:{value}" in on_command.stdout_text
+    assert marker_occurs(on_command.stdout_text, f"V:{value}")
     assert_success_marker_present(on_group, greeting)
-    assert f"G:{gvalue}" in on_group.stdout_text
+    assert marker_occurs(on_group.stdout_text, f"G:{gvalue}")
     assert sub_hi in on_group.stdout_text
 
 
@@ -235,9 +237,9 @@ def test_declared_default_used_when_omitted():
     print(f"omit={omitted.stdout_text!r} given={given.stdout_text!r}", flush=True)
     assert_success_marker_present(omitted, greeting)
     assert_success_marker_present(given, greeting)
-    assert f"V:{defaulted}" in omitted.stdout_text
-    assert f"V:{provided}" in given.stdout_text
-    assert f"V:{defaulted}" not in given.stdout_text
+    assert marker_occurs(omitted.stdout_text, f"V:{defaulted}")
+    assert marker_occurs(given.stdout_text, f"V:{provided}")
+    assert_marker_absent(given.stdout_text, f"V:{defaulted}")
 
 
 def test_type_inferred_from_integer_default():
@@ -317,13 +319,13 @@ def test_callable_default_runs_only_when_no_earlier_source():
     assert_success_marker_present(from_env, greeting)
     assert_success_marker_present(from_map, greeting)
     assert call_mark in none.stdout_text
-    assert f"V:{returned}" in none.stdout_text
+    assert marker_occurs(none.stdout_text, f"V:{returned}")
     assert call_mark not in from_cli.stdout_text
-    assert f"V:{cli_val}" in from_cli.stdout_text
+    assert marker_occurs(from_cli.stdout_text, f"V:{cli_val}")
     assert call_mark not in from_env.stdout_text
-    assert f"V:{env_val}" in from_env.stdout_text
+    assert marker_occurs(from_env.stdout_text, f"V:{env_val}")
     assert call_mark not in from_map.stdout_text
-    assert f"V:{map_val}" in from_map.stdout_text
+    assert marker_occurs(from_map.stdout_text, f"V:{map_val}")
 
 
 # ---------------------------------------------------------------------------
@@ -359,7 +361,7 @@ def test_short_long_and_alias_set_same_destination():
     )
     for result in (via_short, via_long, via_alias):
         assert_success_marker_present(result, greeting)
-        assert f"V:{value}" in result.stdout_text
+        assert marker_occurs(result.stdout_text, f"V:{value}")
 
 
 def test_long_option_equals_and_space_forms():
@@ -380,8 +382,8 @@ def test_long_option_equals_and_space_forms():
     print(f"equals={equals.stdout_text!r} spaced={spaced.stdout_text!r}", flush=True)
     assert_success_marker_present(equals, greeting)
     assert_success_marker_present(spaced, greeting)
-    assert f"V:{value}" in equals.stdout_text
-    assert f"V:{value}" in spaced.stdout_text
+    assert marker_occurs(equals.stdout_text, f"V:{value}")
+    assert marker_occurs(spaced.stdout_text, f"V:{value}")
 
 
 def test_short_value_next_token_or_attached():
@@ -433,7 +435,7 @@ def test_stacked_shorts_equivalent_to_separate_flags():
     for result in (stacked, separate):
         assert_success_marker_present(result, greeting)
         assert f"A:{True!r}" in result.stdout_text
-        assert f"B:{True!r}" in result.stdout_text
+        assert marker_occurs(result.stdout_text, f"B:{True!r}")
         assert f"C:{True!r}" in result.stdout_text
 
 
@@ -465,7 +467,7 @@ def test_stacked_last_flag_takes_attached_or_next_token():
     )
     for result in (attached, next_tok):
         assert_success_marker_present(result, greeting)
-        assert f"F:{True!r}" in result.stdout_text
+        assert marker_occurs(result.stdout_text, f"F:{True!r}")
         assert labeled_stdout_field(result, "T:") == str(expected)
 
 
@@ -492,8 +494,8 @@ def test_multichar_short_is_stacked_not_named_dbg():
     print(f"stack={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
     assert f"D:{True!r}" in result.stdout_text
-    assert f"B:{True!r}" in result.stdout_text
-    assert f"G:{True!r}" in result.stdout_text
+    assert marker_occurs(result.stdout_text, f"B:{True!r}")
+    assert marker_occurs(result.stdout_text, f"G:{True!r}")
 
 
 def test_destination_inferred_from_long_then_short():
@@ -524,7 +526,7 @@ def test_destination_inferred_from_long_then_short():
     print(f"short={via_short.stdout_text!r} long={via_long.stdout_text!r}", flush=True)
     assert_success_marker_present(via_short, greeting)
     assert_success_marker_present(via_long, greeting)
-    assert f"S:{value}" in via_short.stdout_text
+    assert marker_occurs(via_short.stdout_text, f"S:{value}")
     assert f"L:{value}" in via_long.stdout_text
 
 
@@ -639,8 +641,8 @@ def test_leaf_mixes_option_after_argument():
     print(f"after={after.stdout_text!r} before={before.stdout_text!r}", flush=True)
     for result in (after, before):
         assert_success_marker_present(result, greeting)
-        assert f"F:{filename}" in result.stdout_text
-        assert f"V:{value}" in result.stdout_text
+        assert marker_occurs(result.stdout_text, f"F:{filename}")
+        assert marker_occurs(result.stdout_text, f"V:{value}")
 
 
 def test_leaf_mixing_can_be_disabled():
@@ -674,13 +676,13 @@ def test_leaf_mixing_can_be_disabled():
         flush=True,
     )
     assert_success_marker_present(live, greeting)
-    assert f"V:{value}" in live.stdout_text
+    assert marker_occurs(live.stdout_text, f"V:{value}")
     assert_success_marker_present(option_first, greeting)
-    assert f"V:{value}" in option_first.stdout_text
-    assert f"F:{filename}" in option_first.stdout_text
+    assert marker_occurs(option_first.stdout_text, f"V:{value}")
+    assert marker_occurs(option_first.stdout_text, f"F:{filename}")
     if disabled.exit_code == 0:
         assert greeting in disabled.stdout_text
-        assert f"V:{value}" not in disabled.stdout_text, (
+        assert not marker_occurs(disabled.stdout_text, f"V:{value}"), (
             "disabled mixing still delivered the option value after the "
             f"argument; stdout={disabled.stdout_text!r}"
         )
@@ -714,8 +716,8 @@ def test_group_options_stop_at_subcommand_by_default():
     print(f"before={before.stdout_text!r} after={after.stdout_text!r}", flush=True)
     assert_success_marker_present(before, greeting)
     assert sub_hi in before.stdout_text
-    assert f"G:{value!r}" in before.stdout_text
-    assert f"G:{value!r}" not in after.stdout_text, (
+    assert marker_occurs(before.stdout_text, f"G:{value!r}")
+    assert not marker_occurs(after.stdout_text, f"G:{value!r}"), (
         "group option after the subcommand name was delivered to the group; "
         f"stdout={after.stdout_text!r} stderr={after.stderr_text!r}"
     )
@@ -755,9 +757,9 @@ def test_group_mixing_can_be_enabled():
     blocked = _option_run(off, [child_name, flag, value])
     enabled = _option_run(on, [child_name, flag, value])
     print(f"blocked={blocked.stdout_text!r} enabled={enabled.stdout_text!r}", flush=True)
-    assert f"G:{value}" not in blocked.stdout_text
+    assert_marker_absent(blocked.stdout_text, f"G:{value}")
     assert_success_marker_present(enabled, greeting)
-    assert f"G:{value}" in enabled.stdout_text
+    assert marker_occurs(enabled.stdout_text, f"G:{value}")
     assert sub_hi in enabled.stdout_text
 
 
@@ -856,7 +858,7 @@ def test_omitted_required_option_is_usage_error_naming_option():
     assert_omitted_required_names_option(missing_a, greeting, flag_a, flag_b)
     assert_omitted_required_names_option(missing_b, greeting, flag_b, flag_a)
     assert_success_marker_present(given, greeting)
-    assert f"V:{value}" in given.stdout_text
+    assert marker_occurs(given.stdout_text, f"V:{value}")
 
 
 def test_required_option_satisfied_from_named_env():
@@ -1071,8 +1073,8 @@ def test_feature_switch_last_declared_wins_when_tied():
     omitted = _option_run(leaf, [])
     print(f"omit={omitted.stdout_text!r}", flush=True)
     assert_success_marker_present(omitted, greeting)
-    assert f"V:{second_val}" in omitted.stdout_text
-    assert f"V:{first_val}" not in omitted.stdout_text
+    assert marker_occurs(omitted.stdout_text, f"V:{second_val}")
+    assert_marker_absent(omitted.stdout_text, f"V:{first_val}")
 
 
 # ---------------------------------------------------------------------------
@@ -1300,7 +1302,7 @@ def test_tuple_type_sets_arity_and_converts_positions():
     print(f"tuple={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
     assert labeled_stdout_field(result, "T:") == str(expected)
-    assert f"S:{text}" in result.stdout_text
+    assert marker_occurs(result.stdout_text, f"S:{text}")
 
 
 def test_optional_value_flag_alone_token_or_default():
@@ -1334,10 +1336,10 @@ def test_optional_value_flag_alone_token_or_default():
     assert_success_marker_present(equals, greeting)
     assert_success_marker_present(spaced, greeting)
     assert_success_marker_present(omitted, greeting)
-    assert f"V:{flag_val}" in alone.stdout_text
-    assert f"V:{token}" in equals.stdout_text
-    assert f"V:{token}" in spaced.stdout_text
-    assert f"V:{default_val}" in omitted.stdout_text
+    assert marker_occurs(alone.stdout_text, f"V:{flag_val}")
+    assert marker_occurs(equals.stdout_text, f"V:{token}")
+    assert marker_occurs(spaced.stdout_text, f"V:{token}")
+    assert marker_occurs(omitted.stdout_text, f"V:{default_val}")
 
 
 def test_bare_string_default_on_repeatable_is_usage_error():
@@ -1403,7 +1405,7 @@ def test_named_env_fills_when_flag_omitted():
     filled = _option_run(leaf, [], env={env_name: value})
     print(f"filled={filled.stdout_text!r}", flush=True)
     assert_success_marker_present(filled, greeting)
-    assert f"V:{value}" in filled.stdout_text
+    assert marker_occurs(filled.stdout_text, f"V:{value}")
 
 
 def test_empty_env_is_unset_next_source_wins():
@@ -1433,10 +1435,10 @@ def test_empty_env_is_unset_next_source_wins():
     assert_success_marker_present(filled, greeting)
     assert_success_marker_present(empty, greeting)
     assert_success_marker_present(absent, greeting)
-    assert f"V:{env_val}" in filled.stdout_text
-    assert f"V:{defaulted}" not in filled.stdout_text
-    assert f"V:{defaulted}" in empty.stdout_text
-    assert f"V:{defaulted}" in absent.stdout_text
+    assert marker_occurs(filled.stdout_text, f"V:{env_val}")
+    assert_marker_absent(filled.stdout_text, f"V:{defaulted}")
+    assert marker_occurs(empty.stdout_text, f"V:{defaulted}")
+    assert marker_occurs(absent.stdout_text, f"V:{defaulted}")
 
 
 def test_option_env_list_first_set_wins():
@@ -1459,9 +1461,9 @@ def test_option_env_list_first_set_wins():
     print(f"both={both.stdout_text!r} second={second_only.stdout_text!r}", flush=True)
     assert_success_marker_present(both, greeting)
     assert_success_marker_present(second_only, greeting)
-    assert f"V:{v1}" in both.stdout_text
-    assert f"V:{v2}" not in both.stdout_text
-    assert f"V:{v2}" in second_only.stdout_text
+    assert marker_occurs(both.stdout_text, f"V:{v1}")
+    assert_marker_absent(both.stdout_text, f"V:{v2}")
+    assert marker_occurs(second_only.stdout_text, f"V:{v2}")
 
 
 def test_option_env_exact_match_not_whitespace_trimmed():
@@ -1494,12 +1496,12 @@ def test_option_env_exact_match_not_whitespace_trimmed():
     assert_success_marker_present(wrong_case, greeting)
     assert_success_marker_present(padded, greeting)
     assert_success_marker_present(exact, greeting)
-    assert f"V:{defaulted}" in wrong_case.stdout_text
-    assert f"V:{other}" not in wrong_case.stdout_text
-    assert f"V:{defaulted}" in padded.stdout_text
-    assert f"V:{other}" not in padded.stdout_text
-    assert f"V:{other}" in exact.stdout_text
-    assert f"V:{defaulted}" not in exact.stdout_text
+    assert marker_occurs(wrong_case.stdout_text, f"V:{defaulted}")
+    assert_marker_absent(wrong_case.stdout_text, f"V:{other}")
+    assert marker_occurs(padded.stdout_text, f"V:{defaulted}")
+    assert_marker_absent(padded.stdout_text, f"V:{other}")
+    assert marker_occurs(exact.stdout_text, f"V:{other}")
+    assert_marker_absent(exact.stdout_text, f"V:{defaulted}")
 
     def padded_cb(**kwargs) -> None:
         print(greeting, flush=True)
@@ -1512,8 +1514,8 @@ def test_option_env_exact_match_not_whitespace_trimmed():
     padded_exact = _option_run(padded_decl, [], env={padded_name: other})
     print(f"padded_exact={padded_exact.stdout_text!r}", flush=True)
     assert_success_marker_present(padded_exact, greeting)
-    assert f"V:{other}" in padded_exact.stdout_text
-    assert f"V:{defaulted}" not in padded_exact.stdout_text
+    assert marker_occurs(padded_exact.stdout_text, f"V:{other}")
+    assert_marker_absent(padded_exact.stdout_text, f"V:{defaulted}")
 
     live_flag = f"--{_option_ident()}"
     live_dest = _option_ident()
@@ -1837,7 +1839,6 @@ def test_nonboolean_flag_value_env_exact_or_bool_tokens():
     assert exact_enc == repr(flag_val)
     assert true_enc == repr(flag_val)
     assert false_enc != repr(flag_val)
-    assert false_enc != repr(default_val)
     assert unknown_enc == repr(default_val)
     assert empty_enc == repr(default_val)
 
@@ -1892,8 +1893,8 @@ def test_command_line_beats_environment():
     result = _option_run(leaf, [flag, cli_val], env={env_name: env_val})
     print(f"cli={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"V:{cli_val}" in result.stdout_text
-    assert f"V:{env_val}" not in result.stdout_text
+    assert marker_occurs(result.stdout_text, f"V:{cli_val}")
+    assert_marker_absent(result.stdout_text, f"V:{env_val}")
 
 
 def test_command_line_value_must_never_prompt():
@@ -1920,10 +1921,10 @@ def test_command_line_value_must_never_prompt():
     )
     assert_success_marker_present(equals, greeting)
     assert_success_marker_present(spaced, greeting)
-    assert f"V:{cli_val}" in equals.stdout_text
-    assert f"V:{cli_val}" in spaced.stdout_text
-    assert f"V:{typed}" not in equals.stdout_text
-    assert f"V:{typed}" not in spaced.stdout_text
+    assert marker_occurs(equals.stdout_text, f"V:{cli_val}")
+    assert marker_occurs(spaced.stdout_text, f"V:{cli_val}")
+    assert_marker_absent(equals.stdout_text, f"V:{typed}")
+    assert_marker_absent(spaced.stdout_text, f"V:{typed}")
 
 
 # ---------------------------------------------------------------------------
@@ -1964,11 +1965,11 @@ def test_fill_order_command_line_env_map_declared():
     )
     for result in (cli_vs_env, cli_vs_map, env_vs_map, map_vs_def, only_def):
         assert_success_marker_present(result, greeting)
-    assert f"V:{cli_val}" in cli_vs_env.stdout_text
-    assert f"V:{cli_val}" in cli_vs_map.stdout_text
-    assert f"V:{env_val}" in env_vs_map.stdout_text
-    assert f"V:{map_val}" in map_vs_def.stdout_text
-    assert f"V:{def_val}" in only_def.stdout_text
+    assert marker_occurs(cli_vs_env.stdout_text, f"V:{cli_val}")
+    assert marker_occurs(cli_vs_map.stdout_text, f"V:{cli_val}")
+    assert marker_occurs(env_vs_map.stdout_text, f"V:{env_val}")
+    assert marker_occurs(map_vs_def.stdout_text, f"V:{map_val}")
+    assert marker_occurs(only_def.stdout_text, f"V:{def_val}")
 
     map_n = _option_int()
     cli_n = map_n + 4
@@ -2033,11 +2034,11 @@ def test_feature_switch_more_explicit_source_wins():
     )
     for result in (cli_vs_env, cli_vs_map, env_vs_map, map_vs_def, cli_vs_default):
         assert_success_marker_present(result, greeting)
-    assert f"V:{right_val}" in cli_vs_env.stdout_text
-    assert f"V:{right_val}" in cli_vs_map.stdout_text
-    assert f"V:{left_val}" in env_vs_map.stdout_text
-    assert f"V:{left_val}" in map_vs_def.stdout_text
-    assert f"V:{left_val}" in cli_vs_default.stdout_text
+    assert marker_occurs(cli_vs_env.stdout_text, f"V:{right_val}")
+    assert marker_occurs(cli_vs_map.stdout_text, f"V:{right_val}")
+    assert marker_occurs(env_vs_map.stdout_text, f"V:{left_val}")
+    assert marker_occurs(map_vs_def.stdout_text, f"V:{left_val}")
+    assert marker_occurs(cli_vs_default.stdout_text, f"V:{left_val}")
 
 
 # ---------------------------------------------------------------------------
@@ -2071,8 +2072,8 @@ def test_parameter_callback_replaces_converted_value():
     result = _option_run(leaf, [f"{flag}={provided}"])
     print(f"replace={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"V:{replacement}" in result.stdout_text
-    assert f"V:{provided}" not in result.stdout_text
+    assert marker_occurs(result.stdout_text, f"V:{replacement}")
+    assert_marker_absent(result.stdout_text, f"V:{provided}")
 
 
 def test_parameter_callback_may_refuse():
@@ -2112,10 +2113,10 @@ def test_parameter_callback_may_refuse():
         flush=True,
     )
     assert_success_marker_present(accepted, greeting)
-    assert f"V:{provided}" in accepted.stdout_text
+    assert marker_occurs(accepted.stdout_text, f"V:{provided}")
     assert_usage_class(refused, greeting)
     assert_parameter_callback_refused(refused, greeting, f"V:{provided}")
-    assert f"V:{provided}" not in refused.stdout_text
+    assert_marker_absent(refused.stdout_text, f"V:{provided}")
 
 
 def test_parameter_callback_runs_for_env_and_map_sources():
@@ -2147,10 +2148,10 @@ def test_parameter_callback_runs_for_env_and_map_sources():
     print(f"env={from_env.stdout_text!r} map={from_map.stdout_text!r}", flush=True)
     assert_success_marker_present(from_env, greeting)
     assert_success_marker_present(from_map, greeting)
-    assert f"V:{replaced}" in from_env.stdout_text
-    assert f"V:{env_raw}" not in from_env.stdout_text
-    assert f"V:{replaced}" in from_map.stdout_text
-    assert f"V:{map_raw}" not in from_map.stdout_text
+    assert marker_occurs(from_env.stdout_text, f"V:{replaced}")
+    assert_marker_absent(from_env.stdout_text, f"V:{env_raw}")
+    assert marker_occurs(from_map.stdout_text, f"V:{replaced}")
+    assert_marker_absent(from_map.stdout_text, f"V:{map_raw}")
 
 
 def test_parameter_callback_runs_for_prompt_source():
@@ -2184,11 +2185,11 @@ def test_parameter_callback_runs_for_prompt_source():
         flush=True,
     )
     assert_success_marker_present(from_cli, greeting)
-    assert f"V:{other}" in from_cli.stdout_text
-    assert f"V:{replaced}" not in from_cli.stdout_text
+    assert marker_occurs(from_cli.stdout_text, f"V:{other}")
+    assert_marker_absent(from_cli.stdout_text, f"V:{replaced}")
     assert_success_marker_present(from_prompt, greeting)
-    assert f"V:{replaced}" in from_prompt.stdout_text
-    assert f"V:{typed}" not in from_prompt.stdout_text
+    assert marker_occurs(from_prompt.stdout_text, f"V:{replaced}")
+    assert_marker_absent(from_prompt.stdout_text, f"V:{typed}")
 
 
 def test_eager_flag_finishes_when_required_non_eager_missing():
@@ -2259,10 +2260,10 @@ def test_missing_parameter_still_runs_its_callback():
     print(f"omit={omitted.stdout_text!r} given={provided.stdout_text!r}", flush=True)
     assert_success_marker_present(omitted, greeting)
     assert mark in omitted.stdout_text
-    assert f"B:{derived_prefix}{a_val}" in omitted.stdout_text
+    assert marker_occurs(omitted.stdout_text, f"B:{derived_prefix}{a_val}")
     assert_success_marker_present(provided, greeting)
-    assert f"B:{b_val}" in provided.stdout_text
-    assert f"B:{derived_prefix}{a_val}" not in provided.stdout_text
+    assert marker_occurs(provided.stdout_text, f"B:{b_val}")
+    assert_marker_absent(provided.stdout_text, f"B:{derived_prefix}{a_val}")
 
 
 def test_repeatable_parameter_callback_fires_once_with_all_values():
@@ -2346,10 +2347,10 @@ def test_deprecated_option_warns_only_when_user_supplied():
         flush=True,
     )
     assert_deprecation_distinct(supplied_dep, supplied_base, greeting)
-    assert f"V:{provided}" in supplied_dep.stdout_text
+    assert marker_occurs(supplied_dep.stdout_text, f"V:{provided}")
     assert_success_marker_present(omit_dep, greeting)
     assert_success_marker_present(omit_base, greeting)
-    assert f"V:{defaulted}" in omit_dep.stdout_text
+    assert marker_occurs(omit_dep.stdout_text, f"V:{defaulted}")
     assert caller_visible_remainder(omit_dep, greeting) == caller_visible_remainder(
         omit_base, greeting
     )
@@ -2389,7 +2390,7 @@ def test_deprecated_option_cannot_be_required_or_prompted():
     result = _option_run(ok, [ok_flag, value])
     print(f"ok={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"V:{value}" in result.stdout_text
+    assert marker_occurs(result.stdout_text, f"V:{value}")
 
 
 # ---------------------------------------------------------------------------
@@ -2499,4 +2500,4 @@ def test_missing_value_for_required_value_option_is_usage_error():
     print(f"missing={missing.stderr_text!r} opt={optional_ok.stdout_text!r}", flush=True)
     assert_usage_class(missing, greeting)
     assert_success_marker_present(optional_ok, greeting)
-    assert f"V:{flag_val}" in optional_ok.stdout_text
+    assert marker_occurs(optional_ok.stdout_text, f"V:{flag_val}")

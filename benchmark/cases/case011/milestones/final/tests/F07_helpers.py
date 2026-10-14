@@ -16,10 +16,7 @@ from typing import Any
 
 from _harness import HarnessError
 from F03_helpers import (
-    assert_kind_stems_differ,
-    bracket_failure_record,
     bracket_ident,
-    bracket_kind_stem,
     bracket_payload,
 )
 
@@ -381,48 +378,6 @@ def function_kind_texts(*tokens: str) -> tuple[str, ...]:
     return tuple(collected)
 
 
-def assert_three_function_kinds_distinct(
-    unknown: BaseException,
-    arity: BaseException,
-    typed: BaseException,
-    *texts: str,
-) -> None:
-    """Require unknown / arity / type leftovers pairwise differ.
-
-    Sealed F08 still calls this name with leftover *texts*. FP-07
-    assertions use the kind-marker helpers below instead. Kind is
-    ``bracket_kind_stem`` after stripping *texts* (expressions and
-    function names) then digits and whitespace. Same-kind examples
-    are not compared to each other. Unclassifiable (two stems equal)
-    raises — never a pass for "no visible difference".
-    """
-    for label, exc in (
-        ("unknown", unknown),
-        ("arity", arity),
-        ("typed", typed),
-    ):
-        if not isinstance(exc, BaseException):
-            raise HarnessError(
-                f"assert_three_function_kinds_distinct {label} is not an "
-                f"exception: {type(exc)!r}"
-            )
-    unknown_stem = bracket_kind_stem(bracket_failure_record(unknown), *texts)
-    arity_stem = bracket_kind_stem(bracket_failure_record(arity), *texts)
-    typed_stem = bracket_kind_stem(bracket_failure_record(typed), *texts)
-    print(f"kind_stem_unknown={unknown_stem!r}", flush=True)
-    print(f"kind_stem_arity={arity_stem!r}", flush=True)
-    print(f"kind_stem_typed={typed_stem!r}", flush=True)
-    if unknown_stem == arity_stem or unknown_stem == typed_stem or arity_stem == typed_stem:
-        raise HarnessError(
-            "cannot classify unknown-function / invalid-arity / invalid-type "
-            f"as distinct after stripping {texts!r}: "
-            f"unknown={unknown_stem!r} arity={arity_stem!r} typed={typed_stem!r}"
-        )
-    assert_kind_stems_differ(unknown, arity, *texts)
-    assert_kind_stems_differ(unknown, typed, *texts)
-    assert_kind_stems_differ(arity, typed, *texts)
-
-
 def _require_value_error_failure(exc: BaseException, *, label: str) -> BaseException:
     """Require *exc* is a captured kind of value error; never a sentinel."""
     if not isinstance(exc, BaseException):
@@ -451,28 +406,94 @@ def function_kind_marker(exc: BaseException) -> type:
     return marker
 
 
+def _other_kind_representatives(canonical: BaseException) -> list[BaseException]:
+    """Refusals of the Contract's other kinds, observed on the one-shot entry.
+
+    Probes one refusal of every failure kind (empty, incomplete,
+    grammar-level and token-level syntax, zero slice step, unknown
+    function, invalid arity, invalid type). A probe that does not refuse
+    is skipped (other tests grade that). A function-call probe related
+    to *canonical* by subclassing (either way) is the canonical kind and
+    is dropped; the FP-01 and zero-step probes are always other kinds.
+    """
+    from F03_helpers import oneshot_bracket_search
+
+    unknown_name = "zz" + uuid.uuid4().hex[:12]
+    probes = (
+        ("", False),
+        ("(", False),
+        ("foo.", False),
+        ("=", False),
+        ("foo[::0]", False),
+        (f"{unknown_name}(`1`)", True),
+        ("abs()", True),
+        ("abs('x')", True),
+    )
+    others: list[BaseException] = []
+    for text, function_call in probes:
+        result = oneshot_bracket_search(text, {"foo": [1, 2]})
+        exc = result.exception
+        if exc is None or not isinstance(exc, ValueError):
+            continue
+        if function_call and (
+            isinstance(exc, type(canonical)) or isinstance(canonical, type(exc))
+        ):
+            continue
+        others.append(exc)
+    return others
+
+
+def function_kind_class(canonical: BaseException) -> type:
+    """The Contract refusal-kind class presented by *canonical*.
+
+    The Contract gives each function-call kind its own type; a refusal
+    of that kind is an instance of it (its exact type may be a subclass),
+    and no refusal of any other kind is an instance of it. This returns
+    the most general class on *canonical*'s type hierarchy that is a
+    kind of value error and of which no refusal of another kind is an
+    instance — i.e. the kind class, not the canonical example's exact
+    type. Does not name a product class.
+    """
+    _require_value_error_failure(canonical, label="canonical")
+    others = _other_kind_representatives(canonical)
+    kind = type(canonical)
+    for candidate in type(canonical).__mro__:
+        if not (isinstance(candidate, type) and issubclass(candidate, ValueError)):
+            break
+        if candidate is ValueError:
+            break
+        if any(isinstance(other, candidate) for other in others):
+            break
+        kind = candidate
+    print(
+        f"function_kind_class canonical={type(canonical).__name__} kind={kind.__name__}",
+        flush=True,
+    )
+    return kind
+
+
 def assert_shares_function_kind(
     observed: BaseException, canonical: BaseException
 ) -> None:
-    """*observed* presents the same kind marker as *canonical*.
+    """*observed* presents the same Contract refusal kind as *canonical*.
 
-    A more specific form of that kind still counts. Does not compare
-    leftover report text and does not require exact type identity.
+    The kind is the Contract's kind class (``function_kind_class``): a
+    refusal of the kind is an instance of that class or of a subclass,
+    so neither *observed* nor *canonical* needs a particular exact type.
     """
     _require_value_error_failure(observed, label="observed")
     _require_value_error_failure(canonical, label="canonical")
-    marker = function_kind_marker(canonical)
+    kind = function_kind_class(canonical)
     print(
         "shares_function_kind "
-        f"observed={type(observed).__name__} canonical={marker.__name__}",
+        f"observed={type(observed).__name__} kind={kind.__name__}",
         flush=True,
     )
-    assert isinstance(observed, marker), (
-        "observed failure must share the kind marker of the canonical "
-        "call (more specific form allowed); "
-        f"got {type(observed).__name__}, canonical kind is {marker.__name__}"
+    assert isinstance(observed, kind), (
+        "observed failure must present the refusal kind of the canonical "
+        "call (an instance of that kind's class or a subclass); "
+        f"got {type(observed).__name__}, kind class is {kind.__name__}"
     )
-
 
 def assert_does_not_use_function_kind(
     observed: BaseException, canonical: BaseException
@@ -672,7 +693,6 @@ __all__ = (
     "assert_quoted_name_is_syntax_not_empty_incomplete_or_function_kind",
     "assert_shares_function_kind",
     "assert_three_function_kind_markers_distinct",
-    "assert_three_function_kinds_distinct",
     "compact_json_text",
     "fn_float",
     "fn_ident",

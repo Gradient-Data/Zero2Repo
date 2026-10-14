@@ -28,7 +28,7 @@ Surfaces
   suite.
 * Child interpreter — :func:`run_python` / :func:`run_script` /
   :func:`run_command` for observations that need a separate process,
-  including the library-substrate negative control (package removed
+  including the package-absent arm (package removed
   from the import path).
 
 Each isolated call starts from a whitelist of substrate environment
@@ -745,16 +745,16 @@ def as_optional_bytes(value: Any) -> bytes | None:
     """Return *value* as bytes, or ``None`` when the call produced no bytes.
 
     ``None`` is classified absence of a byte string, not a failed
-    observation. ``bytearray`` is copied to ``bytes``. Raises
-    :class:`HarnessError` for any other type — never returns empty
+    observation. ``bytearray`` and ``memoryview`` are copied to ``bytes``.
+    Raises :class:`HarnessError` for any other type — never returns empty
     bytes to mean "not bytes".
     """
     if value is None:
         return None
-    if isinstance(value, (bytes, bytearray)):
+    if isinstance(value, (bytes, bytearray, memoryview)):
         return bytes(value)
     raise HarnessError(
-        f"expected bytes, bytearray, or None; got {type(value)!r}"
+        f"expected bytes, bytearray, memoryview, or None; got {type(value)!r}"
     )
 
 
@@ -1535,7 +1535,7 @@ def run_python(
     the child's ``PYTHONPATH`` and a preamble drops that tree from
     ``sys.path`` and blocks the package name before *code* runs. Combined
     with an isolated cwd that is not the product tree, this is the
-    library-substrate negative control: the package is not importable.
+    package-absent arm: the package is not importable.
     The preamble is applied only when *code* is supplied.
 
     When *isolate* is true (the default) and *cwd* / *env* are omitted,

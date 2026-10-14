@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "case_id": "case013",
+  "ecosystem": "go",
+  "install_ban": [
+    "github.com/okf-memory/homebrew-tap",
+    "github.com/okf-memory/okf-agent-memory",
+    "github.com/okf-memory/okf-agent-memory/cmd/okf",
+    "github.com/okf-memory/okf-agent-memory/cmd/okf-benchmark",
+    "okf",
+    "okf-agent-memory",
+    "okf-benchmark",
+    "okf-memory/homebrew-tap",
+    "okf-memory/okf-agent-memory",
+    "okf-memory/tap",
+    "okf-memory/tap/okf",
+    "okfagentmemory"
+  ],
+  "import_ban": [
+    "github.com/okf-memory/okf-agent-memory/",
+    "okf-memory/okf-agent-memory/"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Bans the upstream Go module github.com/okf-memory/okf-agent-memory, go-install paths cmd/okf and cmd/okf-benchmark, GitHub slug, Homebrew tap/formula okf-memory/tap/okf, and brew/CLI name okf; Go toolchain, GNU make, Git, gcc/clang, and stdlib stay allowed. Recipe image has no importable equivalent (not in GOROOT/GOPATH/GOMODCACHE or on PATH; /opt/cb-warm is case source)."
+}

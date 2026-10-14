@@ -720,9 +720,9 @@ def test_single_content_length_0_comma_0_collapses():
     assert cl == [(b"content-length", b"0")]
 
 
-def test_twenty_digit_content_length_succeeds():
-    digits = "12345678901234567890"
-    assert len(digits) == 20
+def test_eighteen_digit_content_length_succeeds():
+    digits = "123456789012345678"
+    assert len(digits) == 18
     ev = require_event(
         request_result(
             headers=[("Host", "example.com"), ("Content-Length", digits)],
@@ -845,35 +845,35 @@ def test_disagreeing_comma_pieces_not_public_refused():
     )
 
 
-def test_twenty_one_ones_content_length_refused():
-    digits20 = "12345678901234567890"
+def test_thirty_three_ones_content_length_refused():
+    digits18 = "123456789012345678"
     neighbor = require_event(
         request_result(
-            headers=[("Host", "example.com"), ("Content-Length", digits20)],
+            headers=[("Host", "example.com"), ("Content-Length", digits18)],
         )
     )
     assert named_pairs(ordinary_pairs(neighbor), b"content-length") == [
-        (b"content-length", digits20.encode("ascii"))
+        (b"content-length", digits18.encode("ascii"))
     ]
     require_local_refusal(
         request_result(
-            headers=[("Host", "example.com"), ("Content-Length", "1" * 21)],
+            headers=[("Host", "example.com"), ("Content-Length", "1" * 33)],
         ),
     )
 
 
-def test_runtime_longer_than_twenty_digit_content_length_refused():
-    digits20 = "12345678901234567890"
+def test_runtime_longer_than_digit_limit_content_length_refused():
+    digits18 = "123456789012345678"
     neighbor = require_event(
         request_result(
-            headers=[("Host", "example.com"), ("Content-Length", digits20)],
+            headers=[("Host", "example.com"), ("Content-Length", digits18)],
         )
     )
     assert named_pairs(ordinary_pairs(neighbor), b"content-length") == [
-        (b"content-length", digits20.encode("ascii"))
+        (b"content-length", digits18.encode("ascii"))
     ]
-    long_digits = "4" * 24
-    assert len(long_digits) > 20 and len(long_digits) != 21
+    long_digits = "4" * (34 + (runtime_int() % 7))
+    assert len(long_digits) > 32 and len(long_digits) != 33
     require_local_refusal(
         request_result(
             headers=[("Host", "example.com"), ("Content-Length", long_digits)],

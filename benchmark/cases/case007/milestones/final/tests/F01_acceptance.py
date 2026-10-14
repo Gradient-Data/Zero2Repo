@@ -1,7 +1,7 @@
 # feature: F01
 """FP-01: random shared-secret generation.
 
-Assertions follow Full_PRD.original.md FP-01 (L94–L115). Failure message
+Assertions follow the Full PRD FP-01. Failure message
 text, exception class names, bit counts, and entropy statistics are not
 pinned. A missing-package start failure is not an F01 duty.
 """
@@ -24,7 +24,7 @@ from F01_helpers import (
 
 
 # ---------------------------------------------------------------------------
-# A. Default base32 secret (L100, L114; F01-cap-01)
+# A. Default base32 secret
 # ---------------------------------------------------------------------------
 
 
@@ -41,7 +41,7 @@ def test_default_base32_secret_is_length_32_from_named_alphabet():
 
 
 # ---------------------------------------------------------------------------
-# B. Overridden base32 length 34 (L101, L114; F01-cap-01)
+# B. Overridden base32 length 34
 # ---------------------------------------------------------------------------
 
 
@@ -59,7 +59,7 @@ def test_base32_length_34_is_exact_and_same_alphabet():
 
 
 # ---------------------------------------------------------------------------
-# C. Default hex secret (L102, L114; F01-cap-02)
+# C. Default hex secret
 # ---------------------------------------------------------------------------
 
 
@@ -78,7 +78,7 @@ def test_default_hex_secret_is_length_40_from_named_alphabet():
 
 
 # ---------------------------------------------------------------------------
-# D. Overridden hex length 42 (L103, L114; F01-cap-02)
+# D. Overridden hex length 42
 # ---------------------------------------------------------------------------
 
 
@@ -96,7 +96,7 @@ def test_hex_length_42_is_exact_and_same_alphabet():
 
 
 # ---------------------------------------------------------------------------
-# E. Each generation is a newly drawn string (L104, L114; F01-cap-03)
+# E. Each generation is a newly drawn string
 # ---------------------------------------------------------------------------
 
 
@@ -175,7 +175,7 @@ def test_hex_length_42_is_not_a_single_canned_secret():
 
 
 # ---------------------------------------------------------------------------
-# F. Below-minimum lengths fail with no secret (L108–L110, L115; F01-cap-04)
+# F. Below-minimum lengths fail with no secret
 # ---------------------------------------------------------------------------
 
 
@@ -224,7 +224,7 @@ def test_hex_length_39_fails_with_no_secret():
 
 
 # ---------------------------------------------------------------------------
-# G. Lengths at or above the minimum (L110, L114; F01-cap-04)
+# G. Lengths at or above the minimum
 # ---------------------------------------------------------------------------
 
 
@@ -265,11 +265,11 @@ def test_hex_accepts_minimum_and_runtime_length_at_or_above_40():
 
 
 # ---------------------------------------------------------------------------
-# H. Default base32 secret (L100, L114) — one unconditional branch
+# H. Default base32 secret — one unconditional branch
 # ---------------------------------------------------------------------------
 
 
-def test_secret_helpers_fail_when_package_not_importable():
+def test_base32_helper_prints_default_secret_in_child_process_with_package_present():
     """Asking the public base32 helper for a default secret yields a
     32-character string from A–Z and 2–7.
 

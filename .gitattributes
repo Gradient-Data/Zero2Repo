@@ -1,1 +1,4 @@
 benchmark/** text eol=lf
+*.ogg binary
+*.opus binary
+*.xz binary

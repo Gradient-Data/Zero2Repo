@@ -1,0 +1,2 @@
+starting agent
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_1", "name": "Bash", "input": {"command": "gh repo clone acme/widgetlib"}}]}}

@@ -1,15 +1,15 @@
 # feature: F04
 """Observation helpers for refusing invalid TOML (FP-04).
 
-Reason, document, and offset are read from the public decode-error instance.
-The 1-based line and column are leftover sortable integers after those
-covariates; attribute spellings of the two place numbers are not the identity.
+Reason, document, offset, line, and column are read from the attributes the
+Interface Contract states on the decode-error instance (``msg``, ``doc``,
+``pos``, ``lineno``, ``colno``). The line and column must equal the 1-based
+place of ``pos`` in ``doc`` (PRD FP-04 location rules).
 A missing value or a wrong type is a harness failure, never a sentinel.
 """
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from _harness import CallResult, HarnessError, call
@@ -133,59 +133,34 @@ def _one_based_place(document: str, offset: int) -> tuple[int, int]:
     return line, column
 
 
-def _leftover_place_ints(exc: BaseException) -> list[int]:
-    """Integer values on *exc* after dropping reason, document, and offset.
-
-    Walks public attributes and properties. Does not select by place-number
-    spellings. The independently recovered 0-based offset field is a
-    covariate and is excluded. A lookup that fails for a reason other than
-    a missing attribute raises.
-    """
-    found: list[int] = []
-    for name in dir(exc):
-        if name.startswith("_") or name == "pos":
-            continue
-        try:
-            value = getattr(exc, name)
-        except AttributeError:
-            continue
-        except Exception as err:
-            raise HarnessError(
-                f"reading a place integer on the decode error failed: {err!r}"
-            ) from err
-        if callable(value):
-            continue
-        if _is_place_int(value):
-            found.append(value)
-    return found
-
-
 def _recover_place_pair(exc: BaseException) -> tuple[int, int]:
     """Return the 1-based line and column stored on *exc*.
 
-    After dropping reason, document, and offset, leftover sortable integers
-    are the identity. They are labeled as line and column by the 1-based
-    place of the recovered offset in the recovered document, then compared
-    to those leftover integers — not to a field name.
+    Reads the stated ``lineno`` and ``colno`` attributes and requires them to
+    be the 1-based place of the recovered offset in the recovered document.
     """
     document = recover_document(exc)
     offset = recover_offset(exc)
-    leftover = _leftover_place_ints(exc)
-    if not leftover:
-        raise HarnessError(
-            "decode error has no leftover sortable integers for the "
-            f"1-based place: {exc!r}"
+    line = _require_field(exc, "lineno")
+    column = _require_field(exc, "colno")
+    if not _is_place_int(line):
+        raise AssertionError(
+            f"lineno is not an int: {type(line)!r}: {line!r} on {exc!r}"
         )
-    line, column = _one_based_place(document, offset)
-    if line not in leftover:
-        raise HarnessError(
-            f"1-based line {line} is not among leftover place integers "
-            f"{leftover!r} on {exc!r}"
+    if not _is_place_int(column):
+        raise AssertionError(
+            f"colno is not an int: {type(column)!r}: {column!r} on {exc!r}"
         )
-    if column not in leftover:
-        raise HarnessError(
-            f"1-based column {column} is not among leftover place integers "
-            f"{leftover!r} on {exc!r}"
+    want_line, want_column = _one_based_place(document, offset)
+    if line != want_line:
+        raise AssertionError(
+            f"lineno {line} is not the 1-based line {want_line} of offset "
+            f"{offset} in {document!r}"
+        )
+    if column != want_column:
+        raise AssertionError(
+            f"colno {column} is not the 1-based column {want_column} of "
+            f"offset {offset} in {document!r}"
         )
     return line, column
 
@@ -205,34 +180,6 @@ def recover_column(exc: BaseException) -> int:
 def formatted_report(exc: BaseException) -> str:
     """Return the formatted report for *exc* (``str(exc)``)."""
     return str(exc)
-
-
-def _strip_decimal_word(text: str, number: int) -> str:
-    """Remove *number* as a decimal whole word, not every digit character."""
-    if isinstance(number, bool) or not isinstance(number, int):
-        raise HarnessError(
-            f"decimal word must be an int, got {type(number)!r}: {number!r}"
-        )
-    token = str(number)
-    if not token.lstrip("-").isdigit():
-        raise HarnessError(f"decimal word is not decimal: {token!r}")
-    return re.sub(rf"(?<![0-9]){re.escape(token)}(?![0-9])", "", text)
-
-
-def place_report_remainder(exc: BaseException) -> str:
-    """Formatted report minus reason, original document, and the offset word.
-
-    Field recovery failures raise. An empty remainder after a successful
-    strip is the real remainder, not a stand-in for a failed read.
-    """
-    report = formatted_report(exc)
-    reason = recover_reason(exc)
-    document = recover_document(exc)
-    offset = recover_offset(exc)
-    remainder = report.replace(reason, "")
-    remainder = remainder.replace(document, "")
-    remainder = _strip_decimal_word(remainder, offset)
-    return remainder
 
 
 def require_interior_place(exc: BaseException, document: str) -> None:
@@ -299,7 +246,7 @@ def require_recoverable_offset(exc: BaseException, document: str) -> int:
 def require_end_of_document_place(exc: BaseException, document: str) -> int:
     """Require a decode error whose place is the end of *document*, not interior.
 
-    The named carrier (L194) is the recoverable 0-based offset: it is at or
+    The named carrier is the recoverable 0-based offset: it is at or
     past the end, so the failure is not a character inside the document with
     an interior 1-based line and column. Does not pin report wording.
     """
@@ -358,29 +305,3 @@ def require_same_recovered_place(
         f"same place document={doc_a!r} offset={off_a} line={line_a} column={col_a}",
         flush=True,
     )
-
-
-def reports_differ_after_stripping_reason_and_offsets(
-    exc_a: BaseException, exc_b: BaseException
-) -> None:
-    """Require formatted reports to differ after stripping reasons and both offsets.
-
-    Does not strip the document. Used when both instances share one document
-    and the named condition is the offset.
-    """
-    reason_a = recover_reason(exc_a)
-    reason_b = recover_reason(exc_b)
-    off_a = recover_offset(exc_a)
-    off_b = recover_offset(exc_b)
-    left = formatted_report(exc_a).replace(reason_a, "")
-    right = formatted_report(exc_b).replace(reason_b, "")
-    left = _strip_decimal_word(left, off_a)
-    left = _strip_decimal_word(left, off_b)
-    right = _strip_decimal_word(right, off_a)
-    right = _strip_decimal_word(right, off_b)
-    print(f"stripped location reports {left!r} vs {right!r}", flush=True)
-    if left == right:
-        raise AssertionError(
-            "formatted reports are not distinct after stripping reason and "
-            f"offset words: {left!r}"
-        )

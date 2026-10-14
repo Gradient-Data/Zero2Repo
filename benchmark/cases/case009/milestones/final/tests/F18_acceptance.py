@@ -1,9 +1,9 @@
 # feature: F18
 """Logs, completion, dedup, and merge-driver acceptance tests.
 
-PRD: FP-18 (L508–L531), porcelain names L32, PATH negative control L55,
-track merge=lfs L63/L517, sharded store L185/L517, LFS namespace L539.
-Message wording, diagnostic-entry spelling, ioctl names, and flag
+PRD: FP-18, the PRD command inventory (porcelain names), core capabilities (binary off PATH),
+track merge=lfs (non-goals, FP-18), sharded store (FP-05, FP-18), LFS namespace (cross-cutting requirements).
+Message wording, ioctl names, and flag
 spellings are not pinned.
 """
 

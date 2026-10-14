@@ -1,9 +1,8 @@
 # feature: F05
 """FP-05: otpauth provisioning URI parsing.
 
-Assertions follow Full_PRD.original.md FP-05 (L215–L245) plus shared
-defaults at L20, L23, L29–L31, L44–L45, L61–L63, L73, L85, and
-L196–L199. Failure message text, exception class names, Steam, and
+Assertions follow the Full PRD FP-05 plus the PRD's shared defaults
+(Terminology, Non-functional constraints). Failure message text, exception class names, Steam, and
 internal URI split/assembly are not pinned.
 """
 
@@ -153,7 +152,7 @@ def _hotp_kind(helper):
 
 
 # ---------------------------------------------------------------------------
-# A. FP-04 built URIs round-trip except image (L217, L221, L244)
+# A. FP-04 built URIs round-trip except image
 # ---------------------------------------------------------------------------
 
 
@@ -368,7 +367,7 @@ def test_fp04_built_uris_round_trip_except_image():
 
 
 # ---------------------------------------------------------------------------
-# B. JBSWY README URIs match direct construction (L222–L223, L244)
+# B. JBSWY README URIs match direct construction
 # ---------------------------------------------------------------------------
 
 
@@ -431,7 +430,7 @@ def test_jbswy_readme_uris_parse_to_helpers_matching_direct():
 
 
 # ---------------------------------------------------------------------------
-# C. GEZDGNBV totp SHA1 named codes and named rebuilds (L224–L225, L244)
+# C. GEZDGNBV totp SHA1 named codes and named rebuilds
 # ---------------------------------------------------------------------------
 
 
@@ -452,7 +451,7 @@ def test_gezdgnbv_totp_sha1_codes_and_named_rebuilds():
 
 
 # ---------------------------------------------------------------------------
-# D. period=60 shifts named codes; last-wins; unpublished P>60 (L224, L226)
+# D. period=60 shifts named codes; last-wins; unpublished P>60
 # ---------------------------------------------------------------------------
 
 
@@ -471,13 +470,13 @@ def test_period_60_shifts_named_codes_and_rebuild_includes_period():
     print("period=60 vs default 30 at unix 30", flush=True)
 
     forward = _parse(
-        "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
         "&period=30&period=60"
     )
     require_named_code(emit_for_instant(forward, 30), CODE_734055)
 
     reverse = _parse(
-        "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
         "&period=60&period=30"
     )
     require_named_code(emit_for_instant(reverse, 30), CODE_662488)
@@ -485,7 +484,7 @@ def test_period_60_shifts_named_codes_and_rebuild_includes_period():
 
     period_p = unpublished_period_gt_sixty({30, 60})
     parsed_p = _parse(
-        "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
         f"&period={period_p}"
     )
     rebuilt_p = _rebuild(
@@ -509,7 +508,7 @@ def test_period_60_shifts_named_codes_and_rebuild_includes_period():
 
 
 # ---------------------------------------------------------------------------
-# E. hotp GEZDGNBV named codes; counter 0/1; last-wins (L224, L227)
+# E. hotp GEZDGNBV named codes; counter 0/1; last-wins
 # ---------------------------------------------------------------------------
 
 
@@ -537,12 +536,12 @@ def test_hotp_gezdgnbv_codes_counter_zero_and_one():
     require_named_code(emit_at(hotp0, 0), CODE_734055)
 
     forward = _parse(
-        "otpauth://hotp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://hotp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
         "&counter=0&counter=1"
     )
     require_named_code(emit_at(forward, 0), CODE_662488)
     reverse = _parse(
-        "otpauth://hotp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://hotp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
         "&counter=1&counter=0"
     )
     require_named_code(emit_at(reverse, 0), CODE_734055)
@@ -550,7 +549,7 @@ def test_hotp_gezdgnbv_codes_counter_zero_and_one():
 
 
 # ---------------------------------------------------------------------------
-# F. last algorithm SHA256 / SHA512; hotp symmetric (L224, L228)
+# F. last algorithm SHA256 / SHA512; hotp symmetric
 # ---------------------------------------------------------------------------
 
 
@@ -569,20 +568,20 @@ def test_last_algorithm_sha256_and_sha512_named_codes():
     print("GEZDGNBV last algorithm named codes differ at unix 0", flush=True)
 
     reverse_256 = _parse(
-        "otpauth://totp?algorithm=SHA256&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://totp/?algorithm=SHA256&secret=GEZDGNBV&algorithm=SHA1"
     )
     require_named_code(emit_for_instant(reverse_256, 0), CODE_734055)
     reverse_512 = _parse(
-        "otpauth://totp?algorithm=SHA512&secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://totp/?algorithm=SHA512&secret=GEZDGNBV&algorithm=SHA1"
     )
     require_named_code(emit_for_instant(reverse_512, 0), CODE_734055)
 
     secret = unpublished_base32_secret(F05_NAMED_SECRETS)
     parsed_unpub_256 = _parse(
-        f"otpauth://totp?secret={secret}&algorithm=SHA1&algorithm=SHA256"
+        f"otpauth://totp/?secret={secret}&algorithm=SHA1&algorithm=SHA256"
     )
     parsed_unpub_sha1 = _parse(
-        f"otpauth://totp?secret={secret}&algorithm=SHA1&algorithm=SHA1"
+        f"otpauth://totp/?secret={secret}&algorithm=SHA1&algorithm=SHA1"
     )
     direct_256 = _direct_totp(secret, digest=sha256)
     direct_sha1 = _direct_totp(secret, digest=sha1)
@@ -592,7 +591,7 @@ def test_last_algorithm_sha256_and_sha512_named_codes():
     assert unpub_sha1_code == require_code(emit_for_instant(direct_sha1, 0), 6)
 
     parsed_unpub_512 = _parse(
-        f"otpauth://totp?secret={secret}&algorithm=SHA1&algorithm=SHA512"
+        f"otpauth://totp/?secret={secret}&algorithm=SHA1&algorithm=SHA512"
     )
     direct_512 = _direct_totp(secret, digest=sha512)
     unpub_512_code = require_code(emit_for_instant(parsed_unpub_512, 0), 6)
@@ -605,10 +604,10 @@ def test_last_algorithm_sha256_and_sha512_named_codes():
     )
 
     hmac_fwd = _parse(
-        f"otpauth://hotp?secret={secret}&algorithm=SHA1&algorithm=SHA256"
+        f"otpauth://hotp/?secret={secret}&algorithm=SHA1&algorithm=SHA256"
     )
     hmac_rev = _parse(
-        "otpauth://hotp?secret=GEZDGNBV&algorithm=SHA256&algorithm=SHA1"
+        "otpauth://hotp/?secret=GEZDGNBV&algorithm=SHA256&algorithm=SHA1"
     )
     hmac_direct_256 = _direct_hotp(secret, digest=sha256)
     hmac_fwd_code = require_code(emit_at(hmac_fwd, 0), 6)
@@ -621,10 +620,10 @@ def test_last_algorithm_sha256_and_sha512_named_codes():
     )
 
     hmac_512 = _parse(
-        f"otpauth://hotp?secret={secret}&algorithm=SHA1&algorithm=SHA512"
+        f"otpauth://hotp/?secret={secret}&algorithm=SHA1&algorithm=SHA512"
     )
     hmac_sha1 = _parse(
-        f"otpauth://hotp?secret={secret}&algorithm=SHA1"
+        f"otpauth://hotp/?secret={secret}&algorithm=SHA1"
     )
     hmac_direct_512 = _direct_hotp(secret, digest=sha512)
     hmac_direct_sha1 = _direct_hotp(secret, digest=sha1)
@@ -639,17 +638,17 @@ def test_last_algorithm_sha256_and_sha512_named_codes():
 
 
 # ---------------------------------------------------------------------------
-# G. last secret / digits; digits=7; issuer as-read (L224, L237, L238)
+# G. last secret / digits; digits=7; issuer as-read
 # ---------------------------------------------------------------------------
 
 
 def test_last_query_occurrence_wins_for_secret_and_digits():
     unpub_secret = unpublished_base32_secret(F05_NAMED_SECRETS)
     totp_secret_fwd = _parse(
-        f"otpauth://totp?secret=GEZDGNBV&secret={unpub_secret}"
+        f"otpauth://totp/?secret=GEZDGNBV&secret={unpub_secret}"
     )
     totp_secret_rev = _parse(
-        f"otpauth://totp?secret={unpub_secret}&secret=GEZDGNBV"
+        f"otpauth://totp/?secret={unpub_secret}&secret=GEZDGNBV"
     )
     direct_unpub_totp = _direct_totp(unpub_secret)
     fwd_code = require_code(emit_for_instant(totp_secret_fwd, 0), 6)
@@ -657,10 +656,10 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
     require_named_code(emit_for_instant(totp_secret_rev, 0), CODE_734055)
 
     hotp_secret_fwd = _parse(
-        f"otpauth://hotp?secret=GEZDGNBV&secret={unpub_secret}"
+        f"otpauth://hotp/?secret=GEZDGNBV&secret={unpub_secret}"
     )
     hotp_secret_rev = _parse(
-        f"otpauth://hotp?secret={unpub_secret}&secret=GEZDGNBV"
+        f"otpauth://hotp/?secret={unpub_secret}&secret=GEZDGNBV"
     )
     direct_unpub_hotp = _direct_hotp(unpub_secret)
     hotp_fwd_code = require_code(emit_at(hotp_secret_fwd, 0), 6)
@@ -672,10 +671,10 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
     )
 
     totp_digits_fwd = _parse(
-        "otpauth://totp?secret=GEZDGNBV&digits=6&digits=8"
+        "otpauth://totp/?secret=GEZDGNBV&digits=6&digits=8"
     )
     totp_digits_rev = _parse(
-        "otpauth://totp?secret=GEZDGNBV&digits=8&digits=6"
+        "otpauth://totp/?secret=GEZDGNBV&digits=8&digits=6"
     )
     direct_eight_totp = _direct_totp(GEZDGNBV_SECRET, digits=8)
     direct_six_totp = _direct_totp(GEZDGNBV_SECRET, digits=6)
@@ -689,10 +688,10 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
     assert rev_six == six_direct
 
     hotp_digits_fwd = _parse(
-        "otpauth://hotp?secret=GEZDGNBV&digits=6&digits=8"
+        "otpauth://hotp/?secret=GEZDGNBV&digits=6&digits=8"
     )
     hotp_digits_rev = _parse(
-        "otpauth://hotp?secret=GEZDGNBV&digits=8&digits=6"
+        "otpauth://hotp/?secret=GEZDGNBV&digits=8&digits=6"
     )
     direct_eight_hotp = _direct_hotp(GEZDGNBV_SECRET, digits=8)
     direct_six_hotp = _direct_hotp(GEZDGNBV_SECRET, digits=6)
@@ -707,7 +706,7 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
         flush=True,
     )
 
-    totp7 = _parse("otpauth://totp?secret=GEZDGNBV&digits=7")
+    totp7 = _parse("otpauth://totp/?secret=GEZDGNBV&digits=7")
     rebuilt7 = _rebuild(totp7)
     require_query_includes(rebuilt7, {"digits": "7"})
     totp7_code = require_code(emit_for_instant(totp7, 0), 7)
@@ -715,7 +714,7 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
     assert totp7_code == require_code(emit_for_instant(direct7_totp, 0), 7)
     assert totp7_code != six_direct
 
-    hotp7 = _parse("otpauth://hotp?secret=GEZDGNBV&digits=7")
+    hotp7 = _parse("otpauth://hotp/?secret=GEZDGNBV&digits=7")
     rebuilt_hotp7 = _rebuild(hotp7)
     require_query_includes(rebuilt_hotp7, {"digits": "7"})
     assert "counter" in parsed_otpauth(rebuilt_hotp7).query
@@ -786,7 +785,7 @@ def test_last_query_occurrence_wins_for_secret_and_digits():
 
 
 # ---------------------------------------------------------------------------
-# H. literal colon separates; %3A is not a separator (L229, L244)
+# H. literal colon separates; %3A is not a separator
 # ---------------------------------------------------------------------------
 
 
@@ -880,7 +879,7 @@ def test_literal_colon_separates_label_encoded_colon_does_not():
 
 
 # ---------------------------------------------------------------------------
-# I. optional image accepted, ignored, dropped (L217, L221, L230)
+# I. optional image accepted, ignored, dropped
 # ---------------------------------------------------------------------------
 
 
@@ -903,7 +902,7 @@ def test_image_query_is_accepted_ignored_and_dropped_on_rebuild():
     secret = unpublished_base32_secret(F05_NAMED_SECRETS)
     token = unpublished_no_scheme_image_token({"foobar", "nourl"})
     parsed_unpub = _parse(
-        f"otpauth://totp?secret={secret}&image={token}"
+        f"otpauth://totp/?secret={secret}&image={token}"
     )
     direct_unpub = _direct_totp(secret)
     unpub_code = require_code(emit_for_instant(parsed_unpub, 0), 6)
@@ -917,12 +916,12 @@ def test_image_query_is_accepted_ignored_and_dropped_on_rebuild():
 
 
 # ---------------------------------------------------------------------------
-# J. six refusals return no helper; unlike a failed check (L234–L240)
+# J. six refusals return no helper; unlike a failed check
 # ---------------------------------------------------------------------------
 
 
 def test_six_parse_refusals_return_no_helper_unlike_failed_check():
-    digits7 = _parse("otpauth://totp?secret=GEZDGNBV&digits=7")
+    digits7 = _parse("otpauth://totp/?secret=GEZDGNBV&digits=7")
     digits7_code = require_code(emit_for_instant(digits7, 0), 7)
     direct7 = _direct_totp(GEZDGNBV_SECRET, digits=7)
     assert digits7_code == require_code(emit_for_instant(direct7, 0), 7)
@@ -950,33 +949,33 @@ def test_six_parse_refusals_return_no_helper_unlike_failed_check():
     print(f"non-otpauth scheme refused including {scheme!r}", flush=True)
 
     require_parse_refused(run_parse(parse_uri, OTPAUTH_TOTP_NO_SECRET_URI))
-    require_parse_refused(run_parse(parse_uri, "otpauth://hotp"))
-    require_parse_refused(run_parse(parse_uri, "otpauth://totp?digits=6"))
-    require_parse_refused(run_parse(parse_uri, "otpauth://hotp?counter=0"))
+    require_parse_refused(run_parse(parse_uri, "otpauth://hotp/"))
+    require_parse_refused(run_parse(parse_uri, "otpauth://totp/?digits=6"))
+    require_parse_refused(run_parse(parse_uri, "otpauth://hotp/?counter=0"))
     print("missing secret refused with and without other query fields", flush=True)
 
     require_parse_refused(run_parse(parse_uri, DERP_SECRET_URI))
     otp_type = unpublished_otp_type(set())
     require_parse_refused(
-        run_parse(parse_uri, f"otpauth://{otp_type}?secret=GEZDGNBV")
+        run_parse(parse_uri, f"otpauth://{otp_type}/?secret=GEZDGNBV")
     )
     print(f"unsupported type refused including {otp_type!r}", flush=True)
 
     require_parse_refused(run_parse(parse_uri, DIGITS_MINUS_ONE_URI))
     require_parse_refused(
-        run_parse(parse_uri, "otpauth://totp?secret=GEZDGNBV&digits=-1")
+        run_parse(parse_uri, "otpauth://totp/?secret=GEZDGNBV&digits=-1")
     )
     illegal_digits = unpublished_illegal_digits({-1, 6, 7, 8})
     require_parse_refused(
         run_parse(
             parse_uri,
-            f"otpauth://totp?secret=GEZDGNBV&digits={illegal_digits}",
+            f"otpauth://totp/?secret=GEZDGNBV&digits={illegal_digits}",
         )
     )
     require_parse_refused(
         run_parse(
             parse_uri,
-            f"otpauth://hotp?secret=GEZDGNBV&digits={illegal_digits}",
+            f"otpauth://hotp/?secret=GEZDGNBV&digits={illegal_digits}",
         )
     )
     print(f"illegal digits refused including {illegal_digits}", flush=True)
@@ -1007,17 +1006,17 @@ def test_six_parse_refusals_return_no_helper_unlike_failed_check():
     require_parse_refused(
         run_parse(
             parse_uri,
-            f"otpauth://totp?secret=GEZDGNBV&algorithm={algo}",
+            f"otpauth://totp/?secret=GEZDGNBV&algorithm={algo}",
         )
     )
     hotp_sha1 = _parse(
-        "otpauth://hotp?secret=GEZDGNBV&algorithm=SHA1"
+        "otpauth://hotp/?secret=GEZDGNBV&algorithm=SHA1"
     )
     require_named_code(emit_at(hotp_sha1, 0), CODE_734055)
     require_parse_refused(
         run_parse(
             parse_uri,
-            f"otpauth://hotp?secret=GEZDGNBV&algorithm={algo}",
+            f"otpauth://hotp/?secret=GEZDGNBV&algorithm={algo}",
         )
     )
     print(f"illegal algorithm refused including {algo!r}", flush=True)

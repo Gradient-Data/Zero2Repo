@@ -28,9 +28,10 @@ __all__ = [
 DEFAULT_AGENT_TIMEOUT_SEC: float = 7200.0
 DEFAULT_TEST_TIMEOUT_SEC: float = 7200.0
 # Stall watchdog: kill the solve only after this many seconds with no new agent
-# output. Set high so long compiles / long model turns are not misjudged as
-# hangs. 0 disables the stall guard (rely on the wall clock only).
-DEFAULT_STALL_WINDOW_SEC: float = 1800.0
+# output. Set above the 1800s OpenHands request timeout so a silent thinking
+# turn can return and log a line before the watchdog fires. 0 disables the
+# stall guard (rely on the wall clock only).
+DEFAULT_STALL_WINDOW_SEC: float = 2100.0
 SUITE_WALL_HEADROOM: float = 2.0
 
 

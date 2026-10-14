@@ -321,7 +321,7 @@ def test_nested_group_empty_args_is_that_groups_help_page():
         flush=True,
     )
     # Named dispatch to the middle group still runs the outer callback
-    # (L257); the middle then shows its own no-arguments help page.
+    # (FP-06); the middle then shows its own no-arguments help page.
     assert_usage_help(stopped, n["mid_hi"], n["mid_desc"])
     vis = _group_visible(stopped)
     assert n["outer_hi"] in vis, (

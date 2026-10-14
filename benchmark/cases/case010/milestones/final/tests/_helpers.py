@@ -20,8 +20,7 @@ from _harness import (
     replace_list,
 )
 
-# Resource name the product finder uses for the English sentence-boundary model.
-# Tests never download; they copy whatever the finder already located on the host.
+# Resource name of the English sentence-boundary model (Interface Contract table).
 _ENGLISH_SENTENCE_RESOURCE = "tokenizers/punkt_tab/english/"
 
 
@@ -209,129 +208,12 @@ def assert_spans_recover(
         prev_end = end
 
 
-def _drop_loaded_sentence_models() -> None:
-    """Drop in-process cached sentence models so a path bind is honoured.
-
-    Uses the public resource-cache clear, then any ``cache_clear`` hook
-    exposed on the tokenize module (the recommended sentence entry may
-    memoize a loaded model). Failure to classify a clear is a raise.
-    """
-    from lingora import data
-
-    clearer = getattr(data, "clear_cache", None)
-    if not callable(clearer):
-        raise HarnessError("product data finder has no public cache-clear entry")
-    clearer()
-    from lingora import tokenize as tokenize_mod
-
-    for name in dir(tokenize_mod):
-        obj = getattr(tokenize_mod, name)
-        cache_clear = getattr(obj, "cache_clear", None)
-        if callable(cache_clear):
-            cache_clear()
 
 
-def host_english_punkt_dir() -> Path:
-    """Locate the host English sentence-boundary model via the product finder.
-
-    Must run before the search list is isolated. Raises if the finder
-    cannot locate a readable directory; never skips.
-    """
-    from lingora import data
-
-    finder = getattr(data, "find", None)
-    if not callable(finder):
-        raise HarnessError("product data finder has no public find entry")
-    try:
-        located = finder(_ENGLISH_SENTENCE_RESOURCE)
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the English sentence-boundary "
-            f"model: {type(exc).__name__}: {exc}"
-        ) from exc
-    path_attr = getattr(located, "path", None)
-    candidate = Path(path_attr) if path_attr is not None else Path(str(located))
-    try:
-        if not candidate.is_dir():
-            raise HarnessError(
-                "English sentence-boundary model is not a directory: "
-                f"{candidate}"
-            )
-    except HarnessError:
-        raise
-    except OSError as exc:
-        raise HarnessError(
-            f"cannot stat English sentence-boundary model {candidate}: {exc}"
-        ) from exc
-    return candidate.resolve()
 
 
-def install_english_punkt(ws: Any) -> Path:
-    """Copy the host English sentence model into *ws.data* at the finder's relative path.
-
-    Copy failure raises. Never downloads. Never skips.
-    """
-    from lingora import data
-
-    src = host_english_punkt_dir()
-    rel = None
-    for entry in list(data.path):
-        if not entry:
-            continue
-        try:
-            rel = src.relative_to(Path(entry).resolve())
-            break
-        except ValueError:
-            continue
-    if rel is None:
-        raise HarnessError(
-            "could not determine the packaged-resource relative path "
-            f"for the English sentence-boundary model at {src}"
-        )
-    dest = Path(ws.data) / rel
-    try:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.exists():
-            shutil.rmtree(dest)
-        shutil.copytree(src, dest)
-    except OSError as exc:
-        raise HarnessError(
-            f"failed to copy English sentence-boundary model into the workspace: {exc}"
-        ) from exc
-    try:
-        entries = list(dest.iterdir())
-    except OSError as exc:
-        raise HarnessError(
-            f"copied sentence-boundary model is unreadable: {exc}"
-        ) from exc
-    if not entries:
-        raise HarnessError("copied English sentence-boundary model directory is empty")
-    print(f"installed English sentence model at {dest} ({len(entries)} entries)", flush=True)
-    return dest
 
 
-@contextmanager
-def bound_resource_path(ws: Any, *, present: bool = True) -> Iterator[None]:
-    """Rewrite the product search list to *ws.data* (present) or empty (absent).
-
-    Drops loaded sentence models around the bind so a previous in-process
-    load cannot satisfy the opposite arm. Restores the list on exit.
-    """
-    from lingora import data
-
-    search = getattr(data, "path", None)
-    if not isinstance(search, list):
-        raise HarnessError(
-            "product resource search list is not a mutable list; "
-            f"got {type(search)!r}"
-        )
-    items = [str(Path(ws.data).resolve())] if present else []
-    _drop_loaded_sentence_models()
-    with replace_list(search, items):
-        try:
-            yield
-        finally:
-            _drop_loaded_sentence_models()
 
 
 # Finder resource for a language stopwords list (directory form, not a zip name).
@@ -514,149 +396,14 @@ def unsuccessful_observation(result: CallResult) -> str:
     return text
 
 
-def _corpus_proxy_unload(proxy: Any, *, label: str) -> None:
-    """Reset a lazy corpus proxy without triggering a load via getattr.
-
-    Looks only at the instance dict and the type dict so a missing
-    public name cannot lazy-load the corpus. Raises if no unload hook
-    is present.
-    """
-    for name in ("unload", "_unload"):
-        inst = vars(proxy)
-        fn = inst.get(name)
-        if callable(fn):
-            fn()
-            return
-        cls_fn = vars(type(proxy)).get(name)
-        if callable(cls_fn):
-            cls_fn(proxy)
-            return
-    raise HarnessError(
-        f"packaged {label} proxy has no unload / cache-clear entry"
-    )
 
 
-def unload_packaged_wordlists() -> None:
-    """Drop loaded stopwords / WordNet corpus proxies.
-
-    Uses the public resource-cache clear, then each corpus proxy's
-    unload hook. Failure to classify a clear is a raise. Never skips.
-    """
-    from lingora import data
-    from lingora.corpus import stopwords, wordnet
-
-    clearer = getattr(data, "clear_cache", None)
-    if not callable(clearer):
-        raise HarnessError("product data finder has no public cache-clear entry")
-    clearer()
-    _corpus_proxy_unload(stopwords, label="stopwords")
-    _corpus_proxy_unload(wordnet, label="wordnet")
 
 
-def _pointer_bytes(located: Any) -> bytes:
-    """Read bytes from a finder / corpus path pointer. Empty is a raise."""
-    opener = getattr(located, "open", None)
-    if callable(opener):
-        try:
-            stream = opener()
-        except Exception as exc:
-            raise HarnessError(f"cannot open stopwords list: {exc}") from exc
-        try:
-            data = stream.read()
-        except Exception as exc:
-            raise HarnessError(f"cannot read stopwords list: {exc}") from exc
-        finally:
-            closer = getattr(stream, "close", None)
-            if callable(closer):
-                closer()
-        if isinstance(data, str):
-            data = data.encode("utf-8")
-        if not isinstance(data, (bytes, bytearray)):
-            raise HarnessError(
-                f"stopwords list contents are not bytes: {type(data)!r}"
-            )
-        data = bytes(data)
-    else:
-        path_attr = getattr(located, "path", None)
-        if path_attr is None:
-            raise HarnessError(
-                f"stopwords locator has no open() or path: {type(located)!r}"
-            )
-        try:
-            data = Path(path_attr).read_bytes()
-        except OSError as exc:
-            raise HarnessError(
-                f"cannot read stopwords list at {path_attr}: {exc}"
-            ) from exc
-    if not data:
-        raise HarnessError("located stopwords list is empty")
-    return data
 
 
-def host_stopwords_item(language: str) -> Any:
-    """Locate the host stopwords list for *language* via the product entry.
-
-    Must run before the search list is isolated. Raises if the list
-    cannot be located or read; never skips. Resource identity comes
-    from the finder / corpus reader, not a checkout-only zip filename.
-    """
-    from lingora.corpus import stopwords
-
-    # Accessing ensure_loaded / abspath on a lazy corpus proxy may load
-    # the corpus. Catch that load; do not let a finder miss become an
-    # unwrapped product LookupError, and never skip.
-    try:
-        ensure = getattr(stopwords, "ensure_loaded", None)
-        if callable(ensure):
-            ensure()
-        abspath = getattr(stopwords, "abspath", None)
-        if not callable(abspath):
-            raise HarnessError("product stopwords entry has no public abspath")
-        located = abspath(language)
-        _pointer_bytes(located)
-    except HarnessError:
-        raise
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the "
-            f"{language!r} stopwords list: {type(exc).__name__}: {exc}"
-        ) from exc
-    print(f"located host stopwords list for {language!r}: {located!r}", flush=True)
-    return located
 
 
-def install_stopwords(ws: Any, language: str) -> Path:
-    """Copy the host list for *language* into *ws.data* at the finder path.
-
-    Installs only that language's list. Copy failure raises. Never
-    downloads. Never skips.
-    """
-    located = host_stopwords_item(language)
-    data = _pointer_bytes(located)
-    dest = Path(ws.data) / _STOPWORDS_CORPUS_RESOURCE / language
-    try:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
-    except OSError as exc:
-        raise HarnessError(
-            f"failed to copy {language!r} stopwords list into the workspace: {exc}"
-        ) from exc
-    try:
-        if dest.stat().st_size == 0:
-            raise HarnessError(
-                f"copied {language!r} stopwords list is empty: {dest}"
-            )
-    except HarnessError:
-        raise
-    except OSError as exc:
-        raise HarnessError(
-            f"copied {language!r} stopwords list is unreadable: {exc}"
-        ) from exc
-    print(
-        f"installed {language!r} stopwords list at {dest} ({len(data)} bytes)",
-        flush=True,
-    )
-    return dest
 
 
 def write_stopwords_list(ws: Any, language: str, words: Sequence[str]) -> Path:
@@ -699,40 +446,11 @@ def write_stopwords_list(ws: Any, language: str, words: Sequence[str]) -> Path:
     return dest
 
 
-def installed_stopwords(language: str) -> list[str]:
-    """Read the bound language wordlist through the product stopwords entry.
-
-    Empty, unreadable, or a missing entry raises. Never maps a read
-    failure onto ``[]``.
-    """
-    from lingora.corpus import stopwords
-
-    words_fn = getattr(stopwords, "words", None)
-    if not callable(words_fn):
-        raise HarnessError("product stopwords entry has no public words() reader")
-    try:
-        items = list(words_fn(language))
-    except Exception as exc:
-        raise HarnessError(
-            "product stopwords entry could not read the "
-            f"{language!r} list: {type(exc).__name__}: {exc}"
-        ) from exc
-    if not items:
-        raise HarnessError(f"installed {language!r} stopwords list is empty")
-    if not all(isinstance(item, str) for item in items):
-        raise HarnessError(
-            f"installed {language!r} stopwords list is not all strings: {items!r}"
-        )
-    print(
-        f"read {len(items)} stopwords for {language!r}",
-        flush=True,
-    )
-    return items
 
 
-# Finder resources for the recommended averaged perceptron tagger and the
-# packaged English universal tagset tables. Tests never download; they copy
-# whatever the finder already located on the host. These are directory
+# Resource names of the recommended averaged perceptron tagger and the
+# packaged English universal tagset tables. Tests never download; they copy what
+# the environment's resource directory holds. These are directory
 # resource names, not a checkout-only zip filename.
 _UNIVERSAL_TAGSET_RESOURCE = "taggers/universal_tagset/"
 
@@ -1083,283 +801,23 @@ def english_universal_mapping_absent(
     return pairings
 
 
-def _copy_finder_directory(located: Any, dest: Path, *, label: str) -> None:
-    """Copy a finder directory pointer into *dest*. Empty is a raise."""
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        src = Path(path_attr)
-        try:
-            if src.is_dir():
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                if dest.exists():
-                    shutil.rmtree(dest)
-                shutil.copytree(src, dest)
-                entries = list(dest.iterdir())
-                if not entries:
-                    raise HarnessError(f"copied {label} directory is empty: {dest}")
-                return
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(f"cannot copy {label} from {src}: {exc}") from exc
-    zipfile_obj = getattr(located, "zipfile", None)
-    entry = getattr(located, "entry", None)
-    if zipfile_obj is not None and isinstance(entry, str):
-        prefix = entry if entry.endswith("/") else f"{entry}/"
-        try:
-            names = [
-                name
-                for name in zipfile_obj.namelist()
-                if name.startswith(prefix) and not name.endswith("/")
-            ]
-        except Exception as exc:
-            raise HarnessError(f"cannot list {label} zip entries: {exc}") from exc
-        if not names:
-            raise HarnessError(f"located {label} zip directory is empty")
-        try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            if dest.exists():
-                shutil.rmtree(dest)
-            dest.mkdir(parents=True)
-            for name in names:
-                rel = name[len(prefix) :]
-                if not rel or ".." in Path(rel).parts:
-                    raise HarnessError(f"{label} zip entry escapes destination: {name!r}")
-                out = dest / rel
-                out.parent.mkdir(parents=True, exist_ok=True)
-                out.write_bytes(zipfile_obj.read(name))
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(f"failed to extract {label} into the workspace: {exc}") from exc
-        return
-    raise HarnessError(
-        f"{label} locator is not a readable directory: {type(located)!r} {located!r}"
-    )
 
 
-def _finder_relpath(located: Any, resource: str) -> Path:
-    """Relative path under a search-list entry, or the finder resource name."""
-    from lingora import data
-
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        src = Path(path_attr).resolve()
-        for entry in list(data.path):
-            if not entry:
-                continue
-            try:
-                return src.relative_to(Path(entry).resolve())
-            except ValueError:
-                continue
-    return Path(resource.strip("/"))
 
 
-def host_perceptron_dir(language: str) -> Any:
-    """Locate the host averaged perceptron tree for *language* via the finder.
-
-    Must run before the search list is isolated. Raises if the finder
-    cannot locate a readable tree; never skips. Resource identity comes
-    from the finder, not a checkout-only zip filename.
-    """
-    from lingora import data
-
-    finder = getattr(data, "find", None)
-    if not callable(finder):
-        raise HarnessError("product data finder has no public find entry")
-    resource = _perceptron_resource(language)
-    try:
-        located = finder(resource)
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the "
-            f"{language!r} averaged perceptron tagger: "
-            f"{type(exc).__name__}: {exc}"
-        ) from exc
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        candidate = Path(path_attr)
-        try:
-            if candidate.is_dir():
-                entries = list(candidate.iterdir())
-                if not entries:
-                    raise HarnessError(
-                        f"{language!r} averaged perceptron directory is empty: "
-                        f"{candidate}"
-                    )
-                print(
-                    f"located host {language!r} perceptron at {candidate} "
-                    f"({len(entries)} entries)",
-                    flush=True,
-                )
-                return located
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(
-                f"cannot stat {language!r} perceptron at {candidate}: {exc}"
-            ) from exc
-    zipfile_obj = getattr(located, "zipfile", None)
-    entry = getattr(located, "entry", None)
-    if zipfile_obj is not None and isinstance(entry, str):
-        prefix = entry if entry.endswith("/") else f"{entry}/"
-        try:
-            names = [
-                name
-                for name in zipfile_obj.namelist()
-                if name.startswith(prefix) and not name.endswith("/")
-            ]
-        except Exception as exc:
-            raise HarnessError(
-                f"cannot list {language!r} perceptron zip entries: {exc}"
-            ) from exc
-        if not names:
-            raise HarnessError(
-                f"located {language!r} perceptron zip directory is empty"
-            )
-        print(
-            f"located host {language!r} perceptron zip entry {entry!r} "
-            f"({len(names)} files)",
-            flush=True,
-        )
-        return located
-    raise HarnessError(
-        f"{language!r} averaged perceptron locator is not a readable "
-        f"directory: {type(located)!r} {located!r}"
-    )
 
 
-def install_perceptron(ws: Any, language: str) -> Path:
-    """Copy the host perceptron tree for *language* into *ws.data*.
-
-    Installs only that language. Copy failure raises. Never downloads.
-    Never skips.
-    """
-    located = host_perceptron_dir(language)
-    rel = _finder_relpath(located, _perceptron_resource(language))
-    dest = Path(ws.data) / rel
-    _copy_finder_directory(
-        located, dest, label=f"{language!r} averaged perceptron tagger"
-    )
-    print(f"installed {language!r} perceptron at {dest}", flush=True)
-    return dest
 
 
-def host_universal_tagset_dir() -> Any:
-    """Locate the host packaged universal tagset tables via the finder.
-
-    Must run before the search list is isolated. Raises if the finder
-    cannot locate a readable tree; never skips.
-    """
-    from lingora import data
-
-    finder = getattr(data, "find", None)
-    if not callable(finder):
-        raise HarnessError("product data finder has no public find entry")
-    try:
-        located = finder(_UNIVERSAL_TAGSET_RESOURCE)
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the packaged universal "
-            f"tagset tables: {type(exc).__name__}: {exc}"
-        ) from exc
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        candidate = Path(path_attr)
-        try:
-            if candidate.is_dir():
-                entries = list(candidate.iterdir())
-                if not entries:
-                    raise HarnessError(
-                        f"universal tagset directory is empty: {candidate}"
-                    )
-                print(
-                    f"located host universal tagset at {candidate} "
-                    f"({len(entries)} entries)",
-                    flush=True,
-                )
-                return located
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(
-                f"cannot stat universal tagset at {candidate}: {exc}"
-            ) from exc
-    zipfile_obj = getattr(located, "zipfile", None)
-    entry = getattr(located, "entry", None)
-    if zipfile_obj is not None and isinstance(entry, str):
-        prefix = entry if entry.endswith("/") else f"{entry}/"
-        try:
-            names = [
-                name
-                for name in zipfile_obj.namelist()
-                if name.startswith(prefix) and not name.endswith("/")
-            ]
-        except Exception as exc:
-            raise HarnessError(
-                f"cannot list universal tagset zip entries: {exc}"
-            ) from exc
-        if not names:
-            raise HarnessError("located universal tagset zip directory is empty")
-        print(
-            f"located host universal tagset zip entry {entry!r} "
-            f"({len(names)} files)",
-            flush=True,
-        )
-        return located
-    raise HarnessError(
-        f"universal tagset locator is not a readable directory: "
-        f"{type(located)!r} {located!r}"
-    )
 
 
-def install_universal_tagset(ws: Any) -> Path:
-    """Copy the host packaged universal tagset tables into *ws.data*.
-
-    Copy failure raises. Never downloads. Never skips.
-    """
-    located = host_universal_tagset_dir()
-    rel = _finder_relpath(located, _UNIVERSAL_TAGSET_RESOURCE)
-    dest = Path(ws.data) / rel
-    _copy_finder_directory(located, dest, label="packaged universal tagset tables")
-    print(f"installed universal tagset at {dest}", flush=True)
-    return dest
 
 
-def unload_packaged_taggers() -> None:
-    """Drop recommended-tagger load cache and mapping cache_clear hooks.
-
-    Uses the public resource-cache clear, then any ``cache_clear`` hook
-    on the tag module (the recommended entry may memoize a loaded
-    tagger). Failure to classify a resource-cache clear is a raise.
-    Mapping tables that have no public unload hook are not silently
-    treated as cleared; callers isolate those arms with a child interpreter.
-    """
-    from lingora import data
-
-    clearer = getattr(data, "clear_cache", None)
-    if not callable(clearer):
-        raise HarnessError("product data finder has no public cache-clear entry")
-    clearer()
-    from lingora import tag as tag_mod
-
-    for name in dir(tag_mod):
-        obj = getattr(tag_mod, name)
-        cache_clear = getattr(obj, "cache_clear", None)
-        if callable(cache_clear):
-            cache_clear()
-    mapping_mod = getattr(tag_mod, "mapping", None)
-    if mapping_mod is not None:
-        for name in dir(mapping_mod):
-            obj = getattr(mapping_mod, name)
-            cache_clear = getattr(obj, "cache_clear", None)
-            if callable(cache_clear):
-                cache_clear()
 
 
-# Finder resource for the packaged named-entity chunker (directory form, not a
+# Resource name of the packaged named-entity chunker (directory form, not a
 # checkout-only zip filename). Tests never download; they copy whatever the
-# finder already located on the host.
+# environment's resource directory holds.
 _NE_CHUNKER_RESOURCE = "chunkers/maxent_ne_chunker_tab/english_ace_multiclass/"
 
 # The named-entity path's feature detector reads the packaged English wordlist.
@@ -1685,192 +1143,14 @@ def require_grammar_refused(result: CallResult) -> CallResult:
     return result
 
 
-def host_ne_chunker_dir() -> Any:
-    """Locate the host named-entity chunker tree via the finder.
-
-    Must run before the search list is isolated. Raises if the finder
-    cannot locate a readable tree; never skips. Resource identity comes
-    from the finder, not a checkout-only zip filename.
-    """
-    from lingora import data
-
-    finder = getattr(data, "find", None)
-    if not callable(finder):
-        raise HarnessError("product data finder has no public find entry")
-    try:
-        located = finder(_NE_CHUNKER_RESOURCE)
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the named-entity chunker: "
-            f"{type(exc).__name__}: {exc}"
-        ) from exc
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        candidate = Path(path_attr)
-        try:
-            if candidate.is_dir():
-                entries = list(candidate.iterdir())
-                if not entries:
-                    raise HarnessError(
-                        f"named-entity chunker directory is empty: {candidate}"
-                    )
-                print(
-                    f"located host named-entity chunker at {candidate} "
-                    f"({len(entries)} entries)",
-                    flush=True,
-                )
-                return located
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(
-                f"cannot stat named-entity chunker at {candidate}: {exc}"
-            ) from exc
-    zipfile_obj = getattr(located, "zipfile", None)
-    entry = getattr(located, "entry", None)
-    if zipfile_obj is not None and isinstance(entry, str):
-        prefix = entry if entry.endswith("/") else f"{entry}/"
-        try:
-            names = [
-                name
-                for name in zipfile_obj.namelist()
-                if name.startswith(prefix) and not name.endswith("/")
-            ]
-        except Exception as exc:
-            raise HarnessError(
-                f"cannot list named-entity chunker zip entries: {exc}"
-            ) from exc
-        if not names:
-            raise HarnessError("located named-entity chunker zip directory is empty")
-        print(
-            f"located host named-entity chunker zip entry {entry!r} "
-            f"({len(names)} files)",
-            flush=True,
-        )
-        return located
-    raise HarnessError(
-        f"named-entity chunker locator is not a readable directory: "
-        f"{type(located)!r} {located!r}"
-    )
 
 
-def install_ne_chunker(ws: Any) -> Path:
-    """Copy the host named-entity chunker tree into *ws.data*.
-
-    Copy failure raises. Never downloads. Never skips.
-    """
-    located = host_ne_chunker_dir()
-    rel = _finder_relpath(located, _NE_CHUNKER_RESOURCE)
-    dest = Path(ws.data) / rel
-    _copy_finder_directory(located, dest, label="named-entity chunker")
-    print(f"installed named-entity chunker at {dest}", flush=True)
-    return dest
 
 
-def host_english_words_dir() -> Any:
-    """Locate the host packaged English wordlist via the finder.
-
-    The named-entity feature detector reads this list. Raises if the
-    finder cannot locate a readable tree; never skips.
-    """
-    from lingora import data
-
-    finder = getattr(data, "find", None)
-    if not callable(finder):
-        raise HarnessError("product data finder has no public find entry")
-    try:
-        located = finder(_ENGLISH_WORDS_RESOURCE)
-    except Exception as exc:
-        raise HarnessError(
-            "product finder could not locate the packaged English wordlist: "
-            f"{type(exc).__name__}: {exc}"
-        ) from exc
-    path_attr = getattr(located, "path", None)
-    if path_attr is not None:
-        candidate = Path(path_attr)
-        try:
-            if candidate.is_dir():
-                entries = list(candidate.iterdir())
-                if not entries:
-                    raise HarnessError(
-                        f"English wordlist directory is empty: {candidate}"
-                    )
-                print(
-                    f"located host English wordlist at {candidate} "
-                    f"({len(entries)} entries)",
-                    flush=True,
-                )
-                return located
-        except HarnessError:
-            raise
-        except OSError as exc:
-            raise HarnessError(
-                f"cannot stat English wordlist at {candidate}: {exc}"
-            ) from exc
-    zipfile_obj = getattr(located, "zipfile", None)
-    entry = getattr(located, "entry", None)
-    if zipfile_obj is not None and isinstance(entry, str):
-        prefix = entry if entry.endswith("/") else f"{entry}/"
-        try:
-            names = [
-                name
-                for name in zipfile_obj.namelist()
-                if name.startswith(prefix) and not name.endswith("/")
-            ]
-        except Exception as exc:
-            raise HarnessError(
-                f"cannot list English wordlist zip entries: {exc}"
-            ) from exc
-        if not names:
-            raise HarnessError("located English wordlist zip directory is empty")
-        print(
-            f"located host English wordlist zip entry {entry!r} "
-            f"({len(names)} files)",
-            flush=True,
-        )
-        return located
-    raise HarnessError(
-        f"English wordlist locator is not a readable directory: "
-        f"{type(located)!r} {located!r}"
-    )
 
 
-def install_english_words(ws: Any) -> Path:
-    """Copy the host packaged English wordlist into *ws.data*.
-
-    Copy failure raises. Never downloads. Never skips.
-    """
-    located = host_english_words_dir()
-    rel = _finder_relpath(located, _ENGLISH_WORDS_RESOURCE)
-    dest = Path(ws.data) / rel
-    _copy_finder_directory(located, dest, label="English wordlist")
-    print(f"installed English wordlist at {dest}", flush=True)
-    return dest
 
 
-def unload_packaged_chunkers() -> None:
-    """Drop data-finder cache and chunk-module ``cache_clear`` hooks.
-
-    Also unloads the English wordlist corpus proxy the named-entity
-    path may have loaded. Failure to classify a resource-cache clear
-    is a raise. Never skips.
-    """
-    from lingora import data
-
-    clearer = getattr(data, "clear_cache", None)
-    if not callable(clearer):
-        raise HarnessError("product data finder has no public cache-clear entry")
-    clearer()
-    from lingora import chunk as chunk_mod
-
-    for name in dir(chunk_mod):
-        obj = getattr(chunk_mod, name)
-        cache_clear = getattr(obj, "cache_clear", None)
-        if callable(cache_clear):
-            cache_clear()
-    from lingora.corpus import words as words_corpus
-
-    _corpus_proxy_unload(words_corpus, label="english wordlist")
 
 
 def _production_rhs(prod: Any) -> Sequence[Any]:
@@ -2934,3 +2214,102 @@ def assert_no_score(result: CallResult, *, what: str = "score") -> CallResult:
     return require_no_score(result)
 
 
+# ---------------------------------------------------------------------------
+# Packaged-resource fixtures.
+#
+# Every test runs in a fresh interpreter (see conftest.py), so no model
+# loaded by an earlier test can satisfy or hide a resource condition. A
+# test lays out a workspace data directory by copying resources from the
+# environment's resource directory, then points the product's public
+# search list at that directory (or at nothing) before any product call.
+# ---------------------------------------------------------------------------
+
+import os as _os
+
+# Where the environment installs the pinned public resources
+# (source/env/resources.json "destination"). Overridable for local runs.
+HOST_RESOURCE_DIR = Path(_os.environ.get("CB_HOST_RESOURCE_DIR", "/opt/models"))
+
+
+def _host_resource(rel: str) -> Path:
+    src = HOST_RESOURCE_DIR / rel.strip("/")
+    try:
+        if src.is_dir():
+            if not any(src.iterdir()):
+                raise HarnessError(f"host resource directory is empty: {src}")
+        elif not src.is_file() or src.stat().st_size == 0:
+            raise HarnessError(f"host resource is missing or empty: {src}")
+    except OSError as exc:
+        raise HarnessError(f"cannot read host resource {src}: {exc}") from exc
+    return src
+
+
+def install_host_resource(ws: Any, rel: str, *, label: str) -> Path:
+    """Copy one environment resource into *ws.data* at its resource name.
+
+    Copy failure raises. Never downloads. Never skips.
+    """
+    src = _host_resource(rel)
+    dest = Path(ws.data) / rel.strip("/")
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.exists():
+            if dest.is_dir():
+                shutil.rmtree(dest)
+            else:
+                dest.unlink()
+        if src.is_dir():
+            shutil.copytree(src, dest)
+        else:
+            shutil.copyfile(src, dest)
+    except OSError as exc:
+        raise HarnessError(f"failed to copy {label} into the workspace: {exc}") from exc
+    print(f"installed {label} at {dest}", flush=True)
+    return dest
+
+
+def install_english_punkt(ws: Any) -> Path:
+    return install_host_resource(ws, _ENGLISH_SENTENCE_RESOURCE, label="English sentence model")
+
+
+def install_stopwords(ws: Any, language: str) -> Path:
+    return install_host_resource(
+        ws, f"{_STOPWORDS_CORPUS_RESOURCE}/{language}", label=f"{language!r} stopwords list"
+    )
+
+
+def install_perceptron(ws: Any, language: str) -> Path:
+    return install_host_resource(
+        ws, _perceptron_resource(language), label=f"{language!r} averaged perceptron tagger"
+    )
+
+
+def install_universal_tagset(ws: Any) -> Path:
+    return install_host_resource(ws, _UNIVERSAL_TAGSET_RESOURCE, label="universal tagset tables")
+
+
+def install_ne_chunker(ws: Any) -> Path:
+    return install_host_resource(ws, _NE_CHUNKER_RESOURCE, label="named-entity chunker")
+
+
+def install_english_words(ws: Any) -> Path:
+    return install_host_resource(ws, _ENGLISH_WORDS_RESOURCE, label="English wordlist")
+
+
+@contextmanager
+def bound_resource_path(ws: Any, *, present: bool = True) -> Iterator[None]:
+    """Set the product search list to *ws.data* (present) or empty (absent).
+
+    Uses only the public, caller-settable search list. Restores it on exit.
+    """
+    from lingora import data
+
+    search = getattr(data, "path", None)
+    if not isinstance(search, list):
+        raise HarnessError(
+            "product resource search list is not a mutable list; "
+            f"got {type(search)!r}"
+        )
+    items = [str(Path(ws.data).resolve())] if present else []
+    with replace_list(search, items):
+        yield

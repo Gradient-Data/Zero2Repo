@@ -43,6 +43,8 @@ _CLI_BINS = {
 }
 _CURSOR_INSTALL_URL = "https://cursor.com/install"
 _CURSOR_VERSION_ENV = "CBRUN_CURSOR_VERSION"
+OPENHANDS_VERSION = "1.16.0"
+OPENHANDS_CLI_IMAGE = f"codingbench-agent/openhands:{OPENHANDS_VERSION}"
 
 
 def cli_version_spec(backend: str, environ: dict[str, str] | None = None) -> str:
@@ -50,6 +52,8 @@ def cli_version_spec(backend: str, environ: dict[str, str] | None = None) -> str
     _require_backend(backend)
     environ = os.environ if environ is None else environ
     allow_unpinned = (environ.get(_UNPINNED_OK, "") or "").strip() == "1"
+    if backend == "openhands":
+        return OPENHANDS_VERSION
     if backend == "cursor":
         pinned = (environ.get(_CURSOR_VERSION_ENV, "") or "").strip()
         if pinned:
@@ -113,6 +117,14 @@ NODE_RUNTIME_PREFIX = "/opt/cbrun/runtime/node"
 def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> str:
     """Idempotent in-container install command for a backend's CLI."""
     _require_backend(backend)
+    if backend == "openhands":
+        return (
+            "set -eu; "
+            "command -v openhands >/dev/null 2>&1 || { "
+            "echo 'cbrun: openhands is missing; build "
+            f"{OPENHANDS_CLI_IMAGE} first' >&2; exit 1; }}; "
+            "openhands --version"
+        )
     if backend == "cursor":
         return _cursor_install_command(environ)
     pkg, _env_key = _CLI_PACKAGES[backend]

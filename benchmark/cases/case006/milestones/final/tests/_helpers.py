@@ -5,12 +5,15 @@ This file is the complete module. Import what you need (`from _helpers import ..
 
 from __future__ import annotations
 
+import fcntl
 import io
 import os
 import pty
+import re
 import select
 import subprocess
 import sys
+import termios
 import threading
 import time
 import uuid
@@ -329,8 +332,8 @@ def require_usage_without_help_page(
 def require_usage_help(result: Any, greeting: str, *marks: str) -> None:
     """No-args-is-help / missing-subcommand help: status 2, greeting absent.
 
-    The PRD says the help page is printed and does not name a stream.
-    Marks are required on caller-visible stdout+stderr (either stream).
+    The Contract puts a help page shown because of incorrect usage on
+    standard error; marks are required there.
     Other exit statuses hard-fail.
     """
     code, stdout, stderr = _status_and_streams(result)
@@ -342,14 +345,14 @@ def require_usage_help(result: Any, greeting: str, *marks: str) -> None:
         f"usage-help ran the callback; greeting {greeting!r} present; "
         f"stdout={stdout!r} stderr={stderr!r}"
     )
-    visible = stdout + stderr
+    visible = stderr
     assert visible.strip(), (
-        f"usage-help produced empty caller-visible output; "
+        f"usage-help produced an empty help page on stderr; "
         f"stdout={stdout!r} stderr={stderr!r}"
     )
     for mark in marks:
         assert mark in visible, (
-            f"usage-help missing {mark!r} on caller-visible output; "
+            f"usage-help missing {mark!r} on stderr; "
             f"stdout={stdout!r} stderr={stderr!r}"
         )
 
@@ -653,7 +656,7 @@ def require_usage_kinds_unlike(
     """Two usage-error runs (exit 2, greeting absent) with unlike stderr remainders.
 
     After stripping *covariates* from stderr, the remainders must differ.
-    Restricted to the L173 vs omitted-required contrast: do not use this
+    Restricted to the FP-03 non-sequence-default vs omitted-required contrast: do not use this
     to compare omitted-required against an illegal boolean environment word.
     """
     require_usage_error_without_marker(left, greeting)
@@ -867,7 +870,7 @@ def call_with_fed_stdin(text: str, call: Callable[[], Any]) -> Any:
 
 
 def automatic_env_name(prefix: str, *parts: str) -> str:
-    """L288 spec oracle: prefix, then each command/param name, uppercased.
+    """FP-07 rule: prefix, then each command/param name, uppercased.
 
     Dashes in every part become underscores. Parts are joined with
     underscores. The top-level invocation name is not a part — callers
@@ -1019,6 +1022,16 @@ def styled_stdout_remainder(result: Any, payload: str) -> str:
     return text.replace(payload, "")
 
 
+def _take_stdin_as_controlling_tty() -> None:
+    """Make the pty on fd 0 the child's controlling terminal.
+
+    Runs in the forked child after ``start_new_session`` made it a
+    session leader, so ``/dev/tty`` resolves to the pty as it does in
+    a real terminal session.
+    """
+    fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+
+
 def run_python_on_tty(code: str, *, timeout: float = DEFAULT_TIMEOUT) -> RunResult:
     """Run *code* in a child interpreter whose stdio is a real pty.
 
@@ -1047,6 +1060,8 @@ def run_python_on_tty(code: str, *, timeout: float = DEFAULT_TIMEOUT) -> RunResu
                 cwd=str(ws.path),
                 env=ws.env,
                 close_fds=True,
+                start_new_session=True,
+                preexec_fn=_take_stdin_as_controlling_tty,
             )
         except Exception as exc:
             os.close(master)
@@ -1211,6 +1226,29 @@ def require_file_no_longer_usable(file: Any) -> None:
     )
 
 
+def marker_occurs(text: str, marker: str) -> bool:
+    """True when *marker* occurs in *text* not glued to a word character.
+
+    A labeled marker such as ``T:42`` must start a token: the same
+    characters inside a random id (``GREET:42ab...``) are not the
+    marker. Everything after the marker start is still a plain
+    substring match, so a marker followed by extra text counts.
+    """
+    if not marker:
+        raise ValueError("marker must be a non-empty string")
+    if text is None:
+        raise RuntimeError(f"text is None; cannot observe {marker!r}")
+    return re.search(r"(?<!\w)" + re.escape(marker), text) is not None
+
+
+def assert_marker_absent(text: str, marker: str) -> None:
+    """*marker* must not occur in *text* as a token (see :func:`marker_occurs`)."""
+    if marker_occurs(text, marker):
+        raise AssertionError(
+            f"marker {marker!r} unexpectedly present; text={text!r}"
+        )
+
+
 def labeled_stdout_fields(result: Any, label: str) -> list[str]:
     """Every stdout field after *label* as a line prefix, in order.
 
@@ -1275,9 +1313,9 @@ def require_positional_items(payload: Any, *items: Any) -> None:
 
 
 def posix_app_slug(app_name: str) -> str:
-    """L411 spec oracle: lowercase, whitespace runs become a single dash.
+    """FP-11 rule: lowercase, whitespace runs become a single dash.
 
-    Not a product-internal transform. ``Foo Bar`` → ``foo-bar``.
+    Not a product-internal transform.
     """
     if not app_name:
         raise ValueError("app_name must be a non-empty string")
@@ -1728,6 +1766,8 @@ def start_python_on_tty(
             cwd=str(ws.path),
             env=env,
             close_fds=True,
+            start_new_session=True,
+            preexec_fn=_take_stdin_as_controlling_tty,
         )
     except Exception as exc:
         os.close(master)
@@ -2006,9 +2046,9 @@ _KNOWN_COMPLETION_SHELLS = _INDEX_COMPLETION_SHELLS | {_FISH_COMPLETION_SHELL}
 
 
 def complete_variable_name(executable: str) -> str:
-    """L418 spec oracle: underscore + uppercase executable + ``_COMPLETE``.
+    """FP-12 rule: underscore + uppercase executable + ``_COMPLETE``.
 
-    Dashes become underscores. Dots are left as written — L418 does not
+    Dashes become underscores. Dots are left as written — FP-12 does not
     name that substitution.
     """
     if not executable:
@@ -2037,7 +2077,7 @@ def completion_line_env(
 ) -> dict[str, str]:
     """Feed one shell's word list and incomplete token into the process env.
 
-    Also sets ``{shell}_complete`` on the L418 variable. Does not assert
+    Also sets ``{shell}_complete`` on the FP-12 variable. Does not assert
     that these keys appear on stdout — they are the feed, not the contract.
     Fish puts the incomplete token in ``COMP_CWORD``; index shells put
     the cursor index there.

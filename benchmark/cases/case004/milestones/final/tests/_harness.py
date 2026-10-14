@@ -25,9 +25,12 @@ Surfaces
   :meth:`Workspace.open_text` and :meth:`Workspace.binary_source` /
   :meth:`Workspace.text_source` open real files. Dump/load through a
   stream takes a file object, not a path.
-* Process clock — :func:`frozen_clock` replaces ``time.time`` for the
-  duration of a block so a later check can be one second or eleven
-  seconds after a signing instant without sleeping. The timestamped
+* Process clock — :func:`frozen_clock` replaces the standard-library
+  wall clock (``time.time``, ``time.time_ns``, ``datetime.datetime.now``
+  / ``utcnow`` / ``today``) for the duration of a block, including
+  names a product module bound from ``time`` / ``datetime`` at import,
+  so a later check can be one second or eleven seconds after a signing
+  instant without sleeping. The timestamped
   helpers read that clock; this module does not interpret age.
 * Child interpreter — :func:`run_python` / :func:`run_script` /
   :func:`run_command` for observations that need a separate process,
@@ -1260,25 +1263,107 @@ def workspace(
         shutil.rmtree(home, ignore_errors=True)
 
 
+def _frozen_datetime_class(clock: FrozenClock, real_cls: type) -> type:
+    """Subclass of the real ``datetime`` whose current-clock entries read *clock*.
+
+    The C ``datetime.datetime`` type cannot have methods assigned, so the
+    module attribute is replaced with this subclass for the block.
+    ``isinstance`` / ``issubclass`` against it still accept real
+    datetimes via the metaclass.
+    """
+
+    class _FrozenDateTimeMeta(type(real_cls)):  # type: ignore[misc]
+        def __instancecheck__(cls, instance: Any) -> bool:
+            return isinstance(instance, real_cls)
+
+        def __subclasscheck__(cls, subclass: type) -> bool:
+            try:
+                return issubclass(subclass, real_cls)
+            except TypeError:
+                return False
+
+    class FrozenDateTime(real_cls, metaclass=_FrozenDateTimeMeta):  # type: ignore[misc,valid-type]
+        @classmethod
+        def now(cls, tz: Any = None) -> Any:
+            return real_cls.fromtimestamp(clock.epoch, tz)
+
+        @classmethod
+        def utcnow(cls) -> Any:
+            return real_cls.fromtimestamp(clock.epoch, tz=timezone.utc).replace(
+                tzinfo=None
+            )
+
+        @classmethod
+        def today(cls) -> Any:
+            return real_cls.fromtimestamp(clock.epoch)
+
+    FrozenDateTime.__name__ = real_cls.__name__
+    FrozenDateTime.__qualname__ = real_cls.__qualname__
+    return FrozenDateTime
+
+
 @contextmanager
 def frozen_clock(instant: datetime | int | float) -> Iterator[FrozenClock]:
-    """Replace ``time.time`` with a caller-controlled epoch for a block.
+    """Replace the process wall clock with a caller-controlled epoch for a block.
 
-    Timestamped helpers record and check signing time from this clock.
-    The original ``time.time`` is restored when the block exits, including
-    on exception. Does not sleep. Does not interpret maximum age.
+    Timestamped helpers record and check signing time from the
+    standard-library wall clock. ``time.time``, ``time.time_ns``, and
+    ``datetime.datetime.now`` / ``utcnow`` / ``today`` all read this
+    clock for the duration, including names a product module bound from
+    ``time`` or ``datetime`` at import (``from time import time``). The
+    originals are restored when the block exits, including on exception.
+    Does not sleep. Does not interpret maximum age.
 
     *instant* is a timezone-aware ``datetime`` or a Unix epoch (int/float).
     A naive datetime is refused: it is not a classified UTC instant.
     """
+    import datetime as datetime_module
+
     clock = FrozenClock(_as_epoch(instant))
-    original = time_module.time
+    original_time = time_module.time
+    original_time_ns = time_module.time_ns
+    real_dt_cls = datetime_module.datetime
 
     def _frozen_time() -> float:
         return clock.epoch
 
+    def _frozen_time_ns() -> int:
+        return int(round(clock.epoch * 1_000_000_000))
+
+    frozen_dt_cls = _frozen_datetime_class(clock, real_dt_cls)
+    restorations: list[tuple[Any, str, Any]] = []
     try:
         time_module.time = _frozen_time  # type: ignore[method-assign]
+        time_module.time_ns = _frozen_time_ns  # type: ignore[method-assign]
+        datetime_module.datetime = frozen_dt_cls  # type: ignore[misc]
+        try:
+            pkg: str | None = product_package_name()
+        except Exception:
+            pkg = None
+        if pkg:
+            for mod_name, mod in list(sys.modules.items()):
+                if mod is None or not (
+                    mod_name == pkg or mod_name.startswith(pkg + ".")
+                ):
+                    continue
+                try:
+                    items = list(vars(mod).items())
+                except TypeError:
+                    continue
+                for attr_name, value in items:
+                    if value is original_time:
+                        replacement: Any = _frozen_time
+                    elif value is original_time_ns:
+                        replacement = _frozen_time_ns
+                    elif value is real_dt_cls:
+                        replacement = frozen_dt_cls
+                    else:
+                        continue
+                    try:
+                        setattr(mod, attr_name, replacement)
+                    except Exception:
+                        continue
+                    restorations.append((mod, attr_name, value))
         print(
             f"[harness] clock_freeze epoch={clock.epoch!r} "
             f"instant={clock.instant.isoformat()}",
@@ -1286,7 +1371,14 @@ def frozen_clock(instant: datetime | int | float) -> Iterator[FrozenClock]:
         )
         yield clock
     finally:
-        time_module.time = original
+        time_module.time = original_time  # type: ignore[method-assign]
+        time_module.time_ns = original_time_ns  # type: ignore[method-assign]
+        datetime_module.datetime = real_dt_cls  # type: ignore[misc]
+        for owner, attr_name, previous in reversed(restorations):
+            try:
+                setattr(owner, attr_name, previous)
+            except Exception:
+                continue
         print(
             f"[harness] clock_restore epoch={clock.epoch!r}",
             flush=True,

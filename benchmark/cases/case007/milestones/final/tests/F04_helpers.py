@@ -3,7 +3,7 @@
 
 Helpers classify URI-build success and refusal. They never return
 ``None`` to mean "the observation could not be classified". Named URIs,
-paths, and query spellings are the strings the PRD publishes. Percent
+paths, and query spellings are fixed inputs of this suite. Percent
 encoding is never mirrored with ``quote`` / ``urlencode``.
 """
 
@@ -21,7 +21,7 @@ from _harness import CallResult, HarnessError, call_method
 # Public URI-build entry on HMAC / time helpers (interface name).
 URI_BUILD_ENTRY = "provisioning_uri"
 
-# L192–L193 / L210: README URIs for secret JBSWY3DPEHPK3PXP.
+# README URIs for secret JBSWY3DPEHPK3PXP.
 JBSWY_SECRET = "JBSWY3DPEHPK3PXP"
 README_TOTP_URI = (
     "otpauth://totp/Secure%20App:alice%40google.com"
@@ -32,32 +32,32 @@ README_HOTP_URI = (
     "?secret=JBSWY3DPEHPK3PXP&issuer=Secure%20App&counter=0"
 )
 
-# L194 / L210: no-account Secret URI.
+# no-account Secret URI.
 S46_SECRET = "S46SQCPPTCNPROMHWYBDCTBZXV"
 SECRET_PLACEHOLDER_URI = (
     "otpauth://totp/Secret?secret=S46SQCPPTCNPROMHWYBDCTBZXV"
 )
 SECRET_PLACEHOLDER = "Secret"
 
-# L198 / L199: eight-digit SHA256 FooCorp row.
+# eight-digit SHA256 FooCorp row.
 C7UXU_SECRET = "c7uxuqhgflpw7oruedmglbrk7u6242vb"
 
-# L200 / L210: SHA512 image URI.
+# SHA512 image URI.
 NAMED_IMAGE_URL = "https://test.net/test.png"
 SHA512_IMAGE_URI = (
     "otpauth://totp/i:n?secret=GEZDGNBV&issuer=i"
     "&algorithm=SHA512&image=https%3A%2F%2Ftest.net%2Ftest.png"
 )
 
-# L194 / L206: named failed-check candidate.
+# named failed-check candidate.
 NAMED_FAILED_CANDIDATE = "123456"
 
-# L195–L196 / L210: named paths (leading slash, encoded).
+# named paths (leading slash, encoded).
 PATH_ALICE_EXAMPLE = "/alice%40example.com"
 PATH_FOOCORP_BANG_ALICE = "/FooCorp%21:alice%40example.com"
 PATH_FOOCORP_BACO = "/FooCorp:baco%40peperina"
 
-# L184 / L189–L196 / L210: named accounts and issuers.
+# named accounts and issuers.
 NAMED_ACCOUNT_GOOGLE = "alice@google.com"
 NAMED_ACCOUNT_EXAMPLE = "alice@example.com"
 NAMED_ACCOUNT_BACO = "baco@peperina"
@@ -92,20 +92,20 @@ NAMED_SECRETS = frozenset(
 )
 NAMED_SECRET_LENGTHS = frozenset(len(secret) for secret in NAMED_SECRETS)
 
-# L188 query field names; extra-field picker must not land on these.
+# Query field names; extra-field picker must not land on these.
 RESERVED_QUERY_KEYS = frozenset(
     {"secret", "issuer", "counter", "digits", "period", "algorithm", "image"}
 )
 
-# L204 example illegal image.
+# Fixed illegal image value.
 NAMED_ILLEGAL_IMAGE = "nourl"
 
-# L191 named encodings.
+# Encodings of @, ! and space.
 AT_ENCODED = "%40"
 BANG_ENCODED = "%21"
 SPACE_ENCODED = "%20"
 
-# L63 / L197: URI digit-count set includes 7.
+# URI digit-count set includes 7.
 UNPUBLISHED_DIGIT_SEVEN = 7
 
 _BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
@@ -188,7 +188,7 @@ def require_uri(result: CallResult) -> str:
 
 
 def require_named_uri(result: CallResult, expected: str) -> str:
-    """Return a URI that equals a PRD-named string (after scheme/type)."""
+    """Return a URI that equals a suite-named string (after scheme/type)."""
     if not isinstance(expected, str) or not expected:
         raise HarnessError(
             f"require_named_uri expected is not a named URI: {expected!r}"
@@ -203,7 +203,7 @@ def require_named_uri(result: CallResult, expected: str) -> str:
 
 
 def require_build_refused(result: CallResult) -> None:
-    """Require that the build did not hand back an otpauth URI (L204–L205).
+    """Require that the build did not hand back an otpauth URI.
 
     A captured exception whose value is not otpauth text, or a return
     whose value is not otpauth text (including ``None`` / non-text /
@@ -349,7 +349,7 @@ def require_query_omits(uri: str, *keys: str) -> dict[str, str]:
 
 
 def require_space_encoded_not_plus(uri: str, text: str) -> None:
-    """Require a space in *text* is `%20` in the raw URI, not `+` (L191)."""
+    """Require a space in *text* is `%20` in the raw URI, not `+`."""
     if not isinstance(text, str) or " " not in text:
         raise HarnessError(
             f"require_space_encoded_not_plus text has no space: {text!r}"
@@ -402,7 +402,7 @@ def require_at_encoded_in_path(uri: str, account: str) -> None:
 
 
 def require_bang_encoded(uri: str, issuer: str) -> None:
-    """Require `!` in *issuer* is `%21` in path and raw query (L191)."""
+    """Require `!` in *issuer* is `%21` in path and raw query."""
     if not isinstance(issuer, str) or "!" not in issuer:
         raise HarnessError(
             f"require_bang_encoded issuer has no !: {issuer!r}"
@@ -642,7 +642,7 @@ def unpublished_no_scheme_image_token(forbidden: Collection[str]) -> str:
 
 
 def unpublished_wrong_scheme_image_url(forbidden: Collection[str]) -> str:
-    """http URL that still has host and path (L204 conjunction)."""
+    """http URL that still has host and path (image-rule conjunction)."""
     merged = set(forbidden) | {NAMED_ILLEGAL_IMAGE, NAMED_IMAGE_URL}
     token = secrets.token_hex(2)
     band = [
@@ -662,7 +662,7 @@ def unpublished_wrong_scheme_image_url(forbidden: Collection[str]) -> str:
 
 
 def unpublished_https_image_missing_path(forbidden: Collection[str]) -> str:
-    """https URL with host and empty path (L204 conjunction)."""
+    """https URL with host and empty path (image-rule conjunction)."""
     merged = set(forbidden) | {NAMED_ILLEGAL_IMAGE, NAMED_IMAGE_URL}
     token = secrets.token_hex(2)
     band = [
@@ -682,7 +682,7 @@ def unpublished_https_image_missing_path(forbidden: Collection[str]) -> str:
 
 
 def unpublished_https_image_missing_host(forbidden: Collection[str]) -> str:
-    """https URL with path and empty host (L204 conjunction)."""
+    """https URL with path and empty host (image-rule conjunction)."""
     merged = set(forbidden) | {NAMED_ILLEGAL_IMAGE, NAMED_IMAGE_URL}
     token = secrets.token_hex(2)
     band = [

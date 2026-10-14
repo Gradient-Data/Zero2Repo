@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "case_id": "case012",
+  "ecosystem": "npm",
+  "install_ban": [
+    "anti-slop",
+    "anti-slop-effect",
+    "anti_slop",
+    "anti_slop_effect",
+    "antislop",
+    "antislop-effect",
+    "dmmulroy/anti-slop",
+    "github.com/dmmulroy/anti-slop",
+    "oxlint-plugin-anti-slop",
+    "oxlint_plugin_anti_slop"
+  ],
+  "import_ban": [
+    "anti-slop",
+    "anti-slop-effect",
+    "anti-slop-effect/",
+    "anti-slop/",
+    "oxlint-plugin-anti-slop",
+    "oxlint-plugin-anti-slop/"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Bans the upstream package.json name oxlint-plugin-anti-slop, Oxlint plugin ids anti-slop / anti-slop-effect, GitHub slug dmmulroy/anti-slop, and collapsed/underscore aliases, plus JS import roots oxlint-plugin-anti-slop / anti-slop / anti-slop-effect; allows runner-provided Node.js 24 / npm / pnpm / apt / curl and repo deps (@oxlint/plugins, oxlint, tsx, typescript, @types/node) and does not ban author/org-only names (dmmulroy), the Oxlint toolchain, Effect, or vendored eslint-stylistic."
+}

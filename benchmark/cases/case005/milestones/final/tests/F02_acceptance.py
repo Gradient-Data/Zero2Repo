@@ -60,7 +60,7 @@ from F02_helpers import (
     require_runtime_refusal,
     require_send_bytes,
     send_event,
-    send_public_get,
+    send_fixed_get,
     server_connection,
     server_role,
     status_line_reason,
@@ -70,7 +70,7 @@ from F02_helpers import (
 
 
 # ---------------------------------------------------------------------------
-# S. Present-arm encode and pull (L79: no package-disable negative control)
+# S. Present-arm encode and pull
 # ---------------------------------------------------------------------------
 
 
@@ -93,8 +93,7 @@ def test_client_get_encodes_and_server_pulls_when_package_importable():
 
 
 def test_client_get_encode_fails_when_package_not_importable():
-    # L79: this product has no negative control. Present versus hollow is
-    # real send/pull on a constructed connection, not an import-stripped child.
+    # The product is exercised by real send/pull on a constructed connection.
     client = client_connection()
     event = make_request(headers=[("Host", "example.com")])
     encoded = require_send_bytes(send_event(client, event))
@@ -253,7 +252,7 @@ def test_fresh_server_pull_is_need_data():
 
 def test_client_get_slash_cl10_encodes_http11_request_line():
     client = client_connection()
-    encoded = send_public_get(client)
+    encoded = send_fixed_get(client)
     line = encoded_first_line(encoded)
     head, rest = encoded_head_and_rest(encoded)
     print(f"request line={line!r} rest_len={len(rest)}", flush=True)
@@ -267,7 +266,7 @@ def test_client_get_slash_cl10_encodes_http11_request_line():
 
 def test_client_states_after_get_send_are_send_body_and_send_response():
     client = client_connection()
-    send_public_get(client)
+    send_fixed_get(client)
     send_body = named_state("SEND_BODY")
     send_response = named_state("SEND_RESPONSE")
     pair = connection_pair_states(client)
@@ -281,7 +280,7 @@ def test_client_states_after_get_send_are_send_body_and_send_response():
 
 def test_client_peer_http_version_absent_after_request_send():
     client = client_connection()
-    send_public_get(client)
+    send_fixed_get(client)
     version = peer_http_version(client)
     print(f"client peer version after send={version!r}", flush=True)
     assert version is None
@@ -289,7 +288,7 @@ def test_client_peer_http_version_absent_after_request_send():
 
 def test_server_feed_only_leaves_idle_and_peer_version_absent():
     client = client_connection()
-    encoded = send_public_get(client)
+    encoded = send_fixed_get(client)
     server = server_connection()
     fed = feed_bytes(server, encoded)
     assert fed.exception is None, f"feed-only failed: {fed.exception!r}"
@@ -381,7 +380,7 @@ def test_informational_100_status_line_empty_reason_unless_supplied():
     assert len(empty) == 0
 
     other = server_connection()
-    feed_bytes(other, send_public_get(client_connection()))
+    feed_bytes(other, send_fixed_get(client_connection()))
     require_pulled_event(pull_next(other))
     supplied = make_informational(100, headers=[], reason=b"OK")
     encoded_ok = require_send_bytes(send_event(other, supplied))
@@ -397,7 +396,7 @@ def test_runtime_reason_is_written_after_status_code():
     while cl in (10, 11):
         cl += 5
     client = client_connection()
-    encoded_get = send_public_get(client)
+    encoded_get = send_fixed_get(client)
     server = server_connection()
     feed_bytes(server, encoded_get)
     require_pulled_event(pull_next(server))
@@ -432,7 +431,7 @@ def test_response_200_cl11_empty_reason_unless_supplied():
     assert wire_header_value(encoded_empty, b"Content-Length") == b"11"
 
     other_client = client_connection()
-    other_get = send_public_get(other_client)
+    other_get = send_fixed_get(other_client)
     other = server_connection()
     feed_bytes(other, other_get)
     require_pulled_event(pull_next(other))
@@ -835,7 +834,7 @@ def test_host_is_written_before_foo_even_when_not_first():
 
 def test_runtime_host_is_first_among_headers():
     client = client_connection()
-    encoded = send_public_get(client)
+    encoded = send_fixed_get(client)
     names = wire_header_names(encoded)
     print(f"public CL10 wire names={names!r}", flush=True)
     host_i = header_index(names, b"Host", ignore_case=True)

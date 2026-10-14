@@ -616,7 +616,7 @@ def test_configured_bound_prevents_overlap():
 
 
 def test_transfer_fails_when_binary_removed_from_path():
-    """Removing the binary from PATH makes fetch fail (L55)."""
+    """Removing the binary from PATH makes fetch fail (PRD core capabilities)."""
     payload = _payload()
     with conforming_batch_server(mode="download", payloads=[payload]) as svc:
         with workspace() as present:

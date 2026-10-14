@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case017",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "DEBIAN_FRONTEND=noninteractive apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends xz-utils && case $(uname -m) in x86_64) ZIG_ARCH=x86_64; ZIG_SHA=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00 ;; aarch64) ZIG_ARCH=aarch64; ZIG_SHA=ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17 ;; *) echo unsupported arch >&2; exit 1 ;; esac && curl -fsSL https://ziglang.org/download/0.16.0/zig-${ZIG_ARCH}-linux-0.16.0.tar.xz -o /tmp/zig.tar.xz && printf '%s  %s\\n' \"${ZIG_SHA}\" /tmp/zig.tar.xz | sha256sum -c - && mkdir -p /usr/local/zig /var/cache/zig && tar -xJf /tmp/zig.tar.xz -C /usr/local/zig --strip-components=1 && rm -f /tmp/zig.tar.xz && printf '%s\\n' '#!/bin/sh' 'export ZIG_GLOBAL_CACHE_DIR=/var/cache/zig' 'export ZIG_LOCAL_CACHE_DIR=/var/cache/zig' 'exec /usr/local/zig/zig \"$@\"' > /usr/local/bin/zig && chmod 0755 /usr/local/bin/zig && chmod 1777 /var/cache/zig",
+    "build_command": "zig build"
+  }
+}

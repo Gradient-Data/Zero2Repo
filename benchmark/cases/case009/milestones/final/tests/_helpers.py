@@ -63,9 +63,11 @@ _DOTTED_VERSION_RE = re.compile(r"\d+\.\d+(?:\.\d+)*")
 
 # Version identity adjacent to a Git-Orbulk product name. Does not take a
 # dotted token from Git's own version line or a Go runtime version that
-# merely shares the same banner.
+# merely shares the same banner. Adjacency never crosses a line break: a
+# product-name mention at the end of one line is not adjacent to a dotted
+# token on the next line (such as Git's own version line in ``env``).
 _IDENTITY_NEAR_PRODUCT_RE = re.compile(
-    r"git[\s\-]*orbulk[^\d]{0,32}(" + _DOTTED_VERSION_RE.pattern + r")",
+    r"git[ \t\-]*orbulk[^\d\r\n]{0,32}(" + _DOTTED_VERSION_RE.pattern + r")",
     re.IGNORECASE,
 )
 
@@ -147,7 +149,7 @@ check_version_identity_of_this_build = require_version_identity_of_this_build
 
 
 def require_version_path_identity_token(result: RunResult) -> str:
-    """Require version-path identity of this build (FP-01 L76).
+    """Require version-path identity of this build (FP-01).
 
     Success, names Git Orbulk, and returns the identity token from Git-Orbulk-
     named presentations. Does not read the environment report, does not
@@ -520,15 +522,34 @@ _PUSHURL_ECHO = re.compile(
 )
 
 
-def _drop_pushurl_echo_lines(report: str) -> str:
-    """Drop configuration-echo lines that only restate a *pushurl= value.
+# Upload-side marker word on a report line, outside any URL text. The
+# Contract lets ``env`` also present an upload endpoint on a line that
+# carries the word ``push`` or ``upload``; the endpoint line never does.
+# Case is free; the word may also lead a camel-case or key spelling
+# (``PushEndpoint``, ``lfs.pushurl``, ``remote.<r>.lfspushurl``).
+_UPLOAD_SIDE_WORD = re.compile(
+    r"(?<![A-Za-z0-9])(?i:lfs)?(?i:push(?:url)?|upload)(?![a-z0-9])"
+)
 
-    Those lines are not a dedicated would-use-server indication. Do not
+
+def _is_upload_side_line(line: str) -> bool:
+    """True when *line* (URLs removed) names the push/upload side."""
+    outside_urls = _HTTP_URL_RE.sub(" ", line)
+    return bool(_UPLOAD_SIDE_WORD.search(outside_urls))
+
+
+def _drop_pushurl_echo_lines(report: str) -> str:
+    """Drop push-URL echoes and upload-endpoint lines from the report.
+
+    A configuration echo that only restates a *pushurl= value, and a line
+    that presents the upload endpoint, are not the endpoint line. Do not
     drop ordinary ``*.url=`` lines: those may be the real endpoint.
     """
     kept: list[str] = []
     for line in report.splitlines():
         if _PUSHURL_ECHO.search(line.strip()):
+            continue
+        if _is_upload_side_line(line):
             continue
         kept.append(line)
     return "\n".join(kept)
@@ -1097,7 +1118,7 @@ def join_pointer_kv(pairs: Sequence[tuple[str, str]]) -> bytes:
 def contract_still_readable_legacy_pre_release_version_identifier() -> str:
     """Interface Contract still-readable leftover pre-release version identifier.
 
-    FP-03 L128/L139/L144: newly written pointers use the current v1
+    FP-03: newly written pointers use the current v1
     identifier, which is distinct from this leftover pre-release
     identifier. Substituting this Contract token into an otherwise
     generated pointer is ordinary-check success and strict-check
@@ -1462,7 +1483,7 @@ def reorder_required_size_before_object_id(
 
     Finds the object-id field by value shape. Does not pin its key spelling.
     Required-key order becomes version, size, extras, object-id — invalid
-    under FP-03 L139, not merely non-canonical.
+    under FP-03, not merely non-canonical.
     """
     pairs = parse_pointer_kv(document)
     object_id_key = object_id_field_key(pairs, digest=digest)
@@ -1702,7 +1723,7 @@ def require_invalid_check_invocation(
 ) -> RunResult:
     """Require *dirty* is an invalid check invocation relative to *clean*.
 
-    FP-03 L140 names missing-source, both-sources, check-plus-compare-pointer,
+    FP-03 names missing-source, both-sources, check-plus-compare-pointer,
     and strict-plus-non-strict as invalid. The live baseline (*clean*) must
     succeed. The dirty run must exit non-zero and be distinguishable from
     that success. Does not require a message on stderr.
@@ -2080,7 +2101,7 @@ def require_smudge_not_recognized_as_pointer(
 ) -> RunResult:
     """Require filter smudge did not treat *document* as a pointer.
 
-    FP-03 L139: structurally invalid forms are rejected as pointers by
+    FP-03: structurally invalid forms are rejected as pointers by
     filter smudge recognition. The live baseline *unlike_recognized*
     must itself be recognition of *recognized_input* (not successful
     copy-through of that pointer). After stripping input-byte
@@ -2871,7 +2892,7 @@ class RecordedApiRequest:
 
 
 def derived_https_endpoint(git_remote_url: str) -> str:
-    """Append the conventional ``.git/info/lfs`` suffix (PRD L206).
+    """Append the conventional ``.git/info/lfs`` suffix (PRD FP-06).
 
     If *git_remote_url* already ends in ``.git``, append ``/info/lfs`` only.
     Does not implement URL aliases, ``file://``, or SSH host/path translation.
@@ -3320,17 +3341,17 @@ class ConformingBatchServer:
 
 
 def contract_git_orbulk_json_media_type() -> str:
-    """Designated Git Orbulk JSON media type (Interface Contract / L42)."""
+    """Designated Git Orbulk JSON media type (Interface Contract)."""
     return "application/vnd.git-orbulk+json"
 
 
 def contract_objects_batch_path() -> str:
-    """Endpoint objects-batch path (Interface Contract / L231)."""
+    """Endpoint objects-batch path (Interface Contract)."""
     return "/objects/batch"
 
 
 def contract_basic_adapter_name() -> str:
-    """Basic transfer adapter name advertised on the batch request (L232)."""
+    """Basic transfer adapter name advertised on the batch request (FP-07)."""
     return "basic"
 
 
@@ -6042,99 +6063,6 @@ def unset_lock_verification(ws: Workspace) -> None:
     )
 
 
-def require_unknown_server_support_prompt_unlike(
-    unknown_a: RunResult,
-    unknown_b: RunResult,
-    forced_on_a: RunResult,
-    forced_on_b: RunResult,
-    forced_off_a: RunResult,
-    forced_off_b: RunResult,
-    *,
-    strip: Sequence[str],
-) -> str:
-    """Require a stable prompt leftover unlike forced-on and forced-off.
-
-    L316: configuration can prompt on unknown server support. After
-    covariate stripping, chunks present on both unknown observations
-    and absent from both forced-on observations are the unlike-on
-    leftover; chunks present on both unknown observations and absent
-    from both forced-off observations are the unlike-off leftover.
-    Each leftover must be non-empty. Does not pin prompt wording,
-    require a TTY, or require the unknown arm to succeed or PUT.
-    """
-
-    def _chunks(text: str) -> list[str]:
-        parts = re.split(r"[\n\r]+", text)
-        return [part.strip() for part in parts if part.strip()]
-
-    def _stripped_chunks(result: RunResult) -> list[str]:
-        tokens = [str(item) for item in strip if item]
-        stripped = _strip_unrelated_tokens(caller_visible(result), tokens)
-        return _chunks(stripped)
-
-    u_a = _stripped_chunks(unknown_a)
-    u_b = _stripped_chunks(unknown_b)
-    stable = [chunk for chunk in u_a if chunk in set(u_b)]
-    on_chunks = set(_stripped_chunks(forced_on_a)) | set(
-        _stripped_chunks(forced_on_b)
-    )
-    off_chunks = set(_stripped_chunks(forced_off_a)) | set(
-        _stripped_chunks(forced_off_b)
-    )
-    vs_on = [chunk for chunk in stable if chunk not in on_chunks]
-    vs_off = [chunk for chunk in stable if chunk not in off_chunks]
-    rem_on = " ".join(vs_on)
-    rem_off = " ".join(vs_off)
-    print(
-        f"unknown_prompt stable={stable!r} vs_on={vs_on!r} "
-        f"vs_off={vs_off!r} unk_exit={unknown_a.returncode},"
-        f"{unknown_b.returncode} on_exit={forced_on_a.returncode},"
-        f"{forced_on_b.returncode} off_exit={forced_off_a.returncode},"
-        f"{forced_off_b.returncode}"
-    )
-    assert rem_on.strip(), (
-        "no prompt leftover on unknown server support unlike forced-on "
-        "after stripping covariates and shared completion chunks: "
-        f"unknown={caller_visible(unknown_a)!r} "
-        f"forced_on={caller_visible(forced_on_a)!r}"
-    )
-    assert rem_off.strip(), (
-        "no prompt leftover on unknown server support unlike forced-off "
-        "after stripping covariates and shared completion chunks: "
-        f"unknown={caller_visible(unknown_a)!r} "
-        f"forced_off={caller_visible(forced_off_a)!r}"
-    )
-    return rem_on
-
-
-def assert_unknown_server_support_prompt_unlike(
-    unknown_a: RunResult,
-    unknown_b: RunResult,
-    forced_on_a: RunResult,
-    forced_on_b: RunResult,
-    forced_off_a: RunResult,
-    forced_off_b: RunResult,
-    *,
-    strip: Sequence[str],
-) -> str:
-    """Require a stable prompt leftover unlike forced-on and forced-off.
-
-    Same contract as ``require_unknown_server_support_prompt_unlike``.
-    The name is the verdict the suite-bailout audit can see: treating
-    unset locks-verify as forced-on or forced-off is not a prompt on
-    unknown server support.
-    """
-    return require_unknown_server_support_prompt_unlike(
-        unknown_a,
-        unknown_b,
-        forced_on_a,
-        forced_on_b,
-        forced_off_a,
-        forced_off_b,
-        strip=strip,
-    )
-
-
 # ---------------------------------------------------------------------------
 # F11: status / ls-files inspection (new names only)
 # ---------------------------------------------------------------------------
@@ -6454,39 +6382,6 @@ def run_prune(
     return ws.invoke(args, cwd=cwd, env_updates=env_updates)
 
 
-def require_option_visible_stable_unlike(
-    stable_a: RunResult,
-    stable_b: RunResult,
-    unlike_a: RunResult,
-    unlike_b: RunResult,
-    *,
-    strip_tokens: Sequence[str] = (),
-) -> tuple[str, str]:
-    """Require caller-visible output that differs by an option flag.
-
-    After option-token covariates from all four runs (the extra flag
-    spelling itself) and *strip_tokens* are removed, each arm must be
-    stable across two observations, then the two arms must still differ.
-    A timestamp, request id, or argv echo is not a sufficient unlike.
-    Does not pin wording or layout.
-    """
-    option_tokens = _option_token_covariates(
-        stable_a, stable_b, unlike_a, unlike_b
-    )
-    combined = [*strip_tokens, *option_tokens]
-    rem_sa = dry_run_remainder(caller_visible(stable_a), strip=combined)
-    rem_sb = dry_run_remainder(caller_visible(stable_b), strip=combined)
-    rem_ua = dry_run_remainder(caller_visible(unlike_a), strip=combined)
-    rem_ub = dry_run_remainder(caller_visible(unlike_b), strip=combined)
-    print(
-        f"option_visible stable={rem_sa!r} unlike={rem_ua!r} "
-        f"flags={option_tokens!r}"
-    )
-    return require_listing_remainder_stable_unlike(
-        rem_sa, rem_sb, rem_ua, rem_ub
-    )
-
-
 def commit_tracked_payload_dated(
     ws: Workspace, relpath: str, data: bytes, when: str
 ) -> str:
@@ -6715,8 +6610,21 @@ def bitflip_stored_object(
     assert new_data != data, (
         f"bitflip of {path} produced identical bytes"
     )
+    # A product may legitimately store objects read-only; the judge runs
+    # unprivileged, so add owner write permission for the write-back and
+    # restore the original mode afterwards.
     try:
-        path.write_bytes(new_data)
+        orig_mode = stat.S_IMODE(path.stat().st_mode)
+    except OSError as exc:
+        raise AssertionError(f"cannot stat {path}: {exc}") from exc
+    try:
+        if not orig_mode & stat.S_IWUSR:
+            os.chmod(path, orig_mode | stat.S_IWUSR)
+        try:
+            path.write_bytes(new_data)
+        finally:
+            if not orig_mode & stat.S_IWUSR:
+                os.chmod(path, orig_mode)
     except OSError as exc:
         raise AssertionError(
             f"cannot write flipped object at {path}: {exc}"
@@ -8229,7 +8137,7 @@ def serve_transfer(operation):
             continue
         if command.startswith("version "):
             log_event("version_selected", version=1)
-            send_status(200, lines=[])
+            send_status(200)
             continue
         if command == "quit" or command.startswith("quit "):
             send_status(200)
@@ -8885,6 +8793,9 @@ _COW_UNSUPPORTED_ERRNOS = {
 _COW_MOUNTS: dict[str, dict[str, str]] = {}
 _COW_RELOCATED: set[str] = set()
 _LOGS_RESERVED_ENTRIES = frozenset({"last", "show", "clear", "help"})
+
+# Contract: ``logs boomtown`` is the diagnostic-exception sub-entry.
+LOGS_DIAGNOSTIC_ENTRY = "boomtown"
 _CLONE_NEWNS = 0x00020000
 _CLONE_NEWUSER = 0x10000000
 _UNSHARED_MOUNT_NS = False
@@ -9665,77 +9576,6 @@ def require_listed_log_file_under_lfs_namespace(
     return found[0]
 
 
-def _parse_logs_help_entries(text: str) -> list[str]:
-    names: list[str] = []
-    seen: set[str] = set()
-
-    def _add(name: str) -> None:
-        if not name or name in seen or name in _LOGS_RESERVED_ENTRIES:
-            return
-        seen.add(name)
-        names.append(name)
-
-    for match in re.finditer(r"\blogs\s+([A-Za-z][\w-]*)", text):
-        _add(match.group(1))
-    for match in re.finditer(r"`([A-Za-z][\w-]*)`::", text):
-        _add(match.group(1))
-    in_cmds = False
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.lower().startswith("available commands"):
-            in_cmds = True
-            continue
-        if not in_cmds:
-            continue
-        if not stripped:
-            if names:
-                break
-            continue
-        lowered = stripped.lower()
-        if lowered.startswith("flags") or lowered.startswith("usage"):
-            break
-        parts = stripped.split()
-        if parts:
-            _add(parts[0])
-    return names
-
-
-def discover_logs_diagnostic_entry(ws: Workspace) -> str:
-    """Find the logs sub-entry that is not list/show/last/clear; it must fail.
-
-    The returned spelling is only for a later invoke. Callers must not
-    assert it equals a particular token.
-    """
-    before = logs_list_names(ws)
-    help_via = ws.invoke_via_git(["logs", "--help"])
-    help_direct = ws.invoke(["help", "logs"])
-    help_text = (
-        caller_visible(help_via) + "\n" + caller_visible(help_direct)
-    )
-    entries = _parse_logs_help_entries(help_text)
-    candidates = [name for name in entries if name not in _LOGS_RESERVED_ENTRIES]
-    assert candidates, (
-        "logs help listed no diagnostic sub-entry distinct from "
-        f"list/show/last/clear: help={help_text!r}"
-    )
-    for name in candidates:
-        result = ws.invoke_via_git(["logs", name])
-        if result.returncode == 0:
-            continue
-        after = logs_list_names(ws)
-        added = [item for item in after if item not in before]
-        if added:
-            print(
-                f"logs diagnostic entry {name!r} exit={result.returncode} "
-                f"added={added!r}"
-            )
-            return name
-    raise AssertionError(
-        "no logs diagnostic sub-entry failed and added a listed log; "
-        f"candidates={candidates!r} before={before!r}"
-    )
-
-
 def emit_completion_script(ws: Workspace, shell: str) -> bytes:
     """Emit a non-empty completion script for *shell*. Non-zero is not empty."""
     assert shell in ("bash", "fish", "zsh"), (
@@ -10041,7 +9881,7 @@ def completion_candidates(
 
 
 def require_porcelain_subcommand_candidates(candidates: Sequence[str]) -> list[str]:
-    """Require each L32 porcelain name appears as its own candidate token."""
+    """Require each PRD command inventory porcelain name appears as its own candidate token."""
     have = set(candidates)
     missing = [name for name in PORCELAIN_SUBCOMMANDS if name not in have]
     assert not missing, (
@@ -10052,7 +9892,7 @@ def require_porcelain_subcommand_candidates(candidates: Sequence[str]) -> list[s
 
 
 def assert_porcelain_subcommand_candidates(candidates: Sequence[str]) -> list[str]:
-    """Require each L32 porcelain name appears as its own candidate token.
+    """Require each PRD command inventory porcelain name appears as its own candidate token.
 
     Same contract as ``require_porcelain_subcommand_candidates``. The name
     is the verdict the suite-bailout audit can see: a script that loads
@@ -10067,7 +9907,7 @@ def require_clone_among_porcelain_candidates(
 ) -> list[str]:
     """Require clone appears as its own porcelain candidate token.
 
-    L32 lists clone as porcelain. L515's porcelain-candidate set is that
+    PRD command inventory lists clone as porcelain. FP-18's porcelain-candidate set is that
     inventory, observed through the shell's use of the emitted script.
     """
     assert "clone" in set(candidates), (
@@ -10122,62 +9962,6 @@ def require_omits_token(candidates: Sequence[str], name: str) -> list[str]:
         f"{list(candidates)!r}"
     )
     return list(candidates)
-
-
-def invoke_logs_diagnostic_exception(ws: Workspace) -> str:
-    """Invoke the diagnostic-exception logs sub-entry so it fails and a log appears.
-
-    Discovers that sub-entry from optional public listings (help text if
-    present, and the caller-visible output of an unknown logs sub-entry).
-    Does not require that logs help advertise the spelling. The returned
-    name is only for a later invoke; callers must not assert it equals a
-    particular token.
-    """
-    before = logs_list_names(ws)
-    candidates: list[str] = []
-    seen: set[str] = set()
-
-    def _consider(name: str) -> None:
-        if not name or name in seen or name in _LOGS_RESERVED_ENTRIES:
-            return
-        seen.add(name)
-        candidates.append(name)
-
-    help_via = ws.invoke_via_git(["logs", "--help"])
-    help_direct = ws.invoke(["help", "logs"])
-    help_text = caller_visible(help_via) + "\n" + caller_visible(help_direct)
-    for name in _parse_logs_help_entries(help_text):
-        _consider(name)
-
-    unknown = f"nolog_{token()}"
-    miss = ws.invoke_via_git(["logs", unknown])
-    miss_text = caller_visible(miss)
-    for name in _parse_logs_help_entries(miss_text):
-        _consider(name)
-
-    print(
-        f"logs diagnostic candidates={candidates!r} "
-        f"(help listing is not required) unknown={unknown!r}"
-    )
-    tried: list[str] = []
-    for name in candidates:
-        result = ws.invoke_via_git(["logs", name])
-        tried.append(name)
-        if result.returncode == 0:
-            continue
-        after = logs_list_names(ws)
-        added = [item for item in after if item not in before]
-        if added:
-            print(
-                f"logs diagnostic entry {name!r} exit={result.returncode} "
-                f"added={added!r}"
-            )
-            return name
-    raise AssertionError(
-        "no logs diagnostic sub-entry failed and added a listed log; "
-        f"tried={tried!r} before={before!r} unknown={unknown!r} "
-        f"unknown_listing={miss_text!r}"
-    )
 
 
 def _shell_bash_completion_driver() -> str:
@@ -10524,6 +10308,11 @@ def _fpath_zsh_inner_setup() -> str:
 setopt zle
 setopt no_aliases no_beep no_list_beep
 unsetopt prompt_cr prompt_sp
+# List candidates even when zsh first inserts an unambiguous common prefix
+# (a typed "-" that every flag candidate extends to "--"); without this,
+# such a completion inserts the prefix and shows no list.
+setopt auto_list
+unsetopt list_ambiguous
 PROMPT='---ZSHPROMPT---'
 RPROMPT=
 PROMPT2=
@@ -10800,204 +10589,28 @@ def fpath_shell_completion_candidates(
     )
 
 
-def trigger_logs_diagnostic_exception(ws: Workspace) -> str:
-    """Invoke the diagnostic-exception logs sub-entry so it fails and a log appears.
-
-    Finds that sub-entry by invoking dispatched logs argv tokens until
-    one fails and a stored log appears. Does not require logs help or an
-    unknown-subcommand listing to advertise the spelling. The returned
-    name is only for a later invoke; callers must not assert it equals a
-    particular token.
-    """
-    before = logs_list_names(ws)
-    candidates: list[str] = []
-    seen: set[str] = set()
-
-    def _consider(name: str) -> None:
-        if not name or name in seen or name in _LOGS_RESERVED_ENTRIES:
-            return
-        if name.startswith("-"):
-            return
-        if not re.fullmatch(r"[A-Za-z][\w-]*", name):
-            return
-        seen.add(name)
-        candidates.append(name)
-
-    for argv in (
-        ["__completeNoDesc", "logs", ""],
-        ["__complete", "logs", ""],
-        ["__completeNoDesc", "logs"],
-        ["__complete", "logs"],
-    ):
-        dumped = ws.invoke(argv)
-        print(
-            f"logs dispatched-argv dump argv={argv!r} "
-            f"exit={dumped.returncode} stdout={dumped.stdout_text[:400]!r}"
-        )
-        for line in dumped.stdout_text.splitlines():
-            token_name = line.strip().split("\t", 1)[0].strip()
-            _consider(token_name)
-
-    help_via = ws.invoke_via_git(["logs", "--help"])
-    help_direct = ws.invoke(["help", "logs"])
-    help_text = (
-        caller_visible(help_via) + "\n" + caller_visible(help_direct)
-    )
-    for name in _parse_logs_help_entries(help_text):
-        _consider(name)
-
-    print(
-        f"logs diagnostic invoke candidates={candidates!r} "
-        "(help listing is not required)"
-    )
-    tried: list[str] = []
-    for name in candidates:
-        result = ws.invoke_via_git(["logs", name])
-        tried.append(name)
-        if result.returncode == 0:
-            continue
-        after = logs_list_names(ws)
-        added = [item for item in after if item not in before]
-        if added:
-            print(
-                f"logs diagnostic entry {name!r} exit={result.returncode} "
-                f"added={added!r}"
-            )
-            return name
-    raise AssertionError(
-        "no logs diagnostic sub-entry failed and added a listed log; "
-        f"tried={tried!r} before={before!r} candidates={candidates!r}"
-    )
-
-
-def run_logs_diagnostic_exception_entry(ws: Workspace) -> str:
-    """Invoke the diagnostic-exception logs sub-entry so it fails and a log appears.
-
-    Enumerates dispatched logs argv tokens from the product's own
-    command table, then invokes each token that is not list/show/last/
-    clear until one fails and a stored log appears. Does not read logs
-    help, and does not scrape an unknown-subcommand listing. The
-    returned name is only for a later invoke; callers must not assert
-    it equals a particular token.
-    """
-    before = logs_list_names(ws)
-    candidates: list[str] = []
-    seen: set[str] = set()
-
-    def _consider(name: str) -> None:
-        if not name or name in seen or name in _LOGS_RESERVED_ENTRIES:
-            return
-        if name.startswith("-"):
-            return
-        if not re.fullmatch(r"[A-Za-z][\w-]*", name):
-            return
-        seen.add(name)
-        candidates.append(name)
-
-    for argv in (
-        ["__completeNoDesc", "logs", ""],
-        ["__complete", "logs", ""],
-        ["__completeNoDesc", "logs"],
-        ["__complete", "logs"],
-    ):
-        dumped = ws.invoke(argv)
-        print(
-            f"logs command-table dump argv={argv!r} "
-            f"exit={dumped.returncode} stdout={dumped.stdout_text[:400]!r}"
-        )
-        for line in dumped.stdout_text.splitlines():
-            token_name = line.strip().split("\t", 1)[0].strip()
-            _consider(token_name)
-
-    print(
-        f"logs diagnostic invoke candidates={candidates!r} "
-        "(help and unknown-subcommand listings are not required)"
-    )
-    tried: list[str] = []
-    for name in candidates:
-        result = ws.invoke_via_git(["logs", name])
-        tried.append(name)
-        if result.returncode == 0:
-            continue
-        after = logs_list_names(ws)
-        added = [item for item in after if item not in before]
-        if added:
-            print(
-                f"logs diagnostic entry {name!r} exit={result.returncode} "
-                f"added={added!r}"
-            )
-            return name
-    raise AssertionError(
-        "no logs diagnostic sub-entry failed and added a listed log; "
-        f"tried={tried!r} before={before!r} candidates={candidates!r}"
-    )
-
-
 def call_named_logs_diagnostic_exception(ws: Workspace) -> str:
     """Invoke the diagnostic-exception logs sub-entry so it fails and a log appears.
 
-    Calls that named logs extra sub-entry. Optional public listings
-    (help text, or the caller-visible output of an unknown logs
-    sub-entry) may supply additional spellings to try; those listings
-    are not required to advertise the entry, and a hidden
-    complete/__completeNoDesc dump is not consulted. The returned name
-    is only for a later invoke; callers must not assert it equals a
-    particular token.
+    The sub-entry is the Contract's ``logs boomtown``. It must exit
+    non-zero and the default listing must then name a log that was not
+    listed before. Returns the sub-entry spelling for later invokes.
     """
+    name = LOGS_DIAGNOSTIC_ENTRY
     before = logs_list_names(ws)
-    candidates: list[str] = []
-    seen: set[str] = set()
-
-    def _consider(name: str) -> None:
-        if not name or name in seen or name in _LOGS_RESERVED_ENTRIES:
-            return
-        if name.startswith("-"):
-            return
-        if not re.fullmatch(r"[A-Za-z][\w-]*", name):
-            return
-        seen.add(name)
-        candidates.append(name)
-
-    help_via = ws.invoke_via_git(["logs", "--help"])
-    help_direct = ws.invoke(["help", "logs"])
-    help_text = caller_visible(help_via) + "\n" + caller_visible(help_direct)
-    for name in _parse_logs_help_entries(help_text):
-        _consider(name)
-
-    unknown = f"nolog_{token()}"
-    miss = ws.invoke_via_git(["logs", unknown])
-    miss_text = caller_visible(miss)
-    for name in _parse_logs_help_entries(miss_text):
-        _consider(name)
-
-    # Named extra logs argv to invoke even when public listings omit a
-    # spelling. This is an invoke, not an output pin, and not a dump
-    # advertisement. Other spellings still come from optional listings.
-    _consider("boomtown")
-
-    print(
-        f"named logs diagnostic invoke candidates={candidates!r} "
-        "(help, unknown-subcommand, and complete dumps are not required)"
+    result = ws.invoke_via_git(["logs", name])
+    print(f"logs diagnostic entry {name!r} exit={result.returncode}")
+    assert result.returncode != 0, (
+        f"logs {name} succeeded; the diagnostic exception must fail: "
+        f"{result.stdout_text!r} {result.stderr_text!r}"
     )
-    tried: list[str] = []
-    for name in candidates:
-        result = ws.invoke_via_git(["logs", name])
-        tried.append(name)
-        if result.returncode == 0:
-            continue
-        after = logs_list_names(ws)
-        added = [item for item in after if item not in before]
-        if added:
-            print(
-                f"logs diagnostic entry {name!r} exit={result.returncode} "
-                f"added={added!r}"
-            )
-            return name
-    raise AssertionError(
-        "no named logs diagnostic-exception sub-entry failed and added "
-        "a listed log; "
-        f"tried={tried!r} before={before!r}"
+    after = logs_list_names(ws)
+    added = [item for item in after if item not in before]
+    assert added, (
+        f"logs {name} failed but added no listed log; "
+        f"before={before!r} after={after!r}"
     )
+    return name
 
 
 @contextmanager

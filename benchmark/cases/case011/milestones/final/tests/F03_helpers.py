@@ -175,78 +175,6 @@ def assert_bracket_compile_is_value_error(expression: str) -> ValueError:
     return exc
 
 
-def bracket_failure_record(exc: BaseException) -> str:
-    """Collect a failure observation: text plus public scalar attributes.
-
-    Does not record ``type(exc)``, ``__name__``, or the MRO. Unreadable
-    attributes raise rather than being skipped as absence.
-    """
-    if not isinstance(exc, BaseException):
-        raise HarnessError(
-            f"bracket_failure_record expected an exception; got {type(exc)!r}"
-        )
-    pieces = [str(exc)]
-    try:
-        names = dir(exc)
-    except Exception as err:
-        raise HarnessError(f"cannot list attributes of {exc!r}: {err}") from err
-    for name in sorted(names):
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception as err:
-            raise HarnessError(
-                f"cannot read attribute {name!r} from {type(exc).__name__}: {err}"
-            ) from err
-        if callable(value):
-            continue
-        if value is None or isinstance(value, (str, int, float)):
-            pieces.append(repr(value))
-    record = "\n".join(pieces)
-    print(f"failure_record_len={len(record)}", flush=True)
-    return record
-
-
-def _bracket_leftover_strip(record: str, *texts: str) -> str:
-    """Remove each non-empty expression text from *record*."""
-    if not isinstance(record, str):
-        raise HarnessError(
-            f"bracket leftover strip requires str record, got {type(record)!r}"
-        )
-    leftover = record
-    for text in texts:
-        if not isinstance(text, str):
-            raise HarnessError(
-                f"bracket leftover strip texts must be str, got {type(text)!r}"
-            )
-        if text:
-            leftover = leftover.replace(text, "")
-    return leftover
-
-
-def bracket_kind_stem(record: str, *texts: str) -> str:
-    """Leftover after stripping *texts*, then length and padding covariates.
-
-    Each expression text is removed both as raw input and as ``repr``
-    echo. Digits and remaining whitespace are then dropped so two
-    reports of the same failure kind can be compared without requiring
-    byte-identical wording. Used by the existing F03 export
-    ``assert_kind_stems_differ`` (imported by later features). F03
-    tests themselves do not grade leftover stems.
-    """
-    leftover = record
-    for text in texts:
-        if not isinstance(text, str):
-            raise HarnessError(
-                f"bracket_kind_stem texts must be str, got {type(text)!r}"
-            )
-        if text:
-            leftover = leftover.replace(repr(text), "")
-    leftover = _bracket_leftover_strip(leftover, *texts)
-    return "".join(ch for ch in leftover if not ch.isdigit() and not ch.isspace())
-
-
 def bracket_kind_marker(exc: BaseException) -> type:
     """Caller-visible FP-01 kind marker of a captured value error.
 
@@ -436,27 +364,6 @@ def from_end_index(length: int) -> int:
         raise HarnessError(f"from_end_index k={k} still names the last element")
     print(f"from_end_index length={length} k={k} position={position}", flush=True)
     return k
-
-
-def assert_kind_stems_differ(
-    left: BaseException, right: BaseException, *texts: str
-) -> None:
-    """Assert two value-error kind stems differ after stripping *texts*.
-
-    Kind is ``bracket_kind_stem`` (expression texts, then digits and
-    whitespace). When one expression is a prefix of the other, the
-    caller must put the longer text first. Does not compare exception
-    class identity. Sealed later features import this name; F03 tests
-    use ``assert_step_zero_kind_unlike_syntax`` / F03 kind markers.
-    """
-    left_stem = bracket_kind_stem(bracket_failure_record(left), *texts)
-    right_stem = bracket_kind_stem(bracket_failure_record(right), *texts)
-    print(f"kind_stem_left={left_stem!r}", flush=True)
-    print(f"kind_stem_right={right_stem!r}", flush=True)
-    assert left_stem != right_stem, (
-        "failure kind stems are not distinct after stripping "
-        f"{texts!r} and length/padding covariates: {left_stem!r}"
-    )
 
 
 def assert_step_zero_kind_unlike_syntax(

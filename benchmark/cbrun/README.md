@@ -38,8 +38,9 @@ runner.
 ## Fairness: visible checks vs hidden gates
 
 * **Visible / dev checks**: the agent may write and run its own tests and any
-  public sample checks as many times as it wants and read their full output. A
-  real develop → test → debug loop is expected.
+  public sample checks as many times as it wants and read their full output.
+  The prompt states context, the goal, the rules, and the submit/scoring
+  protocol only; it does not prescribe a workflow.
 * **Hidden gates**: the hidden acceptance tests are *physically absent* from the
   solve container. cbrun derives a per-case `:agent` image from the published
   `:deliverable` image and removes `/tests/final` in a new image layer (the
@@ -87,7 +88,7 @@ The solve terminal status is recorded as one of:
 
 ## Built-in backends
 
-Four backends ship as built-in **AgentSpec** records:
+Five backends ship as built-in **AgentSpec** records:
 
 | Backend | CLI | Notes |
 |---------|-----|-------|
@@ -95,6 +96,7 @@ Four backends ship as built-in **AgentSpec** records:
 | `opencode` | `opencode-ai` | Forwards provider env based on `provider/model` id. |
 | `claude-code` | `@anthropic-ai/claude-code` | Runs as root with `bypassPermissions`. Claude Code refuses that mode for a real root login, so the solve process sets `IS_SANDBOX=1`. Judge still runs as root. |
 | `cursor` | Cursor CLI (`cursor-agent`) | Forwards `CURSOR_API_KEY`. Installed from the official Cursor install script into the `:agent` image. |
+| `openhands` | OpenHands CLI 1.16.0 | Forwards `LLM_API_KEY` and `LLM_BASE_URL`. Model id is passed as `LLM_MODEL` (use `openai/<id>` for an OpenAI-compatible endpoint). The CLI is copied from a local `codingbench-agent/openhands:1.16.0` image, because it requires Python 3.12. |
 
 Auth/provider env is selected centrally and forwarded into the container; only
 **present** keys are injected (key names are recorded in results, never values).
@@ -193,9 +195,15 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
 
 ### Network policy and upstream denylist
 
-* During **solve**, GitHub hostnames are blocked via container `/etc/hosts`
-  (`--add-host …:0.0.0.0`). Model API calls and PyPI/npm remain reachable.
-  Disable with `--no-block-github`.
+* During **solve**, code-hosting hostnames are blocked via container
+  `/etc/hosts` (`--add-host …:0.0.0.0`): GitHub and its download hosts,
+  GitLab, Gitee, Bitbucket, Sourcegraph, Codeberg, sourcehut, and well-known
+  GitHub mirrors/proxies (`CODE_HOST_BLOCK_HOSTS` in `denylist.py`). Model API
+  calls, web search and package registries (PyPI, npm, Go proxy, crates.io)
+  remain reachable, because ordinary dependency installs need them; source
+  archives fetched from a registry are reported by the transcript scan below.
+  `summary.json` records `blocked_hosts`. Disable with `--no-block-github`
+  (alias `--no-block-code-hosts`).
 * Each case ships `source/denylist.json` (install/import bans for the
   upstream product). It is tracked with the case. The file never enters the
   solve container: the `:agent` image carries only name hashes plus the
@@ -227,6 +235,93 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
   wins `PATH`; a failed canary is a hard `RuntimeError`, never a silent pass.
   Hidden harnesses must resolve `node` through `PATH`; a hardcoded
   interpreter path bypasses the gate.
+* Solve-time access monitor. One invariant replaces per-technique checks:
+  while the agent solves, only allowlisted toolchain processes may open the
+  files of a banned implementation. Importing it as a dependency or oracle,
+  reading, copying, grepping, or disassembling it all open those files first.
+  Writing an implementation from memory is allowed and not detected.
+  * Protected files are found in the container by name hash (no plaintext
+    names in any shipped script): banned modules in every interpreter's
+    stdlib and site-packages, vendored copies (`_vendor/`, `vendor/`, ...),
+    and banned package directories in global and nested `node_modules`.
+    Nothing under `/app` is protected. Banned modules the toolchain still
+    imports stay as sourceless `.pyc` so plain reads remain useless.
+  * `access_monitor.py` (baked into the `:agent` image) watches every
+    protected file with inotify `IN_OPEN` and streams one JSON event per line
+    over `docker exec`; the host reads it live and keeps the record in
+    `access_monitor_<round>.jsonl`. It also sends a heartbeat and watches its
+    own hook files and socket.
+  * Attribution: every interpreter imports `cbrun_access_hook` from the end
+    of stdlib `encodings/__init__.py` (read from disk even under `-S`/`-I`, and
+    reached by venvs and pip's isolated build envs, unlike `.pth` or
+    `sitecustomize`). A PEP 578 audit hook reports its own opens of protected
+    files over a Unix socket; the monitor takes the sender pid from
+    `SCM_CREDENTIALS` and argv from `/proc`.
+  * The host (`cbrun/access_monitor.py`) matches each open with a report.
+    Allowlisted openers are `-m pip`/pip entry scripts, pip's
+    `__pip-runner__.py`, `pyproject_hooks` `_in_process.py`, `-m build`,
+    ensurepip, uv's build-backend subprocesses, and the OpenHands runtime.
+    Tools may also load a banned module for their own work (pytest reads
+    `pyproject.toml` with the stdlib parser): that open is excused when the
+    process entry is a tool (bin-dir script or installed package) and the
+    code that caused the open is stdlib or installed-package code. The
+    agent's own code (`/app`, `/tmp` scripts, `-c`, packages installed from a
+    local path per `direct_url.json`) never qualifies.
+    A report from any other process, or an open with no report within 3 s
+    (a non-Python tool, or Python without the hook), is an access event.
+    A lost heartbeat, a monitor exit, a forged report, or a changed hook file
+    is interference and counts the same.
+  * The first event stops the round (same stop path as the stall watchdog)
+    and the next round's instruction states what was observed and why it is
+    forbidden. A second event fails the trial (`denylist_violation`,
+    `reward=0`). The count of allowed warnings is `--denylist-fix-retries`.
+    `summary.json` records `access_events` and `access_rounds_stopped`.
+  * If the monitor cannot start (no Python, no inotify, hook not installed),
+    the trial errors before solving (`run_valid=false`); no round runs
+    unmonitored.
+  * Known limitations: single-file bundled CLIs (e.g. Claude Code's
+    `cli.js`) and wheels such as ensurepip's bundled pip are not file-level
+    artefacts; interpreters or packages fetched during the solve are not
+    protected (downloading is already forbidden); a process that rewrites its
+    own `/proc/<pid>/cmdline` and forges hook reports, or plants code in
+    toolchain paths, can evade attribution. Once a tool has loaded a banned
+    module in its own process, later code in that process (e.g. a test file
+    pytest collects) can use it without a new open; tests in `/app` are
+    still caught by the import scan and the judge-time ban. Setup code from
+    `/app` running under pip is excused here and caught by the `/app` import
+    scan.
+* Post-trial transcript scan (`transcript_scan.py`). After every trial the
+  agent's session files (`container_logs/usage/**/*.jsonl`, or the agent logs
+  when there are none) are read for tool calls that try to obtain the upstream
+  code at run time. Banned names come only from the case's `denylist.json`
+  (`install_ban`, `import_ban`) and `manifest.json` (`sensitive_terms`,
+  minus terms whose every word the public PRD/Contract already uses), and are
+  matched as whole components (URL path segment, package spec or archive name
+  without version, path segment), never as substrings. Rules:
+  * `code_host_fetch`: clone/curl/wget/`gh`/VCS install/inline-script URL
+    call/WebFetch to a code host or mirror (high with a banned name, else
+    medium);
+  * `registry_source_download`: an archive URL on a registry or mirror host,
+    or `pip download`, `npm pack <pkg>`, `go mod download <mod>`,
+    `apt-get source`, `gem fetch`, ... (high with a banned name, else medium);
+  * `banned_name_fetch` (high): install/download/fetch of a banned name;
+  * `banned_name_lookup` (medium): `pip show`/`npm view` of a banned name, a
+    probed path outside `/app` (`ls`, `find -name`, Read tool), or an import
+    of a banned root in `python -c`/`node -e`/interpreter heredocs;
+  * `banned_name_in_output` (medium): a command that looked harmless printed
+    "Cloning into / Saving to / Downloading / Collecting" a banned name;
+  * `mention` (low, not flagged): a name in a web-search query or elsewhere
+    in a command.
+  Ordinary dependency installs, files the agent writes (heredocs to `cat`,
+  Write/Edit tools) and its own `/app` paths are not flagged. Any high or
+  medium hit sets `needs_review=true` on the trial; reward is never changed.
+  Each hit records file, line, snippet, the tool result excerpt and whether
+  the result shows a network failure. The full report is
+  `<trial>/transcript_scan.json`; `summary.json` carries `needs_review`,
+  `transcript_scan` (verdict, counts, flagged hits) and the aggregate
+  `needs_review_trials`; the reward matrix marks the cell `*REVIEW`. Offline:
+  `python -m cbrun.transcript_scan <trial-or-run-dir>... [--cases-root DIR]
+  [--write] [--json FILE] [--show-low]` (exit 1 when any trial needs review).
 * `--enforce-denylist` is on by default. Missing file or empty ban lists
   fail before any container starts. `--no-enforce-denylist` skips the scan
   and `summary.json` records `denylist_enforced=false` so a skipped scan is
@@ -367,16 +462,25 @@ bare Harbor run of a substrate case reports `substrates_missing`.
 * `coding_bench_harbor.final_judge`: the scoring engine (single source of truth,
   shared with the Harbor adapter).
 
-## Tests
+### Test execution completeness
 
-* Fast unit tests (no Docker): `tests/test_cbrun_agents.py`,
-  `tests/test_cbrun_agent_spec.py`, `tests/test_cbrun_core.py`,
-  `tests/test_cbrun_wiring.py`.
-* Docker-gated integration (`@pytest.mark.slow`,
-  `tests/test_cbrun_docker.py`): oracle sanity (GT → reward 1), fairness
-  invariant (`:agent` image has no `/tests/final`, CLIs present, `cbagent`
-  user exists, Codex setup writes config). They skip automatically when Docker
-  or the required images are unavailable.
-* **Local agent smoke** (your credentials, no source edits):
-  [`../local_agents/README.md`](../local_agents/README.md) — copy `*.env.example`,
-  run `./local_agents/run_smoke.sh`.
+The trusted pytest launcher records each collected node before selection and
+checks that the same nodes finish exactly once, including setup and teardown.
+Skipped collection, deselection, skip/xfail/xpass outcomes, missing nodes,
+duplicate execution, and interrupted phases are incomplete evaluations, not
+successful submissions. Ordinary completed assertion failures remain test
+failures. The collection receipt is retained in `final_tests.log` under
+`CODING_BENCH_COLLECTION_AUDIT`; launcher exit 86 signals incompleteness to the
+shared judge. This is execution accounting, not a sandbox against arbitrary
+interpreter tampering by in-process solution code.
+
+Historical logs without receipts are not silently upgraded to node-level
+verification. Audit their recorded collection, execution counts, and outcomes
+before deciding which saved submissions need rejudging. Rejudging uses the
+original workspace and image without an agent run, and does not change the
+original submission validity or timeout status.
+
+## Local agent smoke
+
+Your credentials, no source edits: [`../local_agents/README.md`](../local_agents/README.md).
+Copy `*.env.example`, then run `./local_agents/run_smoke.sh`.

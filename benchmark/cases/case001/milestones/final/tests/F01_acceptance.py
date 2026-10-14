@@ -1,10 +1,9 @@
 # feature: F01
 """FP-01: parse TOML document structure from a Python text string.
 
-Assertions follow Full_PRD.original.md FP-01 (L85–L123) and the failure
-carriers in FP-04 (L193, L217). A negative-control that disables the package
-under test is not applicable (L60). Extra nesting past the scored 470/310
-lower bounds is the implementer's and is not scored (L116). Scalar fine
+Assertions follow the PRD FP-01 and the failure
+carriers in FP-04. Nesting past the 470/310 depths of FP-01 is
+unspecified and not asserted. Scalar fine
 rules, the binary-file entry, and decode-error location text are later
 feature points.
 """
@@ -118,7 +117,7 @@ def _walk_dotted_assignment(mapping, parts: int):
 
 
 # ---------------------------------------------------------------------------
-# S. Parse after install (L77, L85): name = "probe"
+# S. Parse after install: name = "probe"
 # ---------------------------------------------------------------------------
 
 
@@ -128,20 +127,8 @@ def test_probe_document_parses_when_package_importable():
     assert isinstance(require_path(doc, "name"), str)
 
 
-def test_parse_fails_when_package_not_importable():
-    """Parse-after-install of name = "probe" still yields a mapping.
-
-    Absence of the package from the import path is not a specified
-    observable. This test does not require a child-process parse to fail
-    after the package is removed.
-    """
-    doc = _parse_mapping('name = "probe"')
-    assert require_path(doc, "name") == "probe"
-    assert isinstance(require_path(doc, "name"), str)
-
-
 # ---------------------------------------------------------------------------
-# A. Empty document and root pairs (L91–L92, L122)
+# A. Empty document and root pairs
 # ---------------------------------------------------------------------------
 
 
@@ -185,7 +172,7 @@ def test_runtime_root_pair():
 
 
 # ---------------------------------------------------------------------------
-# B. Keys are strings (L93–L95, L122)
+# B. Keys are strings
 # ---------------------------------------------------------------------------
 
 
@@ -345,7 +332,7 @@ def test_runtime_literal_quoted_key():
 
 
 # ---------------------------------------------------------------------------
-# C. Dotted keys (L23, L96, L122)
+# C. Dotted keys
 # ---------------------------------------------------------------------------
 
 
@@ -446,7 +433,7 @@ def test_runtime_dotted_prefix_accumulates():
 
 
 # ---------------------------------------------------------------------------
-# D. Square-bracket headers (L97–L98, L122)
+# D. Square-bracket headers
 # ---------------------------------------------------------------------------
 
 
@@ -562,7 +549,7 @@ def test_runtime_omitted_super_then_sibling():
 
 
 # ---------------------------------------------------------------------------
-# E. Arrays of tables (L99–L101, L114, L122–L123)
+# E. Arrays of tables
 # ---------------------------------------------------------------------------
 
 
@@ -767,7 +754,7 @@ def test_runtime_dotted_key_into_aot_is_refused():
 
 
 # ---------------------------------------------------------------------------
-# F. Inline tables (L102–L103, L122)
+# F. Inline tables
 # ---------------------------------------------------------------------------
 
 
@@ -861,7 +848,7 @@ def test_runtime_inline_table_v11_newlines():
 
 
 # ---------------------------------------------------------------------------
-# G. Arrays (L104, L122)
+# G. Arrays
 # ---------------------------------------------------------------------------
 
 
@@ -951,7 +938,7 @@ def test_runtime_array_order_and_comments():
 
 
 # ---------------------------------------------------------------------------
-# H. Comments, indent, CRLF (L105–L107, L122)
+# H. Comments, indent, CRLF
 # ---------------------------------------------------------------------------
 
 
@@ -1054,7 +1041,7 @@ def test_crlf_inside_string_equals_lf():
 
 
 # ---------------------------------------------------------------------------
-# I. Structural refusal and nesting limits (L109–L118, L123)
+# I. Structural refusal and nesting limits
 # ---------------------------------------------------------------------------
 
 
@@ -1308,16 +1295,12 @@ def test_runtime_intermediate_dotted_key_succeeds():
     _walk_dotted_assignment(doc, depth)
 
 
-def test_nesting_past_recursion_limit_is_recursion_error():
-    """Scored lower-bound depths yield mappings. Extra depth is not scored.
-
-    L116 scores 470 nested inline arrays, 310 nested inline tables, and 310
-    dotted parts. How much farther an implementation can nest, and whether a
-    still-deeper document fails because the interpreter refuses a deeper
-    call, is not scored. This test does not require RecursionError, and does
-    not forbid a decode error, at extra depth.
+def test_stated_nesting_depths_all_yield_mappings():
+    """The FP-01 depths (470 nested arrays, 310 nested inline tables, 310
+    dotted parts) each yield a mapping. Deeper input is unspecified and is
+    not exercised.
     """
-    print("scored lower bounds: array=470 inline-table=310 dotted=310", flush=True)
+    print("lower bounds: array=470 inline-table=310 dotted=310", flush=True)
     array_doc = require_mapping(parse_text(nested_array_source(470)))
     _walk_nested_sequence(require_path(array_doc, "arr"), 470)
     table_doc = require_mapping(parse_text(nested_inline_table_source(310)))

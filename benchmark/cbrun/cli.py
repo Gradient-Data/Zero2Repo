@@ -37,6 +37,21 @@ def _default_cases_root() -> Path:
     return _REPO_ROOT / "cases"
 
 
+def _print_token_usage(usage: dict) -> None:
+    if not usage:
+        return
+    line = (
+        f"  tokens: input={usage.get('input_tokens', 0)} "
+        f"cache_read={usage.get('cache_read_tokens', 0)} "
+        f"cache_write={usage.get('cache_write_tokens', 0)} "
+        f"output={usage.get('output_tokens', 0)}"
+    )
+    print(line, file=sys.stderr)
+    if not usage.get("complete"):
+        detail = usage.get("error") or f"no usage in {usage.get('missing') or 'agent logs'}"
+        print(f"  WARNING: token usage incomplete: {detail}", file=sys.stderr)
+
+
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="cbrun",
@@ -117,9 +132,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--block-github",
+        "--block-code-hosts",
+        dest="block_github",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Block GitHub hostnames in solve container (default: on).",
+        help="Block GitHub, other code hosts and GitHub mirrors in the solve "
+        "container via /etc/hosts (default: on). Package registries stay reachable.",
     )
     return parser.parse_args(argv)
 
@@ -285,6 +303,14 @@ def main(argv: list[str] | None = None) -> int:
                     error=f"{type(exc).__name__}: {exc}",
                 )
                 print(f"  FAILED: {result.error}", file=sys.stderr)
+            _print_token_usage(result.token_usage)
+            if result.needs_review:
+                counts = (result.transcript_scan or {}).get("counts") or {}
+                print(
+                    f"  NEEDS REVIEW: transcript scan flagged high={counts.get('high', 0)} "
+                    f"medium={counts.get('medium', 0)}; see {result.logs.get('transcript_scan')}",
+                    file=sys.stderr,
+                )
             results.append(result)
             write_summary(results, args.out)
 

@@ -3,7 +3,7 @@
 
 Helpers classify constructor, emit, and check outcomes. They never
 return ``None`` to mean "the observation could not be classified".
-Named secrets and codes are the strings the PRD publishes, not a copy
+Named secrets and codes are fixed inputs of this suite, not a copy
 of product source. HMAC is never reimplemented here.
 """
 
@@ -22,10 +22,10 @@ from _harness import (
     require_value,
 )
 
-# L20: generated codes are decimal-digit text of the configured width.
+# generated codes are decimal-digit text of the configured width.
 DECIMAL_ALPHABET = frozenset("0123456789")
 
-# L125: RFC 4226 example secret and the ten published codes at 0–9.
+# RFC 4226 example secret and the ten published codes at 0–9.
 RFC_SECRET = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 RFC_CODES = (
     "755224",
@@ -40,13 +40,13 @@ RFC_CODES = (
     "520489",
 )
 
-# L126: README secret and the three published codes at 0 / 1 / 1401.
+# README secret and the three published codes at 0 / 1 / 1401.
 README_SECRET = "base32secret3232"
 README_AT_0 = "260182"
 README_AT_1 = "055283"
 README_AT_1401 = "316439"
 
-# L127: published five-code sequence.
+# published five-code sequence.
 N3OV_SECRET = "N3OVNIBRERIO5OHGVCMDGS4V4RJ3AUZOUN34J6FRM4P6JIFCG3ZA"
 N3OV_CODES = (
     "737863",
@@ -56,13 +56,13 @@ N3OV_CODES = (
     "654019",
 )
 
-# L128 / L130: additional named secrets.
+# additional named secrets.
 WRN3_SECRET = "wrn3pqx5uqxqvnqr"
 GEZDGNBV_SECRET = "GEZDGNBV"
 START1_AT_0 = "662488"
 START1_AT_1 = "289363"
 
-# L131: named fullwidth-digit candidate for RFC relative count 0.
+# named fullwidth-digit candidate for RFC relative count 0.
 FULLWIDTH_755224 = "７５５２２４"
 
 # Public emit / check entries on the HMAC helper (interface names).
@@ -80,17 +80,20 @@ _UNPUBLISHED_BAND = 32
 _UNPUBLISHED_MIN_ELIGIBLE = 16
 _UNPUBLISHED_SKIP_PREFIX = 4
 
-# L131 already maps ASCII 755224 onto these fullwidth digits.
+# Maps ASCII digits onto their fullwidth (NFKC-equivalent) forms.
 _FULLWIDTH_DIGIT_TABLE = str.maketrans("0123456789", "０１２３４５６７８９")
 
 
 def _is_usable_helper(value: Any) -> bool:
-    """Return whether *value* can be treated as a constructed helper."""
-    if value is None:
-        return False
-    if isinstance(value, (str, bytes, int, float, bool)):
-        return False
-    return True
+    """Return whether *value* is an ``HOTP`` or ``TOTP`` instance.
+
+    The Interface Contract states a refused construction or parse as
+    "raises, or returns something that is not an HOTP/TOTP instance";
+    a successful one returns such an instance.
+    """
+    from otpkit import HOTP, TOTP
+
+    return isinstance(value, (HOTP, TOTP))
 
 
 def _require_decimal_text(value: str, *, label: str) -> str:
@@ -145,7 +148,7 @@ def require_code(result: CallResult, width: int) -> str:
 
 
 def require_named_code(result: CallResult, expected: str) -> str:
-    """Return a code that equals a PRD-named string (after width/type)."""
+    """Return a code that equals a suite-named string (after width/type)."""
     if not isinstance(expected, str) or not expected:
         raise HarnessError(f"require_named_code expected is not a named code: {expected!r}")
     code = require_code(result, len(expected))
@@ -158,7 +161,7 @@ def require_named_code(result: CallResult, expected: str) -> str:
 
 
 def require_emit_refused(result: CallResult) -> BaseException:
-    """Require an emit abort with no code string (L136).
+    """Require an emit abort with no code string.
 
     The caller must observe a failure (any exception; class and message
     are not pinned) and ``value`` must not be a code string. Returning
@@ -180,7 +183,7 @@ def require_emit_refused(result: CallResult) -> BaseException:
 def require_construction_refused(result: CallResult) -> None:
     """Require that construction did not hand back a usable helper.
 
-    L137–L138 say construction "does not succeed"; they do not require
+    The PRD says construction "does not succeed"; they do not require
     an exception. A returned ``None`` / text / number, or a captured
     exception whose value is not a helper, both count. A returned helper
     does not. Emit is never probed to interpret this outcome.
@@ -251,22 +254,30 @@ def success_carrier(helper: object, count: int) -> Any:
 def require_accepted(result: CallResult, carrier: Any) -> Any:
     """Require that a check returned the same value as *carrier*."""
     value = require_check_returned(result)
+    assert value is True, (
+        "an accepted check must return True (Interface Contract verify form): "
+        f"got={value!r}"
+    )
     assert value == carrier, (
         "check did not match the success carrier: "
         f"carrier={carrier!r} got={value!r}"
     )
-    print("check accepted (matches success carrier)", flush=True)
+    print("check accepted (returned True)", flush=True)
     return value
 
 
 def require_rejected(result: CallResult, carrier: Any) -> Any:
     """Require that a check returned a value different from *carrier*."""
     value = require_check_returned(result)
+    assert value is False, (
+        "a rejected check must return False (Interface Contract verify form): "
+        f"got={value!r}"
+    )
     assert value != carrier, (
         "check matched the success carrier; the candidate was not rejected: "
         f"carrier={carrier!r} got={value!r}"
     )
-    print("check rejected (differs from success carrier)", flush=True)
+    print("check rejected (returned False)", flush=True)
     return value
 
 
@@ -292,7 +303,7 @@ def require_secret_bound_pair(
 ) -> None:
     """Require two codes still differ after stripping both secrets.
 
-    L73 / L121: the secret is a construction input and the code is
+    The secret is a construction input and the code is
     indexed by secret plus count. After removing the secret strings
     themselves (and their letter-case variants) a stable difference
     must remain. HMAC is not mirrored.
@@ -424,7 +435,7 @@ def unpublished_clock_pair(min_apart: float = 30) -> tuple[float, float]:
 
 
 def fullwidth_digit_form(code: str) -> str:
-    """Map ASCII digits onto the fullwidth digits L131 already used."""
+    """Map ASCII digits onto the fullwidth digits."""
     _require_decimal_text(code, label="fullwidth_digit_form input")
     mapped = code.translate(_FULLWIDTH_DIGIT_TABLE)
     if mapped == code:

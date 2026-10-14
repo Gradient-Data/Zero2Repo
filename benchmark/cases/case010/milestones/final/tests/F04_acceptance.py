@@ -34,8 +34,6 @@ from _helpers import (
     require_grammar_refused,
     tag_value,
     tagged_of,
-    unload_packaged_chunkers,
-    unload_packaged_taggers,
 )
 
 LANG_ENG = "eng"
@@ -203,30 +201,17 @@ def _keys(tagged) -> list[tuple[object, str]]:
 def _empty_resources():
     """No packaged models on the search list (regular-expression chunking)."""
     with workspace() as ws:
-        unload_packaged_chunkers()
         with bound_resource_path(ws, present=False):
-            unload_packaged_chunkers()
-            try:
-                yield ws
-            finally:
-                unload_packaged_chunkers()
+            yield ws
 
 
 @contextmanager
 def _perceptron_without_ne():
     """English perceptron only — named-entity tree is not installed."""
     with workspace() as ws:
-        unload_packaged_chunkers()
-        unload_packaged_taggers()
         install_perceptron(ws, LANG_ENG)
         with bound_resource_path(ws, present=True):
-            unload_packaged_chunkers()
-            unload_packaged_taggers()
-            try:
-                yield ws
-            finally:
-                unload_packaged_chunkers()
-                unload_packaged_taggers()
+            yield ws
 
 
 def _assert_np_then_vbd_leaf(tree, tagged, label: str) -> None:

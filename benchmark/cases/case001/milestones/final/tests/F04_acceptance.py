@@ -1,8 +1,8 @@
 # feature: F04
 """FP-04: refuse invalid TOML and refuse the wrong Python input type.
 
-Assertions follow Full_PRD.original.md FP-04 (L187–L221) plus the string-parse
-file-object refusal named at FP-03 L178. Structural and scalar success rules
+Assertions follow the PRD FP-04 plus the string-parse
+file-object refusal named FP-03. Structural and scalar success rules
 are FP-01 / FP-02; text-mode on the binary-file entry is FP-03.
 """
 
@@ -107,7 +107,7 @@ def _neighbor(source: str):
 def _assert_separate_from_report(exc) -> None:
     """Recover reason, document, offset, line, and column independently.
 
-    L194 / L209 require those fields to be recoverable separately from the
+    The PRD requires those fields to be recoverable separately from the
     formatted report (independent access). They do not require the unformatted
     reason string to differ from ``str(exc)``.
     """
@@ -190,12 +190,12 @@ def _assert_type_error(result):
 
 
 # ---------------------------------------------------------------------------
-# A. Invalid document: decode error ∩ value error, no mapping (L193, L220)
+# A. Invalid document: decode error ∩ value error, no mapping
 # ---------------------------------------------------------------------------
 
 
 class TestInvalidDocument:
-    """L193 / L220: invalid TOML fails as the decode error, a kind of value error."""
+    """invalid TOML fails as the decode error, a kind of value error."""
 
     def test_named_invalid_brackets_are_decode_error(self):
         neighbor = _neighbor("one = 1")
@@ -328,7 +328,7 @@ def test_runtime_dot_column_shifts_with_leading_spaces():
 
 
 # ---------------------------------------------------------------------------
-# C. End of document vs interior (L194, L198)
+# C. End of document vs interior
 # ---------------------------------------------------------------------------
 
 
@@ -356,7 +356,7 @@ def test_end_of_document_distinct_from_interior_dot():
 
 
 # ---------------------------------------------------------------------------
-# D. Caller-constructed decode error (L209, L220)
+# D. Caller-constructed decode error
 # ---------------------------------------------------------------------------
 
 
@@ -444,7 +444,7 @@ def test_constructed_offset_across_newline_increases_line():
 
 
 # ---------------------------------------------------------------------------
-# E. Named invalid constructs (L195–L208, L220)
+# E. Named invalid constructs
 # ---------------------------------------------------------------------------
 
 
@@ -630,7 +630,7 @@ def test_duplicate_keys_are_decode_error():
 
 
 # ---------------------------------------------------------------------------
-# F. Binary-file entry: invalid UTF-8 TOML is decode error (L187, L189, L166)
+# F. Binary-file entry: invalid UTF-8 TOML is decode error
 # ---------------------------------------------------------------------------
 
 
@@ -663,7 +663,7 @@ def test_binary_named_invalid_brackets_is_decode_error():
     _binary_refuse_buffer(_NAMED_INVALID)
 
 
-def test_binary_unclosed_or_true_is_decode_error():
+def test_binary_unclosed_basic_string_is_decode_error():
     key = runtime_token()
     n = runtime_int()
     _binary_neighbor_buffer(f"{key} = {n}")
@@ -712,7 +712,7 @@ def test_binary_interior_line_shifts_with_leading_newlines():
 
 
 # ---------------------------------------------------------------------------
-# G. String-parse wrong Python type: type error, not decode error (L213, L178)
+# G. String-parse wrong Python type: type error, not decode error
 # ---------------------------------------------------------------------------
 
 
@@ -778,17 +778,16 @@ def test_binary_text_mode_file_is_type_error_not_decode_error(isolated_ws):
 
 
 # ---------------------------------------------------------------------------
-# H. Scored invalid TOML is the decode error (L193, L220); extra depth unpinned
+# H. Invalid TOML is the decode error, not a recursion error; extra depth unpinned
 # ---------------------------------------------------------------------------
 
 
 def test_recursion_error_distinct_from_decode_error():
     """``val=.`` fails as the decode error, a kind of value error.
 
-    Extra nesting past the interpreter recursion limit is not scored
-    (FP-01 L116): how much farther a document may nest, and whether a
-    still-deeper document fails because the interpreter refuses a deeper
-    call, is the implementer's. This test does not require RecursionError
+    Nesting past the FP-01 depths is unspecified: how much farther a
+    document may nest, and how a still-deeper document fails, is the
+    implementer's. This test does not require RecursionError
     at extra depth.
     """
     decode_exc = _refuse_invalid(_NAMED_VAL_DOT)
@@ -799,7 +798,7 @@ def test_recursion_error_distinct_from_decode_error():
 
 
 # ---------------------------------------------------------------------------
-# I. FP-01 / FP-02 named conflicts fail the same way (L189)
+# I. FP-01 / FP-02 named conflicts fail the same way
 # ---------------------------------------------------------------------------
 
 
@@ -815,6 +814,14 @@ def test_frozen_or_overwrite_is_decode_error_with_location():
     runtime_source = f"{key} = {n}\n[{key}.b.c.d]"
     runtime_exc = _refuse_invalid(runtime_source)
     require_interior_place(runtime_exc, runtime_source)
+    # An array-of-tables header that would overwrite a value is placed
+    # inside the document too, even as the last thing in it (FP-04).
+    aot_key = runtime_token()
+    aot_neighbor = _neighbor(f"{aot_key} = true")
+    require_bool(require_path(aot_neighbor, aot_key), True)
+    aot_source = f"{aot_key} = true\n[[{aot_key}]]"
+    aot_exc = _refuse_invalid(aot_source)
+    require_interior_place(aot_exc, aot_source)
 
 
 def test_frozen_inline_table_mutated_afterwards_is_decode_error():

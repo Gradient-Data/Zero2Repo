@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .docker_env import Container, _shq
+from .images import _agent_user_snippet
 
 __all__ = [
     "JudgeOutcome",
@@ -232,6 +233,21 @@ def _pytest_user() -> str:
     return (os.environ.get("CODING_BENCH_PYTEST_USER") or "cbagent").strip() or "cbagent"
 
 
+def _ensure_pytest_user(container: Container) -> None:
+    """Create ``cbagent`` when the judged image lacks it.
+
+    final_judge.py drops pytest to that user only if it exists. A bare
+    ``:deliverable`` (canaries, pipeline probes) would otherwise run the suite
+    as root and pass tests that every ``:agent`` trial fails.
+    """
+    res = container.exec(_agent_user_snippet(), timeout_sec=60.0)
+    if res.exit_code != 0:
+        raise RuntimeError(
+            f"cannot create judge user cbagent (exit {res.exit_code}): "
+            f"{(res.tail or '').strip()[-400:]}"
+        )
+
+
 def _probe_pip_gate(container: Container) -> None:
     """Refuse to judge when the site .pth hook is unread for the pytest user."""
     user = _pytest_user()
@@ -272,8 +288,14 @@ def run_judge(
     artifacts_dir: Path,
     denylist=None,
     judge_bans: list[str] | tuple[str, ...] = (),
+    test_seed: str | None = None,
 ) -> JudgeOutcome:
-    """Inject hidden tests + task.toml, run final_judge, parse the reward."""
+    """Inject hidden tests + task.toml, run final_judge, parse the reward.
+
+    *test_seed* pins the hidden tests' runtime randomisation (``CB_TEST_SEED``),
+    so a rejudge can replay the scenario values of an earlier judge. Trials leave
+    it unset and the tests draw a fresh seed.
+    """
     if not (Path(tests_final_dir) / "test_manifest.json").is_file():
         raise RuntimeError(f"hidden tests cache invalid: {tests_final_dir}")
     if not FINAL_JUDGE_SRC.is_file():
@@ -291,6 +313,7 @@ def run_judge(
     container.cp_to(LAUNCHER_SRC, CONTAINER_LAUNCHER_PATH)
     ban_env = _import_ban_env(denylist)
     container.exec(f"mkdir -p {CONTAINER_VERIFIER_DIR}")
+    _ensure_pytest_user(container)
 
     env = {
         "CODING_BENCH_WORKSPACE": CONTAINER_APP,
@@ -300,6 +323,8 @@ def run_judge(
         "CODING_BENCH_PYTEST_LAUNCHER": CONTAINER_LAUNCHER_PATH,
         **ban_env,
     }
+    if test_seed is not None:
+        env["CB_TEST_SEED"] = str(test_seed)
     bans = [str(x).strip() for x in judge_bans if str(x).strip()]
     if bans:
         env["CODING_BENCH_JUDGE_BANS"] = ",".join(bans)

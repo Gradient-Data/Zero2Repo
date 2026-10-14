@@ -60,9 +60,19 @@ class TrialResult:
     host_arch: str | None = None
     emulated: bool | None = None
     infra_signals: dict[str, int] = field(default_factory=dict)
+    # Opens of banned-implementation files and monitor interference, per round.
+    access_events: list[dict] = field(default_factory=list)
+    access_rounds_stopped: int = 0
     run_valid: bool = True
     invalid_reason: str | None = None
     substrates_missing: list[str] = field(default_factory=list)
+    token_usage: dict = field(default_factory=dict)
+    # Hostnames blocked via /etc/hosts during solve (empty with --no-block-github).
+    blocked_hosts: list[str] = field(default_factory=list)
+    # Post-trial transcript behaviour scan (``transcript_scan``). Informational:
+    # never changes reward; a human reviews trials with ``needs_review``.
+    needs_review: bool = False
+    transcript_scan: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -115,7 +125,40 @@ def _aggregate(results: list[TrialResult]) -> dict:
             if r.invalid_reason and str(r.invalid_reason).startswith("judge:")
         ),
         "emulated_trials": sum(1 for r in results if r.emulated),
+        "needs_review_trials": sum(1 for r in results if r.needs_review),
+        "token_usage": _aggregate_usage([r.token_usage for r in results]),
     }
+
+
+_USAGE_KEYS = (
+    "input_tokens",
+    "cache_read_tokens",
+    "cache_write_tokens",
+    "cache_write_1h_tokens",
+    "output_tokens",
+    "reasoning_tokens",
+    "total_tokens",
+)
+
+
+def _aggregate_usage(records: list[dict]) -> dict:
+    """Sum per-trial token usage and cost; incomplete and unpriced trials are counted."""
+    out: dict = {key: 0 for key in _USAGE_KEYS}
+    cost = 0.0
+    for record in records:
+        for key in _USAGE_KEYS:
+            value = record.get(key) if record else None
+            if isinstance(value, int):
+                out[key] += value
+        value = (record or {}).get("cost_usd")
+        if isinstance(value, (int, float)):
+            cost += value
+    out["cost_usd"] = round(cost, 6)
+    out["incomplete_trials"] = sum(1 for record in records if not (record or {}).get("complete"))
+    out["unpriced_trials"] = sum(
+        1 for record in records if not isinstance((record or {}).get("cost_usd"), (int, float))
+    )
+    return out
 
 
 def format_reward_matrix(results: list[TrialResult]) -> str:
@@ -145,6 +188,10 @@ def format_reward_matrix(results: list[TrialResult]) -> str:
                 else:
                     mark = "PASS" if r.passed else "FAIL"
                     token = f"{mark}({r.terminal_status})"
+            if r is not None and r.needs_review:
+                token += "*REVIEW"
             row.append(token.ljust(col_w))
         lines.append("  ".join(row))
+    if any(r.needs_review for r in results):
+        lines.append("*REVIEW: transcript scan flagged the trial (see transcript_scan.json); reward unchanged.")
     return "\n".join(lines)

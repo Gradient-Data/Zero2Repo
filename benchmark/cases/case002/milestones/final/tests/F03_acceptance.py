@@ -6,8 +6,9 @@ do-not-override versus explicit override; no-value versus empty string;
 path / stream / no-arg locate / FIFO source selection; success versus
 failure reports; extra-reporting missing-file diagnostic; disable-switch
 truthy spellings; caller-named encoding; expansion on by default versus
-off leaving dollar-brace text literal. Return booleans, log wording,
-exception types, and logger names are not pinned.
+off leaving dollar-brace text literal. Return booleans, exception
+types, and logger names are not pinned; the missing-file diagnostic is
+read as the line that names the path (Interface Contract).
 """
 
 from __future__ import annotations
@@ -30,7 +31,8 @@ from _helpers import (
     require_environ_absent,
     require_labeled_line,
     require_script_success,
-    strip_path_covariates,
+    require_line_naming,
+    require_no_line_naming,
     unique_token,
 )
 
@@ -789,13 +791,8 @@ def test_extra_reporting_missing_file_diagnostic_contrast():
         "missing-file diagnostic"
     )
 
-    paths = [missing, empty_path]
-    on_stripped = strip_path_covariates(on_text, paths)
-    empty_stripped = strip_path_covariates(empty_text, paths)
-    assert on_stripped != empty_stripped, (
-        "after stripping paths, missing-file extra reporting is not "
-        "distinguishable from extra reporting on an existing empty file"
-    )
+    require_line_naming(on_text, missing, origin="extra-on missing")
+    require_no_line_naming(empty_text, empty_path, origin="extra-on empty file")
 
 
 # ---------------------------------------------------------------------------

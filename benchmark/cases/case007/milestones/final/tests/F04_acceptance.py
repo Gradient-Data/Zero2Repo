@@ -1,8 +1,8 @@
 # feature: F04
 """FP-04: otpauth provisioning URI generation.
 
-Assertions follow Full_PRD.original.md FP-04 (L182–L211) plus shared
-defaults at L29–L31, L44, L61–L63, and L73. Failure message text,
+Assertions follow the Full PRD FP-04 plus the PRD's shared defaults
+(Terminology, Non-functional constraints). Failure message text,
 exception class names, unpublished full-URI goldens, HMAC ``period``,
 and URI parsing (FP-05) are not pinned.
 """
@@ -404,7 +404,7 @@ def test_hmac_uri_writes_counter_zero_twelve_and_override_zero():
 
     # Overlay proof is a first build, not a later build of the helper above:
     # a fresh helper stored as 7 whose first build is asked for 0 must write
-    # counter=0 (zero written, not omitted). L184 / L195.
+    # counter=0 (zero written, not omitted).
     overlay_stored_7 = require_helper(
         call(HOTP, WRN3_SECRET, name=NAMED_ACCOUNT_EXAMPLE, initial_count=7)
     )

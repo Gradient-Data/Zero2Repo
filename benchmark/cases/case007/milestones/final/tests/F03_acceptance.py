@@ -1,10 +1,8 @@
 # feature: F03
 """FP-03: Time-based one-time passwords (TOTP).
 
-Assertions follow Full_PRD.original.md FP-03 (L148–L178) plus the
-shared defaults at L19–L20, L23–L24, L26–L28, L43, L55–L59, L73, and
-L82. Failure message text, exception class names, True/False rendering
-of a check, and URI / HMAC-counter behavior are not pinned.
+Assertions follow the Full PRD FP-03 plus the PRD's shared defaults
+(Terminology, Non-functional constraints). Failure message text, exception class names, and URI / HMAC-counter behavior are not pinned.
 """
 
 from __future__ import annotations
@@ -596,7 +594,7 @@ def test_matching_step_returns_5_6_7_rejects_195979_and_does_not_remember():
         "matching-step window 1 at Unix 200 must yield 7 for 681610: "
         f"got={step_plus!r}"
     )
-    # L165/L173: no time-step number, and a negative result — not a
+    # no time-step number, and a negative result — not a
     # successful non-integer return equal to an accepted ordinary check.
     check_success = success_carrier_at(helper, OFFSET_INSTANT)
     rejected_step = matching_step_at(

@@ -112,7 +112,9 @@
     "raw.githubusercontent.com/jmespath/jmespath.py",
     "saryerwinnie",
     "scripts/abnfstress",
-    "scripts/astrender"
+    "scripts/astrender",
+    "james-saryerwinnie",
+    "james_saryerwinnie"
   ],
   "runner": {
     "schema_version": 1,

@@ -10,6 +10,8 @@ exit-code numbers are not pinned.
 
 from __future__ import annotations
 
+import re
+
 from pathlib import Path
 
 from _harness import reserve_loopback_port, token, workspace
@@ -52,7 +54,6 @@ from _helpers import (
     require_server_holds_lock,
     require_server_lacks_lock,
     require_success,
-    require_unknown_server_support_prompt_unlike,
     run_lock,
     run_locks,
     run_post_checkout,
@@ -1238,13 +1239,8 @@ def test_lock_verification_disabled_does_not_refuse_foreign_lock():
             require_put_of(_records_since(svc_off, start), payload)
 
 
-def test_lock_verification_unknown_does_not_refuse_foreign_lock():
-    """Enabled verify refuses a foreign-locked update after a verify exchange.
-
-    Unset locks-verify is not required to succeed or PUT: L316 names
-    prompt on unknown server support, which may fail without a terminal.
-    Unset is not treated as forced-off.
-    """
+def test_lock_verification_enabled_refuses_foreign_lock_after_verify():
+    """Enabled verify refuses a foreign-locked update after a verify exchange (FP-10)."""
     payload = _payload(pad=25)
     rel = _rel("unk")
     with locking_api_server(payloads=[payload]) as svc_on:
@@ -1264,26 +1260,16 @@ def test_lock_verification_unknown_does_not_refuse_foreign_lock():
             require_locking_verify_received(svc_on)
 
 
-def test_lock_verification_unknown_prompts_on_unknown_server_support():
-    """Unset locks-verify prompts on unknown server support, unlike on and off.
+def test_lock_verification_unset_writes_locksverify_advisory():
+    """Unset locks-verify: push writes a stderr advisory naming the setting (FP-10).
 
-    L316 names a third configuration: prompt when server support is
-    unknown. Forced-on still consults verify and PUTs on a path nobody
-    else holds; forced-off still PUTs. Unset must leave a leftover
-    unlike both after covariate stripping. Success or PUT on unset is
-    not required: a prompt that cannot complete without a terminal may
-    fail the push.
+    The Contract states the carrier: standard error, naming the
+    ``lfs.<endpoint-url>.locksverify`` key (wording free). Forced-on and
+    forced-off pushes write no such advisory. Success or PUT on the unset
+    arm is not required.
     """
     payload = _payload(pad=26)
     rel = _rel("pr")
-    oid = sha256_hex(payload)
-    try:
-        payload_text = payload.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise AssertionError(
-            "payload is not UTF-8; cannot strip it as an input-byte "
-            f"covariate: {exc}"
-        ) from exc
 
     def _push(svc, configure):
         with workspace() as ws:
@@ -1301,74 +1287,42 @@ def test_lock_verification_unknown_prompts_on_unknown_server_support():
                 f"verifies={verifies_before}->{verifies_after} "
                 f"visible={caller_visible(result)!r}"
             )
-            return (
-                result,
-                str(ws.path.resolve()),
-                recs,
-                verifies_before,
-                verifies_after,
-            )
+            return result, recs, verifies_after > verifies_before
 
     with locking_api_server(payloads=[payload]) as svc:
-        unk_a, path_ua, _recs_ua, _v_ua, _va_ua = _push(
-            svc, unset_lock_verification
-        )
-        unk_b, path_ub, _recs_ub, _v_ub, _va_ub = _push(
-            svc, unset_lock_verification
-        )
-        on_a, path_oa, recs_oa, v_oa, va_oa = _push(
-            svc, enable_lock_verification
-        )
-        on_b, path_ob, recs_ob, v_ob, va_ob = _push(
-            svc, enable_lock_verification
-        )
-        off_a, path_ofa, recs_ofa, _v_ofa, _va_ofa = _push(
-            svc, disable_lock_verification
-        )
-        off_b, path_ofb, recs_ofb, _v_ofb, _va_ofb = _push(
-            svc, disable_lock_verification
-        )
+        unk_a, _, _ = _push(svc, unset_lock_verification)
+        unk_b, _, _ = _push(svc, unset_lock_verification)
+        on_a, recs_oa, verified_oa = _push(svc, enable_lock_verification)
+        on_b, recs_ob, verified_ob = _push(svc, enable_lock_verification)
+        off_a, recs_ofa, _ = _push(svc, disable_lock_verification)
+        off_b, recs_ofb, _ = _push(svc, disable_lock_verification)
         require_success(on_a)
         require_success(on_b)
         require_put_of(recs_oa, payload)
         require_put_of(recs_ob, payload)
-        assert va_oa > v_oa, (
+        assert verified_oa, (
             "forced-on live baseline recorded no new verify-class exchange"
         )
-        assert va_ob > v_ob, (
+        assert verified_ob, (
             "forced-on live baseline recorded no new verify-class exchange"
         )
         require_success(off_a)
         require_success(off_b)
         require_put_of(recs_ofa, payload)
         require_put_of(recs_ofb, payload)
-        strip = [
-            path_ua,
-            path_ub,
-            path_oa,
-            path_ob,
-            path_ofa,
-            path_ofb,
-            rel,
-            payload_text,
-            oid,
-            str(len(payload)),
-            svc.url,
-            "origin",
-            "true",
-            "false",
-            "lfs.locksverify",
-        ]
-        leftover = require_unknown_server_support_prompt_unlike(
-            unk_a,
-            unk_b,
-            on_a,
-            on_b,
-            off_a,
-            off_b,
-            strip=strip,
-        )
-        print(f"unknown server-support prompt leftover={leftover!r}")
+        advisory = re.compile(r"lfs\.(?:\S+\.)?locksverify")
+        for arm, result in (("unset-a", unk_a), ("unset-b", unk_b)):
+            assert advisory.search(result.stderr_text), (
+                f"{arm}: unset locks-verify push wrote no stderr advisory "
+                f"naming the locksverify setting: {result.stderr_text!r}"
+            )
+        for arm, result in (
+            ("on-a", on_a), ("on-b", on_b), ("off-a", off_a), ("off-b", off_b)
+        ):
+            assert not advisory.search(result.stderr_text), (
+                f"{arm}: a configured locks-verify push still wrote the "
+                f"unset-setting advisory: {result.stderr_text!r}"
+            )
 
 
 # ---------------------------------------------------------------------------

@@ -40,10 +40,12 @@ from _helpers import (
     assert_ansi_escape_absent,
     assert_ansi_escape_present,
     assert_labeled_fields_unlike,
+    assert_marker_absent,
     assert_success_marker_present,
     assert_usage_class,
     automatic_env_name,
     labeled_stdout_field,
+    marker_occurs,
     require_usage_names_option,
     run_python_on_tty,
     styled_stdout_remainder,
@@ -341,10 +343,10 @@ def test_toplevel_prefix_fills_omitted_option():
     omitted = _dispatch(leaf, [], auto_envvar_prefix=prefix)
     print(f"filled={filled.stdout_text!r} omitted={omitted.stdout_text!r} key={key!r}", flush=True)
     assert_success_marker_present(filled, greeting)
-    assert f"V:{value}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"V:{value}")
     assert_success_marker_present(omitted, greeting)
-    assert f"V:{defaulted}" in _stdout(omitted)
-    assert f"V:{value}" not in _stdout(omitted)
+    assert marker_occurs(_stdout(omitted), f"V:{defaulted}")
+    assert_marker_absent(_stdout(omitted), f"V:{value}")
 
 
 def test_dashed_command_and_option_names_build_prefix_key():
@@ -383,10 +385,10 @@ def test_dashed_command_and_option_names_build_prefix_key():
         flush=True,
     )
     assert_success_marker_present(filled, greeting)
-    assert f"V:{value}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"V:{value}")
     assert_success_marker_present(wrong, greeting)
-    assert f"V:{other}" not in _stdout(wrong)
-    assert f"V:{defaulted}" in _stdout(wrong)
+    assert_marker_absent(_stdout(wrong), f"V:{other}")
+    assert marker_occurs(_stdout(wrong), f"V:{defaulted}")
 
 
 def test_each_command_name_is_in_the_prefix_key():
@@ -431,9 +433,9 @@ def test_each_command_name_is_in_the_prefix_key():
         flush=True,
     )
     assert_success_marker_present(filled, greeting)
-    assert f"V:{value}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"V:{value}")
     assert_success_marker_present(contrast, greeting)
-    assert f"V:{other}" not in _stdout(contrast)
+    assert_marker_absent(_stdout(contrast), f"V:{other}")
 
 
 def test_dashed_prefix_is_normalized_in_the_key():
@@ -462,9 +464,9 @@ def test_dashed_prefix_is_normalized_in_the_key():
         flush=True,
     )
     assert_success_marker_present(filled, greeting)
-    assert f"V:{value}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"V:{value}")
     assert_success_marker_present(wrong, greeting)
-    assert f"V:{other}" not in _stdout(wrong)
+    assert_marker_absent(_stdout(wrong), f"V:{other}")
 
 
 def test_option_may_opt_out_of_automatic_prefix():
@@ -548,13 +550,13 @@ def test_opted_out_option_uses_prefix_key_only_if_explicitly_named():
         flush=True,
     )
     assert_success_marker_present(via_named, greeting)
-    assert f"V:{prefix_val}" in _stdout(via_named)
+    assert marker_occurs(_stdout(via_named), f"V:{prefix_val}")
     assert_success_marker_present(via_prefix_only, greeting)
-    assert f"V:{prefix_val}" not in _stdout(via_prefix_only)
-    assert f"V:{defaulted}" in _stdout(via_prefix_only)
+    assert_marker_absent(_stdout(via_prefix_only), f"V:{prefix_val}")
+    assert marker_occurs(_stdout(via_prefix_only), f"V:{defaulted}")
     assert_success_marker_present(via_other, greeting)
-    assert f"V:{named_val}" in _stdout(via_other)
-    assert f"V:{prefix_val}" not in _stdout(via_other)
+    assert marker_occurs(_stdout(via_other), f"V:{named_val}")
+    assert_marker_absent(_stdout(via_other), f"V:{prefix_val}")
 
 
 def test_automatic_prefix_does_not_fill_sibling_argument():
@@ -611,8 +613,8 @@ def test_command_line_beats_prefix_environment():
     )
     print(f"cli-beats={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"V:{cli_val}" in _stdout(result)
-    assert f"V:{env_val}" not in _stdout(result)
+    assert marker_occurs(_stdout(result), f"V:{cli_val}")
+    assert_marker_absent(_stdout(result), f"V:{env_val}")
 
 
 def test_required_option_satisfied_from_prefix_key():
@@ -635,7 +637,7 @@ def test_required_option_satisfied_from_prefix_key():
     missing = _dispatch(leaf, [], auto_envvar_prefix=prefix)
     print(f"req-prefix={filled.stdout_text!r} miss={missing.stderr_text!r}", flush=True)
     assert_success_marker_present(filled, greeting)
-    assert f"T:{expected}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"T:{expected}")
     assert_usage_class(missing, greeting)
 
 
@@ -667,11 +669,11 @@ def test_nested_default_map_used_when_flag_omitted_and_beaten_by_cli():
     beaten = _dispatch(cli, [child_name, flag, cli_val], default_map=nested)
     print(f"map={omitted.stdout_text!r} cli={beaten.stdout_text!r}", flush=True)
     assert_success_marker_present(omitted, greeting)
-    assert f"V:{map_val}" in _stdout(omitted)
-    assert f"V:{declared}" not in _stdout(omitted)
+    assert marker_occurs(_stdout(omitted), f"V:{map_val}")
+    assert_marker_absent(_stdout(omitted), f"V:{declared}")
     assert_success_marker_present(beaten, greeting)
-    assert f"V:{cli_val}" in _stdout(beaten)
-    assert f"V:{map_val}" not in _stdout(beaten)
+    assert marker_occurs(_stdout(beaten), f"V:{cli_val}")
+    assert_marker_absent(_stdout(beaten), f"V:{map_val}")
 
 
 def test_wrong_nested_key_does_not_fill_this_child():
@@ -703,11 +705,11 @@ def test_wrong_nested_key_does_not_fill_this_child():
         flush=True,
     )
     assert_success_marker_present(right, greeting)
-    assert f"V:{map_val}" in _stdout(right)
-    assert f"V:{declared}" not in _stdout(right)
+    assert marker_occurs(_stdout(right), f"V:{map_val}")
+    assert_marker_absent(_stdout(right), f"V:{declared}")
     assert_success_marker_present(wrong, greeting)
-    assert f"V:{map_val}" not in _stdout(wrong)
-    assert f"V:{declared}" in _stdout(wrong)
+    assert_marker_absent(_stdout(wrong), f"V:{map_val}")
+    assert marker_occurs(_stdout(wrong), f"V:{declared}")
 
 
 def test_default_map_from_command_declaration():
@@ -732,8 +734,8 @@ def test_default_map_from_command_declaration():
     result = _dispatch(cli, [child_name])
     print(f"declared-map={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"V:{map_val}" in _stdout(result)
-    assert f"V:{declared}" not in _stdout(result)
+    assert marker_occurs(_stdout(result), f"V:{map_val}")
+    assert_marker_absent(_stdout(result), f"V:{declared}")
 
 
 def test_nested_default_map_fills_omitted_argument():
@@ -765,10 +767,10 @@ def test_nested_default_map_fills_omitted_argument():
     )
     print(f"arg-map={filled.stdout_text!r} wrong={wrong.stdout_text!r}", flush=True)
     assert_success_marker_present(filled, greeting)
-    assert f"T:{expected}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"T:{expected}")
     assert_success_marker_present(wrong, greeting)
-    assert f"T:{declared * 3 + 7}" in _stdout(wrong)
-    assert f"T:{expected}" not in _stdout(wrong)
+    assert marker_occurs(_stdout(wrong), f"T:{declared * 3 + 7}")
+    assert_marker_absent(_stdout(wrong), f"T:{expected}")
 
 
 def test_default_map_string_splits_like_environment():
@@ -922,9 +924,9 @@ def test_nested_map_delivers_converted_integer():
     )
     print(f"imap={from_map.stdout_text!r} icli={from_cli.stdout_text!r}", flush=True)
     assert_success_marker_present(from_map, greeting)
-    assert f"T:{map_n * 3 + 7}" in _stdout(from_map)
+    assert marker_occurs(_stdout(from_map), f"T:{map_n * 3 + 7}")
     assert_success_marker_present(from_cli, greeting)
-    assert f"T:{cli_n * 3 + 7}" in _stdout(from_cli)
+    assert marker_occurs(_stdout(from_cli), f"T:{cli_n * 3 + 7}")
 
 
 def test_required_option_satisfied_from_nested_map():
@@ -951,7 +953,7 @@ def test_required_option_satisfied_from_nested_map():
     missing = _dispatch(cli, [child_name], default_map={child_name: {}})
     print(f"req-map={filled.stdout_text!r} miss={missing.stderr_text!r}", flush=True)
     assert_success_marker_present(filled, greeting)
-    assert f"T:{value * 3 + 7}" in _stdout(filled)
+    assert marker_occurs(_stdout(filled), f"T:{value * 3 + 7}")
     assert_usage_class(missing, greeting)
 
 
@@ -1054,8 +1056,8 @@ def test_source_distinguishes_five_origins_for_the_same_value():
     )
     for result in (cli, environ, from_map, declared, prompted):
         assert_success_marker_present(result, greeting)
-        assert f"T:{expected}" in _stdout(result)
-        assert f"T:{other_n * 3 + 7}" not in _stdout(result)
+        assert marker_occurs(_stdout(result), f"T:{expected}")
+        assert_marker_absent(_stdout(result), f"T:{other_n * 3 + 7}")
     assert_labeled_fields_unlike(
         cli, environ, from_map, declared, prompted, label="SRC:", covariates=covariates
     )
@@ -1097,10 +1099,10 @@ def test_command_line_source_does_not_consume_prompt_stdin():
     )
     print(f"cli-stdin={via_cli.stdout_text!r} prompt={via_prompt.stdout_text!r}", flush=True)
     assert_success_marker_present(via_cli, greeting)
-    assert f"T:{number * 3 + 7}" in _stdout(via_cli)
-    assert f"T:{other_n * 3 + 7}" not in _stdout(via_cli)
+    assert marker_occurs(_stdout(via_cli), f"T:{number * 3 + 7}")
+    assert_marker_absent(_stdout(via_cli), f"T:{other_n * 3 + 7}")
     assert_success_marker_present(via_prompt, greeting)
-    assert f"T:{number * 3 + 7}" in _stdout(via_prompt)
+    assert marker_occurs(_stdout(via_prompt), f"T:{number * 3 + 7}")
     assert_labeled_fields_unlike(
         via_cli,
         via_prompt,
@@ -1160,7 +1162,7 @@ def test_source_distinguishes_cli_map_declared_for_argument():
     )
     for result in (via_cli, via_map, via_def):
         assert_success_marker_present(result, greeting)
-        assert f"T:{expected}" in _stdout(result)
+        assert marker_occurs(_stdout(result), f"T:{expected}")
     assert_labeled_fields_unlike(
         via_cli,
         via_map,
@@ -1213,7 +1215,7 @@ def test_undeclared_extra_key_is_not_converted_or_tracked():
     )
     print(f"undeclared-map={mapped.stdout_text!r}", flush=True)
     assert_success_marker_present(mapped, greeting)
-    assert f"T:{number * 3 + 7}" in _stdout(mapped)
+    assert marker_occurs(_stdout(mapped), f"T:{number * 3 + 7}")
     assert labeled_stdout_field(mapped, "XSRC:") == "NO_TRACKED_SOURCE"
     assert labeled_stdout_field(mapped, "SRC:") != labeled_stdout_field(mapped, "XSRC:")
 
@@ -1259,7 +1261,7 @@ def test_undeclared_extra_key_is_not_converted_or_tracked():
     print(f"undeclared-invoke={invoked.stdout_text!r}", flush=True)
     assert_success_marker_present(invoked, greeting)
     assert_success_marker_present(invoked, target_hi)
-    assert f"T:{number * 3 + 7}" in _stdout(invoked)
+    assert marker_occurs(_stdout(invoked), f"T:{number * 3 + 7}")
     assert labeled_stdout_field(invoked, "TXSRC:") == "NO_TRACKED_SOURCE"
     assert "TEXMARK:RAW" in _stdout(invoked)
     assert extra_text in labeled_stdout_field(invoked, "TEXTRA:")
@@ -1267,7 +1269,7 @@ def test_undeclared_extra_key_is_not_converted_or_tracked():
     declared_run = _dispatch(target, [opt_flag, extra_text])
     print(f"declared-int={declared_run.stdout_text!r}", flush=True)
     assert_success_marker_present(declared_run, target_hi)
-    assert f"T:{int(extra_text) * 3 + 7}" in _stdout(declared_run)
+    assert marker_occurs(_stdout(declared_run), f"T:{int(extra_text) * 3 + 7}")
     assert labeled_stdout_field(declared_run, "TSRC:") != "NO_TRACKED_SOURCE"
 
 
@@ -1425,7 +1427,7 @@ def test_lowercase_normalizer_matches_option_name():
         flush=True,
     )
     assert_success_marker_present(lowered, greeting)
-    assert f"V:{value}" in _stdout(lowered)
+    assert marker_occurs(_stdout(lowered), f"V:{value}")
     assert_usage_class(missing, greeting)
     assert_usage_class(identity, greeting)
     assert_usage_class(alien, greeting)
@@ -1454,7 +1456,9 @@ def test_lowercase_normalizer_matches_choice_value():
         flush=True,
     )
     assert_success_marker_present(lowered, greeting)
-    assert f"V:{member}" in _stdout(lowered) or f"V:{upper}" in _stdout(lowered)
+    assert marker_occurs(_stdout(lowered), f"V:{member}") or marker_occurs(
+        _stdout(lowered), f"V:{upper}"
+    )
     assert_usage_class(missing, greeting)
     assert_usage_class(identity, greeting)
     assert_usage_class(other, greeting)

@@ -604,23 +604,23 @@ def event_is_kind(event: Any, kind: str) -> bool:
     return isinstance(event, event_ctor(kind))
 
 
-def public_get_headers(content_length: int = 10) -> list[tuple[str, str]]:
-    """Headers for the public GET / Host example.com Content-Length walk."""
+def fixed_get_headers(content_length: int = 10) -> list[tuple[str, str]]:
+    """Headers for the fixed GET / Host example.com Content-Length walk."""
     return [("Host", "example.com"), ("Content-Length", str(content_length))]
 
 
-def send_public_get(conn: Any, *, content_length: int = 10) -> bytes:
-    """Send the public GET walk on *conn* and return the encoded bytes."""
-    event = make_request(headers=public_get_headers(content_length))
+def send_fixed_get(conn: Any, *, content_length: int = 10) -> bytes:
+    """Send the fixed GET walk on *conn* and return the encoded bytes."""
+    event = make_request(headers=fixed_get_headers(content_length))
     encoded = require_send_bytes(send_event(conn, event))
     print(f"public GET encoded len={len(encoded)}", flush=True)
     return encoded
 
 
 def client_server_after_public_get() -> tuple[Any, Any, bytes, Any]:
-    """Client send + server feed/pull of the public GET. Returns both sides."""
+    """Client send + server feed/pull of the fixed GET. Returns both sides."""
     client = client_connection()
-    encoded = send_public_get(client)
+    encoded = send_fixed_get(client)
     server = server_connection()
     fed = feed_bytes(server, encoded)
     if fed.exception is not None:
@@ -684,8 +684,8 @@ __all__ = (
     "header_index",
     "neighbor_request_pulls",
     "neighbor_response_pulls",
-    "public_get_headers",
-    "send_public_get",
+    "fixed_get_headers",
+    "send_fixed_get",
     "make_data",
     "make_eom",
     "make_informational",

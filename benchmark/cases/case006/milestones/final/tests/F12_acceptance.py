@@ -1,7 +1,7 @@
 # feature: F12
 """Shell completion (FP-12).
 
-Assertions stay at the PRD's precision: the L418 complete-variable name,
+Assertions stay at the PRD's precision: the FP-12 complete-variable name,
 the four built-in shells' source and complete instructions, suggestion
 rules (visible names, dash-gated options including --help, choice prefix,
 file/path carrying the incomplete token, directories-only distinguishable
@@ -165,7 +165,7 @@ def _require_name(stream: str, name: str, *, present: bool) -> None:
 
 
 # ---------------------------------------------------------------------------
-# A. Entry variable, install form, ignore (L418, L422, L437)
+# A. Entry variable, install form, ignore (FP-12)
 # ---------------------------------------------------------------------------
 
 
@@ -1088,7 +1088,7 @@ def test_bash_file_completion_registers_and_lists_directory_candidates():
             "fi\n"
             f'reg="$(complete -p {exe})"\n'
             'printf "REGISTRATION:%s\\n" "$reg"\n'
-            # Registration-script syntax is not pinned (Contract L35 / F12
+            # Registration-script syntax is not pinned (Contract §8 / F12
             # header). Accept -F, -C, or options-only such as -o default.
             r"""fn=$(printf '%s\n' "$reg" | awk '{for(i=1;i<=NF;i++) if($i=="-F") print $(i+1)}' | sed "s/^[\"']//;s/[\"']$//")"""
             "\n"

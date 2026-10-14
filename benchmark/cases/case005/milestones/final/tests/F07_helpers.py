@@ -47,11 +47,10 @@ from F04_helpers import (
 )
 
 
-# Waiting-flag reports are identified by role-asymmetric visibility
-# (PRD line 301), not by a published attribute spelling. Bound after an
-# HTTP/1.1 Expect 100-continue request with a non-empty body.
-_CLIENT_WAITING_NAME: str | None = None
-_THEY_WAITING_NAME: str | None = None
+# Waiting-flag reports are the two attributes the Interface Contract
+# names. bind_waiting_reports still checks their role split.
+_CLIENT_WAITING_NAME: str = "client_is_waiting_for_100_continue"
+_THEY_WAITING_NAME: str = "they_are_waiting_for_100_continue"
 
 
 def _public_bools(conn: Any) -> dict[str, bool]:
@@ -90,80 +89,47 @@ def _public_bools(conn: Any) -> dict[str, bool]:
 
 
 def bind_waiting_reports(client: Any, server: Any) -> tuple[str, str]:
-    """Identify the two waiting reports by the role split on this pair.
+    """Check the two stated waiting reports on a waiting pair.
 
-    After an HTTP/1.1 Expect 100-continue request with a non-empty body:
-    the client-waiting report is the public boolean that is true on both
-    the client-role and server-role connections; the they-are-waiting
-    report is the public boolean that is true only on the server-role
-    connection and false on the client-role connection. Missing reports
-    or a probe that is not a bool raise — never rewritten as False.
-
-    Does not match a checkout spelling. The names this checkout or an
-    equivalent form happen to use are not part of the assertion.
+    After an HTTP/1.1 Expect 100-continue request has been sent by
+    *client* and pulled by *server*: ``client_is_waiting_for_100_continue``
+    is true on both connections, and ``they_are_waiting_for_100_continue``
+    is true on the server-role connection and false on the client-role
+    connection. Missing reports or a value that is not exactly a bool
+    raise — never rewritten as False.
     """
-    global _CLIENT_WAITING_NAME, _THEY_WAITING_NAME
-    client_bools = _public_bools(client)
-    server_bools = _public_bools(server)
-    shared = set(client_bools) & set(server_bools)
-    both_true = sorted(
-        name
-        for name in shared
-        if client_bools[name] is True and server_bools[name] is True
-    )
-    server_only = sorted(
-        name
-        for name in shared
-        if server_bools[name] is True and client_bools[name] is False
-    )
-    if not both_true:
+    flags = {}
+    for label, conn in (("client", client), ("server", server)):
+        for name in (_CLIENT_WAITING_NAME, _THEY_WAITING_NAME):
+            raw = attr(conn, name)
+            if type(raw) is not bool:
+                raise HarnessError(
+                    f"{label} connection {name} is not a bool: {raw!r}"
+                )
+            flags[(label, name)] = raw
+    if not (flags[("client", _CLIENT_WAITING_NAME)] is True
+            and flags[("server", _CLIENT_WAITING_NAME)] is True):
         raise AssertionError(
-            "no public boolean is true on both the client-role and "
-            "server-role connections after Expect 100-continue"
+            "client_is_waiting_for_100_continue is not true on both the "
+            "client-role and server-role connections after Expect 100-continue"
         )
-    if len(both_true) != 1:
+    if not (flags[("server", _THEY_WAITING_NAME)] is True
+            and flags[("client", _THEY_WAITING_NAME)] is False):
         raise AssertionError(
-            "more than one public boolean is true on both connections; "
-            "cannot identify the client-waiting report from the role split"
+            "they_are_waiting_for_100_continue is not true only on the "
+            "server-role connection after Expect 100-continue"
         )
-    if not server_only:
-        raise AssertionError(
-            "no public boolean is true only on the server-role connection "
-            "and false on the client-role connection after Expect 100-continue"
-        )
-    if len(server_only) != 1:
-        raise AssertionError(
-            "more than one public boolean is true only on the server-role "
-            "connection; cannot identify the they-are-waiting report from "
-            "the role split"
-        )
-    _CLIENT_WAITING_NAME = both_true[0]
-    _THEY_WAITING_NAME = server_only[0]
     print(
-        "waiting_reports bound by role split: "
-        "client-waiting true on both, they-waiting true only on server",
+        "waiting_reports checked: client-waiting true on both, "
+        "they-waiting true only on server",
         flush=True,
     )
     return _CLIENT_WAITING_NAME, _THEY_WAITING_NAME
 
 
 def _ensure_waiting_reports() -> tuple[str, str]:
-    """Return bound report names, discovering from a fresh Expect pair if needed.
-
-    Discovery is the HTTP/1.1 Expect Content-Length 100 walk line 322
-    names. A later HTTP/1.0 or no-Expect arm then reads those same
-    reports. Failure to classify raises; it is never "not waiting".
-    """
-    if _CLIENT_WAITING_NAME is not None and _THEY_WAITING_NAME is not None:
-        return _CLIENT_WAITING_NAME, _THEY_WAITING_NAME
-    client = client_connection()
-    server = server_connection()
-    encoded = require_send_bytes(
-        send_event(client, make_request(headers=public_expect_headers()))
-    )
-    feed_ok(server, encoded)
-    pull_kind(server, "request")
-    return bind_waiting_reports(client, server)
+    """Return the two stated waiting-report attribute names."""
+    return _CLIENT_WAITING_NAME, _THEY_WAITING_NAME
 
 
 def _read_bound_bool(conn: Any, name: str, *, label: str) -> bool:
@@ -179,7 +145,7 @@ def _read_bound_bool(conn: Any, name: str, *, label: str) -> bool:
 def client_waiting_flag(conn: Any) -> bool:
     """Read whether the client is waiting for 100-continue.
 
-    Uses the report discovered by role split, not a fixed spelling.
+    Reads the attribute the Interface Contract names.
     Attribute missing, probe crash, or a non-bool value raises. Never
     returns False to mean "could not look".
     """
@@ -190,7 +156,7 @@ def client_waiting_flag(conn: Any) -> bool:
 def they_are_waiting_flag(conn: Any) -> bool:
     """Read whether the peer is waiting for 100-continue.
 
-    Uses the report discovered by role split, not a fixed spelling.
+    Reads the attribute the Interface Contract names.
     Attribute missing, probe crash, or a non-bool value raises. Never
     returns False to mean "could not look".
     """
@@ -281,7 +247,7 @@ def require_not_switched(conn: Any) -> None:
     print("require_not_switched ok", flush=True)
 
 
-def public_expect_headers() -> list[tuple[str, str]]:
+def fixed_expect_headers() -> list[tuple[str, str]]:
     """Public GET / Host example.com Content-Length 100 Expect 100-continue."""
     return [
         ("Host", "example.com"),
@@ -538,7 +504,7 @@ def finish_proposing_request(
 
 
 def runtime_connect_target() -> str:
-    """A CONNECT target that is not the public ``example.com:443``."""
+    """A CONNECT target that is not the fixed ``example.com:443``."""
     token = runtime_token()
     target = token[:12] + ".test:9443"
     if target == "example.com:443":
@@ -548,7 +514,7 @@ def runtime_connect_target() -> str:
 
 
 def runtime_upgrade_value() -> str:
-    """An Upgrade value that is not the public ``a, b``."""
+    """An Upgrade value that is not the fixed ``a, b``."""
     token = runtime_token()
     value = token[:8] + "-proto"
     if value.lower() in {"a, b", "a,b", "websocket"}:
@@ -591,7 +557,7 @@ def runtime_non_2xx_except_404() -> int:
     return status
 
 
-def public_leftover_http10_get() -> bytes:
+def fixed_leftover_http10_get() -> bytes:
     """Public leftover ``GET / HTTP/1.0`` with no headers."""
     raw = b"GET / HTTP/1.0\r\n\r\n"
     if not raw.startswith(b"GET / HTTP/1.0"):
@@ -601,11 +567,11 @@ def public_leftover_http10_get() -> bytes:
             "public leftover is missing the terminating blank line; "
             "refusing to return a prefix"
         )
-    print(f"public_leftover_http10_get len={len(raw)}", flush=True)
+    print(f"fixed_leftover_http10_get len={len(raw)}", flush=True)
     return raw
 
 
-def public_connect_finished() -> tuple[Any, Any]:
+def fixed_connect_finished() -> tuple[Any, Any]:
     """Public CONNECT example.com:443 CL 1, finished through EOM."""
     client = client_connection()
     server = server_connection()
@@ -613,11 +579,11 @@ def public_connect_finished() -> tuple[Any, Any]:
         target="example.com:443", host="example.com", content_length=1
     )
     finish_proposing_request(client, server, request, b"1")
-    print("public_connect_finished", flush=True)
+    print("fixed_connect_finished", flush=True)
     return client, server
 
 
-def public_upgrade_finished() -> tuple[Any, Any]:
+def fixed_upgrade_finished() -> tuple[Any, Any]:
     """Public GET / Upgrade a, b CL 1, finished through EOM."""
     client = client_connection()
     server = server_connection()
@@ -625,7 +591,7 @@ def public_upgrade_finished() -> tuple[Any, Any]:
         host="example.com", target="/", upgrade="a, b", content_length=1
     )
     finish_proposing_request(client, server, request, b"1")
-    print("public_upgrade_finished", flush=True)
+    print("fixed_upgrade_finished", flush=True)
     return client, server
 
 
@@ -683,10 +649,10 @@ __all__ = (
     "finish_proposing_request",
     "http10_expect_request_bytes",
     "http11_expect_request_bytes",
-    "public_connect_finished",
-    "public_expect_headers",
-    "public_leftover_http10_get",
-    "public_upgrade_finished",
+    "fixed_connect_finished",
+    "fixed_expect_headers",
+    "fixed_leftover_http10_get",
+    "fixed_upgrade_finished",
     "require_both_switched",
     "require_not_switched",
     "require_receive_closed",

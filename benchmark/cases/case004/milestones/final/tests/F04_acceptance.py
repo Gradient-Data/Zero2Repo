@@ -1,9 +1,9 @@
 # feature: F04
 """FP-04: URL-safe tokens.
 
-Assertions follow Full_PRD.original.md FP-04 (L185–L209). Exception class
-names, failure message text, and failure-object attribute spellings are
-not pinned.
+Assertions follow Full_PRD.original.md FP-04 (L185–L209). Failure objects are read
+through the exception classes and attributes the Interface Contract
+states.
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ from F02_helpers import (
     load_object,
     load_object_call,
     make_helper,
-    payload_section,
     require_load_failure,
     require_load_success,
     require_payload_decode_failure,
@@ -1058,12 +1057,6 @@ def test_uncompressed_mapping_different_secret_is_signature_mismatch_not_missing
     assert_signature_mismatch_not_missing_timestamp(
         mismatch_exc,
         missing_exc,
-        covariates=(
-            missing_token,
-            mismatch_token,
-            PUBLIC_ID_MAPPING,
-            42,
-        ),
     )
     print(
         "different-secret uncompressed mapping is signature mismatch, "
@@ -1100,7 +1093,6 @@ def test_runtime_uncompressed_different_secret_is_signature_mismatch_not_missing
     assert_signature_mismatch_not_missing_timestamp(
         mismatch_exc,
         missing_exc,
-        covariates=(missing_token, mismatch_token, obj),
     )
     print(
         "runtime different-secret uncompressed mapping is signature mismatch, "
@@ -1130,15 +1122,6 @@ def test_urlsafe_missing_and_malformed_cross_load_are_distinguishable():
     assert_urlsafe_missing_not_malformed_timestamp(
         missing_exc,
         malformed_exc,
-        covariates=(
-            missing_token,
-            malformed_token,
-            PUBLIC_ID_MAPPING,
-            THOUSAND_A,
-            42,
-            payload_section(missing_token),
-            payload_section(malformed_token),
-        ),
     )
     print(
         "same-secret uncompressed missing is distinguishable from "
@@ -1171,14 +1154,6 @@ def test_runtime_urlsafe_missing_and_malformed_cross_load_are_distinguishable():
     assert_urlsafe_missing_not_malformed_timestamp(
         missing_exc,
         malformed_exc,
-        covariates=(
-            missing_token,
-            malformed_token,
-            obj,
-            blob,
-            payload_section(missing_token),
-            payload_section(malformed_token),
-        ),
     )
     print(
         "runtime same-secret uncompressed missing is distinguishable from "

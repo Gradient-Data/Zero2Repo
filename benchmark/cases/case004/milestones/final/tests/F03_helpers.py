@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable
+from typing import Any
 
 from _harness import (
     CallResult,
@@ -83,7 +83,7 @@ AGE_EXPIRED_SECONDS = AGE_EXPIRED_SECONDS(11)
 
 
 class PUBLIC_SIGNING_INSTANT(datetime):
-    """Frozen UTC instant used as the public signing-time oracle.
+    """Frozen UTC instant the suite signs at.
 
     Downstream suites import this name and freeze the clock on it.
     The binding is 2020-06-24 00:09:05 UTC, not a callable.
@@ -96,7 +96,7 @@ PUBLIC_SIGNING_INSTANT = PUBLIC_SIGNING_INSTANT(
 
 
 class OTHER_SIGNING_INSTANT(datetime):
-    """A second frozen UTC instant, distinct from the public oracle.
+    """A second frozen UTC instant, distinct from the first.
 
     Downstream suites import this name and freeze the clock on it.
     The binding is 2018-03-11 14:22:00 UTC, not a callable.
@@ -202,8 +202,9 @@ def require_exact_bytes(value: Any) -> bytes:
 def require_integer_id(loaded: Any, *, ident: int = 42) -> Any:
     """Require *loaded* exposes ``id`` as the exact integer *ident*.
 
-    Mapping equality accepts ``42.0 == 42``. The PRD names the integer 42,
-    so a float (or other numeric stand-in) is a different object.
+    Mapping equality accepts ``42.0 == 42``. Round-trip must return an
+    equal object of the same JSON type, so a float stand-in for the
+    integer is a different object.
     Lookup failure raises — never treated as a missing id.
     """
     try:
@@ -338,36 +339,14 @@ def require_returned_signing_time(
 
 
 def datetimes_on_failure(exc: BaseException) -> list[datetime]:
-    """Collect datetime objects from args and public non-callable attributes.
+    """Return the failure's stated ``date_signed`` attribute when it is a datetime.
 
-    Does not search message text or repr. A language ``None`` sentinel is
-    not a datetime. Probe failure raises — never returns empty to mean
-    "could not look".
+    A missing attribute or ``None`` means the signing time is absent.
     """
-    found: list[datetime] = []
-    args = getattr(exc, "args", ())
-    for item in args:
-        if isinstance(item, datetime):
-            found.append(item)
-    try:
-        names = dir(exc)
-    except Exception as probe_exc:
-        raise HarnessError(
-            f"cannot list attributes on failure object: {probe_exc}"
-        ) from probe_exc
-    for name in names:
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception:
-            continue
-        if callable(value):
-            continue
-        if isinstance(value, datetime):
-            found.append(value)
+    value = getattr(exc, "date_signed", None)
+    found = [value] if isinstance(value, datetime) else []
     print(
-        f"failure datetime fields={[d.isoformat() for d in found]}",
+        f"failure date_signed={[d.isoformat() for d in found]}",
         flush=True,
     )
     return found
@@ -382,8 +361,8 @@ def require_signing_time_on_failure(
     """
     found = datetimes_on_failure(exc)
     if not found:
-        raise HarnessError(
-            "failure object carries no datetime field for the signing time"
+        raise AssertionError(
+            "failure object's date_signed carries no signing-time datetime"
         )
     aware: list[datetime] = []
     errors: list[str] = []
@@ -694,163 +673,104 @@ def arrange_replaced_in_range_token(
     return changed
 
 
-_STRIPPED = object()
+# Failure kinds, read from the stated exception classes (and, for the
+# timestamp kinds, the `reason` attribute the Contract states).
+FAILURE_KINDS = (
+    "signature",
+    "time-signature",
+    "missing-timestamp",
+    "malformed-timestamp",
+    "expired",
+    "payload",
+)
+MISSING_REASON = "missing"
+MALFORMED_REASON = "malformed"
+_NO_REASON_ATTR = object()
 
 
-def _covariate_values(covariates: Iterable[Any]) -> list[Any]:
-    values: list[Any] = []
-    for item in covariates:
-        if item is None:
-            continue
-        values.append(item)
-        if isinstance(item, str):
-            values.append(as_bytes(item))
-        elif isinstance(item, bytes):
-            try:
-                values.append(item.decode("utf-8"))
-            except UnicodeDecodeError:
-                pass
-    return values
+def failure_kind(exc: BaseException) -> str:
+    """Classify a refusal by its stated exception class.
 
-
-def _item_is_covariate(item: Any, covariates: list[Any]) -> bool:
-    for cov in covariates:
-        if item == cov:
-            return True
-        if isinstance(item, (bytes, bytearray)) and isinstance(cov, (bytes, bytearray)):
-            if bytes(item) == bytes(cov):
-                return True
-    return False
-
-
-def _strip_text(text: str, covariates: list[Any]) -> Any:
-    leftover = text
-    for cov in covariates:
-        piece: str | None = None
-        if isinstance(cov, str) and cov:
-            piece = cov
-        elif isinstance(cov, bytes):
-            try:
-                decoded = cov.decode("utf-8")
-            except UnicodeDecodeError:
-                decoded = ""
-            if decoded:
-                piece = decoded
-        if piece:
-            leftover = leftover.replace(piece, "")
-    leftover = leftover.strip()
-    if not leftover:
-        return _STRIPPED
-    return leftover
-
-
-def failure_kind_parts(
-    exc: BaseException, *, covariates: tuple[Any, ...] = ()
-) -> tuple[Any, ...]:
-    """Inspectable failure parts with input covariates stripped.
-
-    Keeps type identity (not a class-name spelling) and leftover public
-    values after tokens, payloads, and dummy suffixes are removed.
-    Leftover text is an unpinned kind marker — this does not require a
-    particular message. Probe failure raises.
+    The three non-expired ``BadTimeSignature`` kinds are told apart by
+    the ``reason`` attribute the Contract states: ``"missing"`` for a
+    missing timestamp, ``"malformed"`` for a malformed timestamp, ``None``
+    for a time-signature failure. Message text is not consulted. Raises
+    if the failure is none of the stated failure classes.
     """
-    cov = _covariate_values(covariates)
-    parts: list[Any] = [type(exc)]
-    for item in getattr(exc, "args", ()):
-        if isinstance(item, datetime):
-            parts.append(("dt", item))
-            continue
-        if _item_is_covariate(item, cov):
-            continue
-        if isinstance(item, str):
-            stripped = _strip_text(item, cov)
-            if stripped is _STRIPPED:
-                continue
-            parts.append(("text", stripped))
-            continue
-        if isinstance(item, (bytes, bytearray)):
-            parts.append(("bytes", bytes(item)))
-            continue
-        if item is None:
-            continue
-        parts.append(("arg", item))
-    try:
-        names = dir(exc)
-    except Exception as probe_exc:
-        raise HarnessError(
-            f"cannot list attributes on failure object: {probe_exc}"
-        ) from probe_exc
-    for name in names:
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception:
-            continue
-        if callable(value):
-            continue
-        if isinstance(value, datetime):
-            parts.append(("dt", value))
-            continue
-        if _item_is_covariate(value, cov):
-            continue
-        if isinstance(value, str):
-            stripped = _strip_text(value, cov)
-            if stripped is _STRIPPED:
-                continue
-            parts.append(("text", stripped))
-        elif isinstance(value, (bytes, bytearray)):
-            parts.append(("bytes", bytes(value)))
-    return tuple(parts)
+    import signtoken
+
+    if isinstance(exc, signtoken.SignatureExpired):
+        kind = "expired"
+    elif isinstance(exc, signtoken.BadTimeSignature):
+        reason = getattr(exc, "reason", _NO_REASON_ATTR)
+        if reason is _NO_REASON_ATTR:
+            raise AssertionError(
+                "BadTimeSignature refusal has no `reason` attribute; "
+                f"type={type(exc).__name__} message={str(exc)!r}"
+            )
+        if reason == MISSING_REASON:
+            kind = "missing-timestamp"
+        elif reason == MALFORMED_REASON:
+            kind = "malformed-timestamp"
+        elif reason is None:
+            kind = "time-signature"
+        else:
+            raise AssertionError(
+                "BadTimeSignature `reason` is not 'missing', 'malformed' or "
+                f"None; got {reason!r}"
+            )
+    elif isinstance(exc, signtoken.BadSignature):
+        kind = "signature"
+    elif isinstance(exc, signtoken.BadPayload):
+        kind = "payload"
+    else:
+        raise AssertionError(
+            "refusal is not one of the stated failure classes; "
+            f"got {type(exc).__name__}: {exc!r}"
+        )
+    print(f"failure kind={kind} type={type(exc).__name__}", flush=True)
+    return kind
+
+
+def require_failure_kind(exc: BaseException, kind: str) -> BaseException:
+    if kind not in FAILURE_KINDS:
+        raise HarnessError(f"unknown failure kind {kind!r}")
+    got = failure_kind(exc)
+    assert got == kind, (
+        f"refusal is a {got} failure, expected {kind}; "
+        f"type={type(exc).__name__} message={str(exc)!r}"
+    )
+    return exc
 
 
 def require_distinct_failure_kinds(
     first: BaseException,
     second: BaseException,
     *,
-    covariates: tuple[Any, ...] = (),
+    expect: tuple[str, str],
 ) -> None:
-    """Require two refusals to remain distinguishable after covariate strip.
-
-    Does not pin message wording or exception-class spelling. Raises if
-    the stripped observations are identical — a single cheap rejection
-    for both named kinds.
-    """
-    left = failure_kind_parts(first, covariates=covariates)
-    right = failure_kind_parts(second, covariates=covariates)
-    print(f"kind-parts left={left!r} right={right!r}", flush=True)
-    assert left != right, (
-        "the two refusals are not distinguishable after stripping "
-        "input tokens, payloads, and other covariates; "
-        f"left={left!r} right={right!r}"
-    )
+    """Require two refusals to be the two named, different failure kinds."""
+    left_kind, right_kind = expect
+    assert left_kind != right_kind, "expected kinds must differ"
+    require_failure_kind(first, left_kind)
+    require_failure_kind(second, right_kind)
 
 
 def assert_signature_mismatch_not_missing_timestamp(
     mismatch: BaseException,
     missing: BaseException,
-    *,
-    covariates: tuple[Any, ...] = (),
 ) -> None:
     """L170: different-secret non-timestamped refusal is not a missing timestamp.
 
-    Does not pin exception class names or message wording. After stripping
-    tokens and payloads, a stable kind difference must remain. A helper that
-    treats every two-part token as a missing timestamp fails this contrast.
     The name carries ``assert`` so an imported call is a check the suite
     bail-out audit can see; ``require_*`` imported from another module is not.
     """
-    left = failure_kind_parts(mismatch, covariates=covariates)
-    right = failure_kind_parts(missing, covariates=covariates)
-    print(f"kind-parts mismatch={left!r} missing={right!r}", flush=True)
-    assert left != right, (
-        "different-secret non-timestamped refusal is not distinguishable "
-        "from a missing timestamp after stripping tokens and payloads; "
-        f"mismatch={left!r} missing={right!r}"
+    require_distinct_failure_kinds(
+        mismatch, missing, expect=("signature", "missing-timestamp")
     )
     print(
-        "different-secret non-timestamped refusal is a distinct kind "
-        "from missing timestamp",
+        "different-secret non-timestamped refusal is a signature mismatch, "
+        "not a missing timestamp",
         flush=True,
     )
 
@@ -897,23 +817,12 @@ def require_none_derivation_default_salt_load(
 def require_expired_not_signature_mismatch(
     expired: BaseException,
     mismatch: BaseException,
-    *,
-    covariates: tuple[Any, ...] = (),
 ) -> None:
-    """Require an expired refusal is a distinct kind from a signature mismatch.
-
-    A signature mismatch still carries the unsigned payload (FP-02). A
-    time-signature failure still exposes a signing-time datetime when the
-    time field decodes (L175). Datetime presence plus a carried payload
-    is therefore not enough to prove expired-not-mismatch. Those shared
-    carriers are stripped; a stable difference must remain.
-    """
-    shared = tuple(datetimes_on_failure(expired) + datetimes_on_failure(mismatch))
+    """Require an expired refusal and a time-signature mismatch to be those kinds."""
     require_distinct_failure_kinds(
-        expired, mismatch, covariates=covariates + shared
+        expired, mismatch, expect=("expired", "time-signature")
     )
     print(
-        "expired refusal remains a distinct kind from signature mismatch "
-        "after stripping payload and datetime carriers",
+        "expired refusal is a distinct kind from signature mismatch",
         flush=True,
     )

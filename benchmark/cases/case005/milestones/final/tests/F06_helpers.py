@@ -97,7 +97,7 @@ def require_client_server_states(
     return client_side, server_side
 
 
-def public_two_bodied_gets_then_empty() -> bytes:
+def fixed_two_bodied_gets_then_empty() -> bytes:
     """Public pipelined GET /1 and /2 with five-byte bodies.
 
     Does not include a trailing empty chunk; the test feeds that
@@ -109,12 +109,12 @@ def public_two_bodied_gets_then_empty() -> bytes:
         b"GET /2 HTTP/1.1\r\nHost: a\r\nContent-Length: 5\r\n\r\n"
         b"67890"
     )
-    print(f"public_two_bodied_gets_then_empty len={len(block)}", flush=True)
+    print(f"fixed_two_bodied_gets_then_empty len={len(block)}", flush=True)
     return block
 
 
 def runtime_two_bodied_gets() -> tuple[bytes, bytes, bytes, bytes, bytes]:
-    """Two bodied GETs whose targets, Host, and bodies are not public samples.
+    """Two bodied GETs whose targets, Host, and bodies are not the fixtures.
 
     Returns ``(block, target1, target2, body1, body2)``. Content-Length
     matches each body. Probe failure raises.
@@ -271,7 +271,7 @@ def incomplete_get_then_rest(*, host: str, target: str) -> tuple[bytes, bytes]:
 
 
 def runtime_finished_bodied_request() -> tuple[Any, Any, Any, bytes]:
-    """A finished Content-Length request that is not the public ten-byte GET.
+    """A finished Content-Length request that is not the fixed ten-byte GET.
 
     Returns ``(request, data, end-of-message, payload)``. Length is not
     10. Method, target, Host, and payload are process-local.
@@ -308,7 +308,7 @@ __all__ = (
     "complete_new_get_bytes",
     "incomplete_get_then_rest",
     "make_connection_closed",
-    "public_two_bodied_gets_then_empty",
+    "fixed_two_bodied_gets_then_empty",
     "pull_connection_closed",
     "require_client_server_states",
     "require_connection_closed_event",

@@ -78,14 +78,12 @@ _COPY_IGNORE = shutil_ignore_patterns
 _INSTRUCTION_PREAMBLE = """\
 # Development Task
 
-You are an autonomous software engineer. Build the complete project described
-below, from scratch, in your current working directory. Implement every step of
-the development plan so that the finished project fully satisfies the
-specification.
+Build the project specified below, from scratch, in your current working
+directory.
 
-When you are done, the workspace must be in a state the hidden tests can use
-directly. See the Build contract below for whether a build step is required
-and where outputs must remain.
+The hidden tests run against the workspace exactly as you leave it. See the
+Build contract below for whether a build step is required and where outputs
+must remain.
 
 ---
 
@@ -575,7 +573,7 @@ def build_task(
     verifier_timeout_sec: float = 600.0,
     build_timeout_sec: float = 600.0,
     cpus: int = 2,
-    memory_mb: int = 4096,
+    memory_mb: int = 16384,
     storage_mb: int = 10240,
     require_released: bool = True,
 ) -> Path:

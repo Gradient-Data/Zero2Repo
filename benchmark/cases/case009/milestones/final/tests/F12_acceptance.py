@@ -34,7 +34,6 @@ from _helpers import (
     require_git_config_set,
     require_object_absent,
     require_object_bytes,
-    require_option_visible_stable_unlike,
     require_success,
     run_prune,
     run_track,
@@ -309,7 +308,7 @@ def test_dry_run_does_not_delete_unlike_live_prune():
         )
 
 
-def test_dry_run_report_differs_when_candidate_present():
+def test_dry_run_reports_and_keeps_candidate_and_head():
     """Dry-run reports without deleting: prune candidate and HEAD stay in the store."""
     with workspace() as ws:
         layout = _two_path_pushed(ws)
@@ -323,7 +322,7 @@ def test_dry_run_report_differs_when_candidate_present():
         print(f"dry-run visible={visible!r}")
         assert visible.strip(), (
             "dry-run produced no caller-visible report; "
-            "L377 requires dry-run to report without deleting"
+            "FP-12 requires dry-run to report without deleting"
         )
         assert_object_bytes(
             layout["store"], layout["oid_s"], layout["data_s"]
@@ -1208,42 +1207,37 @@ def _shared_pair(ws, store_dir: Path, *, b_rel: str | None = None):
 # ---------------------------------------------------------------------------
 
 
-def test_verbose_is_distinguishable_from_default():
-    """--verbose caller-visible output differs from default on the same layout."""
+def test_verbose_names_each_pruned_oid():
+    """--verbose writes each deleted (or, with --dry-run, would-be-deleted) oid on stdout."""
     with workspace() as live:
         layout = _main_pushed(live)
-        require_success(run_prune(live))
+        result = run_prune(live, ["--verbose"])
+        require_success(result)
+        print(f"verbose live stdout={result.stdout_text!r}")
         require_object_absent(layout["store"], layout["stale_oid"])
         require_object_bytes(
             layout["store"], layout["head_oid"], layout["head"]
         )
+        assert layout["stale_oid"] in result.stdout_text, (
+            "prune --verbose did not name the deleted object's oid on stdout"
+        )
+        assert layout["head_oid"] not in result.stdout_text, (
+            "prune --verbose named the retained current-checkout oid"
+        )
     with workspace() as ws:
         layout = _main_pushed(ws)
-        default_a = run_prune(ws, ["--dry-run"])
-        require_success(default_a)
-        default_b = run_prune(ws, ["--dry-run"])
-        require_success(default_b)
-        verbose_a = run_prune(ws, ["--dry-run", "--verbose"])
-        require_success(verbose_a)
-        verbose_b = run_prune(ws, ["--dry-run", "--verbose"])
-        require_success(verbose_b)
-        strip = [
-            str(ws.path),
-            layout["rel"],
-            layout["stale"].decode("utf-8"),
-            layout["head"].decode("utf-8"),
-            layout["head_oid"],
-            _FAR,
-            *git_state_sha_tokens(ws),
-        ]
-        rem_d, rem_v = require_option_visible_stable_unlike(
-            default_a,
-            default_b,
-            verbose_a,
-            verbose_b,
-            strip_tokens=strip,
+        result = run_prune(ws, ["--dry-run", "--verbose"])
+        require_success(result)
+        print(f"verbose dry-run stdout={result.stdout_text!r}")
+        require_object_bytes(
+            layout["store"], layout["stale_oid"], layout["stale"]
         )
-        print(f"verbose remainder default={rem_d!r} verbose={rem_v!r}")
+        assert layout["stale_oid"] in result.stdout_text, (
+            "prune --dry-run --verbose did not name the candidate's oid on stdout"
+        )
+        assert layout["head_oid"] not in result.stdout_text, (
+            "prune --dry-run --verbose named the retained current-checkout oid"
+        )
 
 
 def test_prune_fails_without_product_on_path():

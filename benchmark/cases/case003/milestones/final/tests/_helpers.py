@@ -37,25 +37,10 @@ from _harness import (
     workspace,
 )
 
-# Integers the F01 public oracles already name. Runtime draws stay outside.
+# Integers the suite's own named fixtures use. Runtime draws stay outside.
 _GOLDEN_CORE_INTS = frozenset({1, 2, 42, 123})
-_PUBLIC_UNICODE_SCALAR = 0x1F600
-_PUBLIC_TAG_HANDLE = "!a1!"
-
-_LINE_CLUE = re.compile(r"(?:line|row)\s*[:=]?\s*(-?\d+)", re.IGNORECASE)
-
-
-class LineIdentityAbsent:
-    """Classified: stripped failure material has no sortable line clue."""
-
-    def __repr__(self) -> str:
-        return "NO_LINE_IDENTITY"
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, LineIdentityAbsent)
-
-
-NO_LINE_IDENTITY = LineIdentityAbsent()
+_SUITE_NAMED_UNICODE_SCALAR = 0x1F600
+_SUITE_NAMED_TAG_HANDLE = "!a1!"
 
 
 def unique_token() -> str:
@@ -93,24 +78,24 @@ def distinct_core_ints(count: int) -> list[int]:
 def eight_hex_scalar() -> tuple[str, str]:
     """Return ``(eight hex digits, character)`` for a legal Unicode scalar.
 
-    Avoids the public ``U+1F600`` oracle, surrogates, and out-of-range values.
+    Avoids the suite-named ``U+1F600``, surrogates, and out-of-range values.
     The expected character is ``chr`` of that code point — not a YAML scan.
     """
     base = 0x1F300
     span = 0x2FF
     code = base + (uuid.uuid4().int % span)
-    if code == _PUBLIC_UNICODE_SCALAR:
+    if code == _SUITE_NAMED_UNICODE_SCALAR:
         code = 0x1F601
     return f"{code:08X}", chr(code)
 
 
 def digit_tag_handle() -> str:
-    """A ``%TAG`` handle that contains a digit and is not the public ``!a1!``."""
+    """A ``%TAG`` handle that contains a digit and is not the suite-named ``!a1!``."""
     letters = "bcdefghkmnprstwxyz"
     letter = letters[uuid.uuid4().int % len(letters)]
     digit = str(2 + uuid.uuid4().int % 8)
     handle = f"!{letter}{digit}!"
-    if handle == _PUBLIC_TAG_HANDLE:
+    if handle == _SUITE_NAMED_TAG_HANDLE:
         handle = "!z9!"
     return handle
 
@@ -160,37 +145,22 @@ def observer_visible_report(error: ErrorInfo) -> str:
 
 
 def report_has_label(error: ErrorInfo, label: str) -> bool:
-    """Whether *label* appears in the caller-visible failure material."""
+    """Whether the stated failure form carries *label*.
+
+    Reads only the error ``message`` and ``mark.name`` (Interface Contract,
+    thrown failure form); a stack trace is not evidence.
+    """
     if not label:
         raise ValueError("label must be a non-empty string")
-    return label in observer_visible_report(error)
-
-
-def line_identity_after_strip(error: ErrorInfo, *covariates: str) -> Any:
-    """Sortable line clue left after stripping *covariates* from the report.
-
-    Prefers a captured numeric line field when present, then a line/row
-    token remaining in the stripped text. Returns
-    :data:`NO_LINE_IDENTITY` when no line clue survives — never ``""``.
-    """
     if error is None:
-        raise HarnessError("cannot read line identity from a missing report")
-    structured: int | None = None
-    if error.mark is not None and isinstance(error.mark.line, int):
-        structured = error.mark.line
-    text = observer_visible_report(error)
-    for cov in covariates:
-        if cov:
-            text = text.replace(str(cov), "")
-    parsed: int | None = None
-    match = _LINE_CLUE.search(text)
-    if match:
-        parsed = int(match.group(1))
-    if structured is not None:
-        return structured
-    if parsed is not None:
-        return parsed
-    return NO_LINE_IDENTITY
+        raise HarnessError("failure report is missing")
+    if not isinstance(error, ErrorInfo):
+        raise HarnessError(
+            f"failure report is not ErrorInfo: {type(error).__name__}"
+        )
+    in_message = bool(error.message) and label in error.message
+    in_mark = error.mark is not None and error.mark.name == label
+    return in_message and in_mark
 
 
 def require_document(result: CallResult) -> Any:
@@ -316,7 +286,7 @@ def is_successful_answer_42(result: CallResult | None) -> bool:
 YAML11_TRUE_WORDS = ("y", "Y", "yes", "Yes", "YES", "on", "On", "ON")
 YAML11_FALSE_WORDS = ("n", "N", "no", "No", "NO", "off", "Off", "OFF")
 
-_F02_PUBLIC_INT_TEXTS = frozenset({
+_F02_SUITE_NAMED_INT_TEXTS = frozenset({
     "0123",
     "0o123",
     "0x1A",
@@ -329,7 +299,7 @@ _F02_PUBLIC_INT_TEXTS = frozenset({
     "+0o123",
     "-0x1A",
 })
-_F02_PUBLIC_FLOAT_TEXTS = frozenset({
+_F02_SUITE_NAMED_FLOAT_TEXTS = frozenset({
     "12.",
     "1_000.0",
     ".5",
@@ -469,8 +439,8 @@ def _draw(span: int) -> int:
     return uuid.uuid4().int % span
 
 
-def _reject_public_token(text: str, value: int | None = None) -> bool:
-    if text in _F02_PUBLIC_INT_TEXTS or text in _F02_PUBLIC_FLOAT_TEXTS:
+def _reject_suite_named_token(text: str, value: int | None = None) -> bool:
+    if text in _F02_SUITE_NAMED_INT_TEXTS or text in _F02_SUITE_NAMED_FLOAT_TEXTS:
         return True
     if value is not None and value in _F02_AVOIDED_INT_VALUES:
         return True
@@ -502,7 +472,7 @@ def oversized_decimal_token() -> str:
 def overflow_float_token() -> str:
     """Decimal-exponent text whose exponent is beyond a finite JS number.
 
-    Not the public ``1e999``. Does not reuse the oversized-integer helper.
+    Not the suite-named ``1e999``. Does not reuse the oversized-integer helper.
     """
     for _ in range(32):
         coeff = 2 + _draw(7)
@@ -518,18 +488,18 @@ def json_legal_decimal_token() -> tuple[str, int]:
     """JSON-legal decimal (no plus, no leading zero) and its integer value."""
     for _ in range(64):
         number = 200 + _draw(8000)
-        if _reject_public_token(str(number), number):
+        if _reject_suite_named_token(str(number), number):
             continue
         return str(number), number
     raise HarnessError("could not draw a JSON-legal decimal")
 
 
 def plus_decimal_int_token() -> str:
-    """Leading-plus decimal integer text. Not the public ``+685230``."""
+    """Leading-plus decimal integer text. Not the suite-named ``+685230``."""
     for _ in range(64):
         number = 200 + _draw(8000)
         text = f"+{number}"
-        if _reject_public_token(text, number):
+        if _reject_suite_named_token(text, number):
             continue
         return text
     raise HarnessError("could not draw a leading-plus decimal integer")
@@ -538,7 +508,7 @@ def plus_decimal_int_token() -> str:
 def leading_zero_octal_token() -> tuple[str, int, int]:
     """Leading-zero token of octal digits: text, decimal value, octal value.
 
-    Not the public ``0123``. JSON keeps the text; Core uses decimal
+    Not the suite-named ``0123``. JSON keeps the text; Core uses decimal
     arithmetic; YAML 1.1 uses octal arithmetic.
     """
     for _ in range(64):
@@ -548,69 +518,69 @@ def leading_zero_octal_token() -> tuple[str, int, int]:
         text = f"0{d1}{d2}{d3}"
         decimal = int(text, 10)
         octal = int(text, 8)
-        if _reject_public_token(text, decimal) or octal in _F02_AVOIDED_INT_VALUES:
+        if _reject_suite_named_token(text, decimal) or octal in _F02_AVOIDED_INT_VALUES:
             continue
         return text, decimal, octal
     raise HarnessError("could not draw a leading-zero octal token")
 
 
 def zero_o_int_token() -> tuple[str, int]:
-    """``0o`` + octal digits and ``int(digits, 8)``. Not public ``0o123``."""
+    """``0o`` + octal digits and ``int(digits, 8)``. Not the suite-named ``0o123``."""
     for _ in range(64):
         digits = f"{1 + _draw(7)}{_draw(8)}{_draw(8)}"
         text = f"0o{digits}"
         value = int(digits, 8)
-        if _reject_public_token(text, value):
+        if _reject_suite_named_token(text, value):
             continue
         return text, value
     raise HarnessError("could not draw a 0o integer token")
 
 
 def hex_int_token() -> tuple[str, int]:
-    """``0x`` + hex digits and ``int(digits, 16)``. Not public ``0x1A``."""
+    """``0x`` + hex digits and ``int(digits, 16)``. Not the suite-named ``0x1A``."""
     alphabet = "0123456789ABCDEF"
     for _ in range(64):
         digits = f"{alphabet[2 + _draw(14)]}{alphabet[_draw(16)]}"
         text = f"0x{digits}"
         value = int(digits, 16)
-        if _reject_public_token(text, value):
+        if _reject_suite_named_token(text, value):
             continue
         return text, value
     raise HarnessError("could not draw a 0x integer token")
 
 
 def bin_int_token() -> tuple[str, int]:
-    """``0b`` + bits and ``int(bits, 2)``. Not public ``0b1010``."""
+    """``0b`` + bits and ``int(bits, 2)``. Not the suite-named ``0b1010``."""
     for _ in range(64):
         bits = "".join(str(_draw(2)) for _ in range(5))
         if bits == "00000" or bits == "01010":
             continue
         text = f"0b{bits}"
         value = int(bits, 2)
-        if _reject_public_token(text, value):
+        if _reject_suite_named_token(text, value):
             continue
         return text, value
     raise HarnessError("could not draw a 0b integer token")
 
 
 def plus_zero_o_int_token() -> tuple[str, int]:
-    """``+0o`` + octal digits and ``int(digits, 8)``. Not public ``+0o123``."""
+    """``+0o`` + octal digits and ``int(digits, 8)``. Not the suite-named ``+0o123``."""
     for _ in range(64):
         text, value = zero_o_int_token()
         signed = f"+{text}"
-        if _reject_public_token(signed, value):
+        if _reject_suite_named_token(signed, value):
             continue
         return signed, value
     raise HarnessError("could not draw a +0o integer token")
 
 
 def minus_hex_int_token() -> tuple[str, int]:
-    """``-0x`` + hex digits and ``-int(digits, 16)``. Not public ``-0x1A``."""
+    """``-0x`` + hex digits and ``-int(digits, 16)``. Not the suite-named ``-0x1A``."""
     for _ in range(64):
         text, value = hex_int_token()
         signed = f"-{text}"
         negated = -value
-        if _reject_public_token(signed, negated):
+        if _reject_suite_named_token(signed, negated):
             continue
         return signed, negated
     raise HarnessError("could not draw a -0x integer token")
@@ -619,14 +589,14 @@ def minus_hex_int_token() -> tuple[str, int]:
 def underscore_int_token() -> tuple[str, int]:
     """Underscored decimal and the integer after removing underscores.
 
-    Not the public ``1_000``.
+    Not the suite-named ``1_000``.
     """
     for _ in range(64):
         left = 2 + _draw(8)
         right = 100 + _draw(900)
         text = f"{left}_{right}"
         value = int(text.replace("_", ""), 10)
-        if _reject_public_token(text, value):
+        if _reject_suite_named_token(text, value):
             continue
         return text, value
     raise HarnessError("could not draw an underscored integer")
@@ -639,19 +609,19 @@ def sexagesimal_int_token() -> tuple[str, int]:
         minutes = _draw(60)
         text = f"{hours}:{minutes}"
         value = hours * 60 + minutes
-        if _reject_public_token(text, value):
+        if _reject_suite_named_token(text, value):
             continue
         return text, value
     raise HarnessError("could not draw a sexagesimal integer")
 
 
 def illegal_sexagesimal_token() -> str:
-    """``a:b`` with minutes >= 60. Not the public ``1:99``."""
+    """``a:b`` with minutes >= 60. Not the suite-named ``1:99``."""
     for _ in range(64):
         hours = 2 + _draw(8)
         minutes = 60 + _draw(40)
         text = f"{hours}:{minutes}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw an illegal sexagesimal token")
@@ -660,7 +630,7 @@ def illegal_sexagesimal_token() -> str:
 def plus_plain_decimal_token() -> tuple[str, float]:
     """``+`` plus a plain decimal (not an exponent, not a leading dot).
 
-    Not the public ``+12.3``. Value is independent decimal arithmetic.
+    Not the suite-named ``+12.3``. Value is independent decimal arithmetic.
     """
     for _ in range(64):
         whole = 3 + _draw(20)
@@ -668,7 +638,7 @@ def plus_plain_decimal_token() -> tuple[str, float]:
         if whole == 12:
             continue
         text = f"+{whole}.{frac}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         value = whole + frac / (10 ** len(str(frac)))
         return text, value
@@ -676,49 +646,49 @@ def plus_plain_decimal_token() -> tuple[str, float]:
 
 
 def leading_dot_float_token() -> str:
-    """Leading-dot decimal text. Not the public ``.5``."""
+    """Leading-dot decimal text. Not the suite-named ``.5``."""
     for _ in range(64):
         frac = 11 + _draw(80)
         text = f".{frac}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw a leading-dot float")
 
 
 def leading_zero_float_token() -> str:
-    """Leading-zero float text. Not the public ``01.0``."""
+    """Leading-zero float text. Not the suite-named ``01.0``."""
     for _ in range(64):
         whole = 2 + _draw(7)
         frac = 1 + _draw(80)
         text = f"0{whole}.{frac}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw a leading-zero float")
 
 
 def trailing_dot_token() -> tuple[str, float]:
-    """Trailing-dot decimal and its number. Not the public ``12.``."""
+    """Trailing-dot decimal and its number. Not the suite-named ``12.``."""
     for _ in range(64):
         number = 3 + _draw(20)
         if number == 12:
             continue
         text = f"{number}."
-        if _reject_public_token(text, number):
+        if _reject_suite_named_token(text, number):
             continue
         return text, float(number)
     raise HarnessError("could not draw a trailing-dot decimal")
 
 
 def underscore_float_token() -> str:
-    """Underscored float text. Not the public ``1_000.0``."""
+    """Underscored float text. Not the suite-named ``1_000.0``."""
     for _ in range(64):
         left = 2 + _draw(8)
         right = 100 + _draw(900)
         frac = 1 + _draw(9)
         text = f"{left}_{right}.{frac}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw an underscored float")
@@ -731,7 +701,7 @@ def unsigned_exponent_float_token() -> str:
         frac = 11 + _draw(80)
         exp = 2 + _draw(4)
         text = f"{mantissa}.{frac}e{exp:02d}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw an unsigned-exponent float")
@@ -745,7 +715,7 @@ def signed_underscore_exponent_float_token() -> str:
         frac_b = 11 + _draw(80)
         exp = 1 + _draw(3)
         text = f"{whole}.{frac_a}_{frac_b}e+{exp:02d}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw a signed underscored-exponent float")
@@ -759,7 +729,7 @@ def sexagesimal_float_token() -> str:
         seconds = _draw(60)
         frac = 1 + _draw(80)
         text = f"{hours}:{minutes}:{seconds}.{frac}"
-        if _reject_public_token(text):
+        if _reject_suite_named_token(text):
             continue
         return text
     raise HarnessError("could not draw a sexagesimal float")
@@ -777,7 +747,7 @@ def non_bool_word() -> str:
 
 
 def non_int_text() -> str:
-    """Text that is not integer form. Not the public ``1.5``."""
+    """Text that is not integer form. Not the suite-named ``1.5``."""
     for _ in range(32):
         frac = 2 + _draw(7)
         text = f"3.{frac}"
@@ -787,7 +757,7 @@ def non_int_text() -> str:
 
 
 def non_float_text() -> str:
-    """Text that is not float form. Not the public ``abc``."""
+    """Text that is not float form. Not the suite-named ``abc``."""
     for _ in range(32):
         word = unique_token()
         if word != "abc":
@@ -1229,7 +1199,7 @@ def core_type_absent(result: CallResult, predicate: Callable[[Any], bool]) -> No
 
 
 def bytes_payload() -> bytes:
-    """Runtime bytes that are not the public GIF sample and not empty."""
+    """Runtime bytes that are not the suite-named GIF fixture and not empty."""
     data = uuid.uuid4().bytes + bytes([1 + _draw(254), 1 + _draw(254)])
     if data[:3] == b"GIF":
         data = b"X" + data[1:]
@@ -2563,7 +2533,7 @@ def mapping_remember_spec(name: str, *, prefix: bool = True) -> dict[str, Any]:
 
 
 def unique_local_tag() -> str:
-    """``!`` plus a runtime word, avoiding the public local-tag table."""
+    """``!`` plus a runtime word, avoiding the suite-named local tags."""
     for _ in range(32):
         handle = "!" + unique_token()
         if handle not in _F06_PUBLIC_LOCAL_TAGS:

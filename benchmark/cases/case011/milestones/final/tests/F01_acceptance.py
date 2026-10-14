@@ -1,9 +1,9 @@
 # feature: F01
 """FP-01: search an expression and compile it for reuse.
 
-Assertions follow Full_PRD.original.md FP-01 (L91–L117) plus the
-library-substrate negative control (L76) and the value-error /
-kind-contrast rules at L62–L63. Identifier spelling, index/slice beyond
+Assertions follow FP-01 of the PRD, the import-from-source-tree
+layout of the Interface Contract, and the value-error / failure-kind
+rules. Identifier spelling, index/slice beyond
 ``foo.bar[0]``, and evaluation options are later feature points.
 """
 
@@ -17,7 +17,7 @@ from F01_helpers import (
     assert_compile_is_value_error,
     assert_handled_as_more_specific_syntax_not_foo_marker,
     assert_kind_markers_differ,
-    assert_leftovers_differ,
+    assert_positions_differ,
     assert_search_is_value_error,
     assert_shares_foo_syntax_kind_not_empty_or_incomplete,
     assert_shares_incomplete_kind_not_syntax_or_empty,
@@ -418,7 +418,7 @@ def test_foo_dot_and_dot_foo_are_different_places():
     assert_shares_foo_syntax_kind_not_empty_or_incomplete(
         leading, empty, incomplete, trailing
     )
-    assert_leftovers_differ(trailing, leading, "foo.", ".foo")
+    assert_positions_differ(trailing, leading, "foo.", ".foo")
 
 
 def test_runtime_trailing_and_leading_dot_are_different_places():
@@ -437,7 +437,7 @@ def test_runtime_trailing_and_leading_dot_are_different_places():
     assert_shares_foo_syntax_kind_not_empty_or_incomplete(
         leading, empty, incomplete, syntax
     )
-    assert_leftovers_differ(trailing, leading, trailing_text, leading_text)
+    assert_positions_differ(trailing, leading, trailing_text, leading_text)
 
 
 def test_compile_foo_dot_is_syntax_value_error():
@@ -501,7 +501,7 @@ def test_compile_unmatched_open_paren_is_incomplete():
 
 
 # ---------------------------------------------------------------------------
-# I. Library-substrate negative control
+# I. Package imported from the source tree
 # ---------------------------------------------------------------------------
 
 

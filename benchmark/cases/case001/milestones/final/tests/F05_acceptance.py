@@ -1,11 +1,11 @@
 # feature: F05
 """FP-05: construct TOML floats with a caller-supplied converter.
 
-Assertions follow Full_PRD.original.md FP-05 (L226–L247) plus the default
-Python-float construction in FP-02 (L129 / L141), the same-converter rule
-on the binary-file entry (FP-03 L166), and the table/array-structure
-invariance in FP-01 (L87). Illegal converter results are a value error
-that is not a decode error (L240–L241). Decode-error location fields
+Assertions follow the PRD FP-05 plus the default
+Python-float construction in FP-02, the same-converter rule
+on the binary-file entry, and the table/array-structure
+invariance in FP-01. Illegal converter results are a value error
+that is not a decode error. Decode-error location fields
 and non-UTF-8 bytes are other feature points.
 """
 
@@ -82,7 +82,7 @@ class _ListSubtype(list):
 
 
 def _runtime_finite_spelling() -> str:
-    """Process-local finite decimal text that is not a public oracle token."""
+    """Process-local finite decimal text that is not a document literal."""
     spelling = f"0.{runtime_int()}"
     if spelling in _RESERVED_FINITE:
         spelling = f"0.{runtime_int()}7"
@@ -480,7 +480,7 @@ def test_float_under_table_header_is_converted():
 
 
 def test_datetime_not_passed_through_converter():
-    """A supplied converter leaves date-times as date-times (L228).
+    """A supplied converter leaves date-times as date-times.
 
     Offset and local date-times stay the FP-02 values. They are not built
     through the float converter. Integers, strings, booleans, tables, and

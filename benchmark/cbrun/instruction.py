@@ -1,10 +1,11 @@
 """Agent instruction assembly for cbrun.
 
-The prompt tells the agent exactly what it has (inputs + environment), what its
-goal is, and how it will be scored, without leaking anything about the hidden
-acceptance tests. Specification bodies (PRD, Interface Contract, optional
-hardware) stay on disk at fixed container paths; the prompt only names those
-paths so it stays well under the Linux per-argument size limit.
+The prompt states only what the benchmark defines: the context the agent has,
+what it must build, what it must not do, how to submit, and how it is scored.
+It does not prescribe a way of working. Nothing about the hidden acceptance
+tests leaks. Specification bodies (PRD, Interface Contract, optional hardware)
+stay on disk at fixed container paths; the prompt only names those paths so it
+stays well under the Linux per-argument size limit.
 """
 
 from __future__ import annotations
@@ -21,21 +22,10 @@ CONTRACT_CONTAINER_PATH = "/environment/Interface_Contract.md"
 HARDWARE_CONTAINER_PATH = "/environment/Hardware_Requirements.md"
 WORKSPACE_CONTAINER_PATH = "/app"
 
-_INSTRUCTION_PREAMBLE = """\
-# Development Task
+_INSTRUCTION_PREAMBLE = f"""\
+# Task
 
-You are an autonomous software engineer. Build the complete project described
-in the specification files listed below, from scratch, in your current working
-directory. Implement every step of the development plan so that the finished
-project fully satisfies the specification.
-
-Read those files in full before you start writing code.
-
-When you are done, the workspace must be in a state the hidden tests can use
-directly. See the Build contract below for whether a build step is required
-and where outputs must remain.
-
----
+Build the project specified in the files below, from scratch, in `{WORKSPACE_CONTAINER_PATH}`.
 
 """
 
@@ -44,55 +34,49 @@ def _environment_notes(*, has_hardware: bool) -> str:
     hardware_line = ""
     if has_hardware:
         hardware_line = (
-            f"* Hardware requirements are at `{HARDWARE_CONTAINER_PATH}`.\n"
+            f"* Hardware requirements: `{HARDWARE_CONTAINER_PATH}`.\n"
         )
     return f"""\
-## Your environment
+## Context
 
-* Your workspace is `{WORKSPACE_CONTAINER_PATH}` (your current working directory).
-  Build the project here. See the Build contract below for how the judge
-  locates outputs.
-* The full specification is in these files. Read them in full before you start:
-  the PRD at `{PRD_CONTAINER_PATH}` and the Interface Contract at
+* Workspace: `{WORKSPACE_CONTAINER_PATH}`, your current working directory. It starts empty.
+* Specification: the PRD at `{PRD_CONTAINER_PATH}` and the Interface Contract at
   `{CONTRACT_CONTAINER_PATH}`.
-{hardware_line}* Language runtimes and dependencies the project needs are already installed in
-  this image. You have network access for your own model/tool calls.
+{hardware_line}* Language runtimes and dependencies the project needs are installed.
+* The only limit is a wall-clock time budget for the whole session.
+* GitHub and other code-hosting sites are not reachable from this environment.
 
-## How you work
+## Rules
 
-* You may develop freely: there is no limit on the number of steps, turns, edits
-  or commands. The only limit is a wall-clock time budget for the whole session.
-* **Implement from scratch.** Build the target system described in the PRD and
-  Interface Contract yourself. Do not download, clone, vendor, copy, or install
-  an existing upstream implementation of that target system (for example via
-  `pip install`, `npm install`, or `cargo add` for the product you are building).
-  General-purpose libraries and tools are allowed; the described product behavior
-  must be your own code.
-* Do not treat a runtime- or toolchain-bundled implementation of the same kind
-  of product as a dependency or an oracle. The behavior you deliver must be
-  your own code.
-* GitHub and other code-hosting sites for upstream projects are **not reachable**
-  from this environment during your session.
-* You are encouraged to write and run your OWN tests and checks repeatedly to
-  validate your implementation against the PRD and Interface Contract, then fix
-  and iterate. A real develop -> test -> debug loop is expected, not a single
-  pass.
-* When you are confident the implementation is complete, write the submit file
-  described below, then you may end your session. Ending the session is **not**
-  a submission.
-* Submit by writing exactly this one-line file (no extra words):
-  path `{CONTAINER_SUBMIT_PATH}`
-  contents `{SUBMIT_TOKEN}`
-* If that file is missing or its contents are wrong, this attempt fails and the
-  hidden acceptance tests will not run.
+* The product behavior must be your own code. Do not download, clone, vendor,
+  copy, or install an existing implementation of the product (for example via
+  `pip install`, `npm install`, or `cargo add`). General-purpose libraries and
+  tools are allowed.
+* Do not use a runtime- or toolchain-bundled implementation of the same kind of
+  product as a dependency or an oracle, and do not read, copy, disassemble, or
+  decompile one. This covers every copy already in this environment: standard
+  library modules, packages vendored inside other tools, and packages the
+  agent tooling itself installed. Package managers and build tools may load
+  them for their own work.
+* File access to such implementations is monitored for the whole session, by
+  file opens, whatever tool or language performs them. Do not interfere with
+  the monitoring: do not stop or pause its processes, change or remove its
+  files, or hide or disguise an access.
+* A first violation stops your session; you are told what was observed and
+  get one more session to continue. A second violation fails the attempt.
+* Hidden acceptance tests are not in this container. Do not look for them and
+  do not special-case any test.
 
-## How you are scored
+## Submit
 
-* After a valid submit file is present, a hidden acceptance test suite is run
-  against your final workspace state and produces a binary pass/fail reward.
-* The hidden tests are NOT present in this container and you cannot access them.
-  Do not look for them, and do not special-case any test: implement the public
-  Interface Contract behavior fully and correctly.
+* Write exactly one line to `{CONTAINER_SUBMIT_PATH}`: `{SUBMIT_TOKEN}`.
+* Ending the session is not a submission. Without a valid submit file this
+  attempt fails and the hidden tests do not run.
+
+## Scoring
+
+* After a valid submit, the hidden acceptance tests run against your final
+  `{WORKSPACE_CONTAINER_PATH}` and give a binary pass/fail reward.
 """
 
 

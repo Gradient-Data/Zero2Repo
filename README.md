@@ -1,8 +1,26 @@
-# <img src="icon.svg" width="36" height="36" alt="" valign="middle"> Zero2Repo
+<div align="center">
+
+<img src="icon.svg" width="56" height="56" alt="">
+
+# Zero2Repo
+
+### Can coding agents build repositories from scratch?
+
+**A product spec, an empty workspace, and hidden acceptance tests. The agent builds the repository.**
+
+Organization and repository links are omitted in this copy for double-blind review.
 
 Formerly CodingBench. Same exam. Clearer name.
 
-Organization and repository links are omitted in this copy for double-blind review.
+</div>
+
+<p align="center">
+  <img src="figures/intro.png" width="100%" alt="Data flow for one Zero2Repo task. The specification is given to the agent; hidden tests run only after submission, in a fresh offline judge container.">
+</p>
+
+<p align="center">
+<em>One task, from the public specification to a binary reward. The agent builds in an empty workspace. After an explicit submission, a fresh offline container receives the hidden tests and writes the reward.</em>
+</p>
 
 Zero2Repo evaluates coding agents on **repo-scale, from-scratch** tasks.
 
@@ -10,13 +28,9 @@ The agent receives a product spec and an empty workspace, implements the project
 in a real shell environment, and is scored by **hidden, deterministic acceptance
 tests** (binary reward: `1.0` / `0.0`). No LLM-as-judge.
 
-<p align="center">
-  <img src="fig_overview.png" alt="Zero2Repo evaluation architecture">
-</p>
-
 This repository ships:
 
-- **11 released cases** under `benchmark/cases/`: Tomlparse, python-envfile, ymlcodec (TypeScript), Signtoken, httpwire, Optlyn, Otpkit, Hrefparse (C++), Git Orbulk (Go), Lingora, and PathSel (Python)
+- **17 released cases** under `benchmark/cases/`: Tomlparse, python-envfile, ymlcodec (TypeScript), Signtoken, httpwire, Optlyn, Otpkit, Hrefparse (C++), Git Orbulk (Go), Lingora, PathSel (Python), lint-policy (TypeScript), Membundle (Go), Navfilter (C11), oggrepack (C99), prosecheck (Python and Node), and klyvmap (Zig)
 - The **`cbrun`** harness (recommended)
 - An optional **Harbor** adapter
 
@@ -64,9 +78,10 @@ the agent cannot simply recall the upstream repository.
 ### Language-agnostic by construction
 
 The authoring process makes no assumptions about language, build system or test
-framework. This release currently ships eight Python cases, one TypeScript case,
-one Go case, and one C++ case. New ecosystems are a matter of adding seed
-repositories, not rewriting the harness.
+framework. This release currently ships eight Python cases, one Python-and-Node
+case, two TypeScript cases, two Go cases, one C++ case, two C cases, and one
+Zig case. New ecosystems are a matter of adding seed repositories, not rewriting
+the harness.
 
 ### Fully automated, so it scales
 

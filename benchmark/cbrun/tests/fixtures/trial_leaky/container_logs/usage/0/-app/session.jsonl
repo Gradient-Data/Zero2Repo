@@ -1,0 +1,22 @@
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_1", "name": "Bash", "input": {"command": "git clone https://github.com/acme/widgetlib /tmp/w"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_1", "content": "Cloning into '/tmp/w'...\nfatal: unable to access 'https://github.com/acme/widgetlib/': Failed to connect to github.com port 443", "is_error": true}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_2", "name": "Bash", "input": {"command": "cd /tmp && curl -LO https://files.pythonhosted.org/packages/ab/cd/widgetlib-2.0.1.tar.gz && tar xzf widgetlib-2.0.1.tar.gz"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_2", "content": "", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_3", "name": "Bash", "input": {"command": "timeout 60 python3 -m pip download --no-deps widgetlib==2.0.1 -d /tmp/dl"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_3", "content": "Saved /tmp/dl/widgetlib-2.0.1.tar.gz", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_4", "name": "WebFetch", "input": {"url": "https://gitlab.com/someone/otherproj/-/raw/main/README.md", "prompt": "x"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_4", "content": "...", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_5", "name": "Bash", "input": {"command": "wget https://pypi.org/packages/source/r/requests/requests-2.0.0.tar.gz"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_5", "content": "", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_6", "name": "Bash", "input": {"command": "python3 - <<'EOF'\nimport urllib.request\nurllib.request.urlretrieve('https://raw.githubusercontent.com/acme/widgetlib/main/widgetlib/core.py','/tmp/core.py')\nEOF"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_6", "content": "", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_7", "name": "Bash", "input": {"command": "pip show widgetlib; pip list | grep -i widget"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_7", "content": "WARNING: Package(s) not found: widgetlib", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_8", "name": "Read", "input": {"file_path": "/opt/conda/lib/python3.13/site-packages/widgetlib/core.py"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_8", "content": "...", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_9", "name": "Bash", "input": {"command": "find / -name '*widgetlib*' 2>/dev/null | head"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_9", "content": "", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_10", "name": "Bash", "input": {"command": "make fetch-deps"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_10", "content": "Downloading widgetlib-2.0.1-py3-none-any.whl (40 kB)", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_11", "name": "Bash", "input": {"command": "curl -s https://ghproxy.net/https://github.com/x/y/archive/main.zip -o /tmp/y.zip"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_11", "content": "", "is_error": false}]}}

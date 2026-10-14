@@ -1,7 +1,7 @@
 # feature: F17
 """Pure SSH transfer protocol acceptance tests.
 
-PRD: FP-17 (L484–L507) and PATH negative control L55. Fetch and
+PRD: FP-17 and the PRD core capabilities (binary off PATH). Fetch and
 push-object-id against an SSH Git remote exercise git-orbulk-transfer,
 hybrid fallback, the negotiate/always/never triad, and post-put
 verification. Command tokens, pkt-line status numbers, and message

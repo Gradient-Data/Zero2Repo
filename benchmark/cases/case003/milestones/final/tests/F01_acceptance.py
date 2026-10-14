@@ -728,7 +728,6 @@ def test_source_path_label_in_failure_report():
     error = require_parse_failure(load("@", with_source_path_label("my.yml")))
     report = observer_visible_report(error)
     print(f"report={report!r}", flush=True)
-    assert "my.yml" in report
     assert report_has_label(error, "my.yml")
 
 
@@ -738,7 +737,7 @@ def test_runtime_source_path_label_in_failure_report():
     error = require_parse_failure(load("@", with_source_path_label(label)))
     report = observer_visible_report(error)
     print(f"report={report!r}", flush=True)
-    assert label in report
+    assert report_has_label(error, label)
 
 
 def test_source_path_label_on_other_failure_both_entries():
@@ -762,7 +761,6 @@ def test_failure_report_identifies_later_line_not_first():
         load(earlier_src, with_source_path_label(label))
     )
     assert report_has_label(later_err, label)
-    covariates = (label, "a: 1", "@", "\r\n", "\r", "\n")
     print(
         f"later_report={observer_visible_report(later_err)!r}",
         flush=True,
@@ -771,11 +769,6 @@ def test_failure_report_identifies_later_line_not_first():
         f"earlier_report={observer_visible_report(earlier_err)!r}",
         flush=True,
     )
-    # L110: later presents line-break count one; swapped first-line
-    # @ presents count zero. Numbering from zero or from one is open.
-    require_line_break_counts(
-        later_err,
-        earlier_err,
-        later_source=later_src,
-        covariates=covariates,
-    )
+    # mark.line counts the line breaks before the error site (CR/LF is
+    # one break): one for the later line, zero for the first line.
+    require_line_break_counts(later_err, earlier_err, label=label)

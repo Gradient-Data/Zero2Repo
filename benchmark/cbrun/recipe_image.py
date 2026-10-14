@@ -37,11 +37,13 @@ from .denylist import (
 )
 from .docker_env import docker_available, image_exists
 from .images import deliverable_tag
+from .state import FINGERPRINT_LABEL, digest, file_manifest, image_matches
 from .recipe import (
     RecipeLockError,
     env_recipe_tag,
     load_lock,
     public_base_pull_ref,
+    recipe_lock_path,
     resolve_lock_base_image,
     resolve_lock_runner,
     stage_benchmark_bundle,
@@ -451,7 +453,12 @@ def _stage_deliverable(
                 "see streamed docker output above)"
             )
         commit = subprocess.run(
-            ["docker", "commit", "-c", "WORKDIR /app", container_name, tag],
+            [
+                "docker", "commit",
+                "-c", "WORKDIR /app",
+                "-c", f"LABEL {FINGERPRINT_LABEL}={deliverable_fingerprint(case_dir)}",
+                container_name, tag,
+            ],
             capture_output=True,
             text=True,
         )
@@ -473,18 +480,39 @@ def ensure_deliverable_image(
     """
     case_dir = Path(case_dir).resolve()
     tag = deliverable_tag(case_dir.name)
+    rebuild_env = force
     if not force and image_exists(tag):
-        if _image_probe_clean(tag, case_dir):
+        if not image_matches(tag, deliverable_fingerprint(case_dir)):
+            # Public docs or hidden tests changed since staging; the env
+            # image (recipe toolchain) is still reused when its own lock matches.
+            print(f"[cbrun] deliverable image {tag} is stale; restaging", flush=True)
+        elif _image_probe_clean(tag, case_dir):
             print(f"[cbrun] reusing deliverable image {tag}", flush=True)
             return tag
-        print(
-            f"[cbrun] deliverable image {tag} failed denylist probe; rebuilding",
-            flush=True,
-        )
-        force = True
+        else:
+            print(
+                f"[cbrun] deliverable image {tag} failed denylist probe; rebuilding",
+                flush=True,
+            )
+            rebuild_env = True
 
     lock = load_lock(case_dir)
     validate_lock_env_install(lock)
     runner = resolve_lock_runner(lock, _load_manifest_runner(case_dir))
-    env_tag = _build_env_image(case_dir, lock, runner, force=force)
+    env_tag = _build_env_image(case_dir, lock, runner, force=rebuild_env)
     return _stage_deliverable(case_dir, env_tag, force=True)
+
+
+def deliverable_fingerprint(case_dir: Path) -> str:
+    """Hash of everything staged into ``:deliverable`` on top of the env image."""
+    case_dir = Path(case_dir).resolve()
+    with stage_benchmark_bundle(case_dir, case_dir / "milestones" / "final") as bundle:
+        staged = file_manifest(bundle)
+    lock = recipe_lock_path(case_dir)
+    return digest(
+        {
+            "staged": staged,
+            "staging": staging_shell_command(),
+            "lock": lock.read_text(encoding="utf-8") if lock.is_file() else None,
+        }
+    )

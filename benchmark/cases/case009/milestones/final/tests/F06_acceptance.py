@@ -130,7 +130,7 @@ def _layout_without_git_suffix() -> TwoRemoteLayout:
 
 
 def _https_host_path_from_ssh(ssh_url: str) -> str:
-    """Translate an SSH-style Git remote into HTTPS host/path form (L206)."""
+    """Translate an SSH-style Git remote into HTTPS host/path form (FP-06)."""
     if ssh_url.startswith("ssh://"):
         rest = ssh_url[len("ssh://") :]
         if "@" in rest:
@@ -1223,7 +1223,7 @@ def test_empty_underivable_endpoint_fails_before_pretending_transfer_succeeded()
 
 
 def test_fetch_fails_when_binary_removed_from_path(isolated_ws, product_binary):
-    """Removing the binary from PATH makes the env entry fail (L55)."""
+    """Removing the binary from PATH makes the env entry fail (PRD core capabilities)."""
     isolated_ws.init_repo()
     present = isolated_ws.invoke_via_git(["env"])
     require_success(present)

@@ -25,7 +25,14 @@ __all__ = [
     "image_exists",
     "ExecResult",
     "Container",
+    "CONTAINER_MEMORY",
 ]
+
+# Hard memory cap for every container cbrun starts (solve, judge, scans). The
+# host runs several trials side by side; without a cap one runaway program can
+# exhaust host memory and stall every other trial with it. Swap is capped to the
+# same value so the limit is not bypassed through swap.
+CONTAINER_MEMORY = "16g"
 
 
 def docker_available() -> bool:
@@ -55,6 +62,7 @@ class ExecResult:
     exit_code: int
     timed_out: bool = False
     stall_killed: bool = False
+    aborted: bool = False
     seconds: float = 0.0
     tail: str = ""
 
@@ -84,6 +92,7 @@ class Container:
         the host daemon.
         """
         argv = ["docker", "run", "--platform", platform_name(), "-d", "--rm"]
+        argv += ["--memory", CONTAINER_MEMORY, "--memory-swap", CONTAINER_MEMORY]
         if name:
             argv += ["--name", name]
         if gpus:
@@ -184,6 +193,7 @@ class Container:
         stall_marker: str,
         user: str | None = None,
         activity_path: str | None = None,
+        abort: threading.Event | None = None,
     ) -> ExecResult:
         """Run the agent solve with a wall clock + stall watchdog.
 
@@ -191,6 +201,7 @@ class Container:
         stopped inside the container even if the local client is interrupted.
         The stall watchdog stops the agent when stdout and ``activity_path``
         (typically ``/app``) both stay quiet for ``stall_window_sec``.
+        Setting ``abort`` stops the agent the same way (used by the access monitor).
         """
         wrapped = (
             f"timeout --signal=KILL {int(wall_timeout_sec)} "
@@ -203,6 +214,7 @@ class Container:
         last_activity = [start]
         last_mtime = [self._latest_mtime(activity_path) if activity_path else None]
         stall_killed = [False]
+        aborted = False
 
         proc = subprocess.Popen(
             argv,
@@ -232,6 +244,14 @@ class Container:
             except subprocess.TimeoutExpired:
                 pass
             now = time.monotonic()
+            if abort is not None and abort.is_set():
+                aborted = True
+                self._stop_agent(stall_marker)
+                try:
+                    proc.wait(timeout=30)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                break
             if activity_path:
                 current_mtime = self._latest_mtime(activity_path)
                 if (
@@ -261,7 +281,7 @@ class Container:
         pump.join(timeout=10)
         exit_code = proc.returncode if proc.returncode is not None else -1
         # `timeout` exits 124 (TERM) / 137 (KILL) when the wall clock fires.
-        timed_out = exit_code in (124, 137) and not stall_killed[0]
+        timed_out = exit_code in (124, 137) and not stall_killed[0] and not aborted
         # Defensive sweep so no lingering agent process mutates /app during judge.
         self._stop_agent(stall_marker)
         tail = _tail(log_path.read_text(encoding="utf-8", errors="replace")) if log_path.is_file() else ""
@@ -269,6 +289,7 @@ class Container:
             exit_code=exit_code,
             timed_out=timed_out,
             stall_killed=stall_killed[0],
+            aborted=aborted,
             seconds=time.monotonic() - start,
             tail=tail,
         )

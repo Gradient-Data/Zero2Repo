@@ -27,6 +27,7 @@ from _helpers import (
     assert_usage_names_option,
     default_invoked_name,
     help_page_remainder,
+    marker_occurs,
     unrelated_dispatch_token,
 )
 
@@ -255,7 +256,7 @@ def test_script_program_invocation_runs_callback():
         result = ws.run_python(argv=[str(path), f"{flag}={value}"])
     print(f"script exit={result.returncode} stdout={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"T:{expected}" in result.stdout_text, (
+    assert marker_occurs(result.stdout_text, f"T:{expected}"), (
         f"script program entry did not deliver converted {value}; "
         f"stdout={result.stdout_text!r} stderr={result.stderr_text!r}"
     )
@@ -552,7 +553,7 @@ def test_ascii_environment_encoding_does_not_abort():
             flush=True,
         )
         assert_success_marker_present(unicode_run, greeting)
-        assert f"T:{expected}" in unicode_run.stdout_text
+        assert marker_occurs(unicode_run.stdout_text, f"T:{expected}")
 
         ascii_run = ws.run_python(
             argv=["-X", "utf8=0", str(path), f"{flag}={value}"],
@@ -577,7 +578,7 @@ def test_ascii_environment_encoding_does_not_abort():
         f"stdout={ascii_run.stdout_text!r} stderr={ascii_run.stderr_text!r}"
     )
     assert_success_marker_present(ascii_run, greeting)
-    assert f"T:{expected}" in ascii_run.stdout_text, (
+    assert marker_occurs(ascii_run.stdout_text, f"T:{expected}"), (
         f"ASCII locale run lost the converted marker; "
         f"stdout={ascii_run.stdout_text!r} stderr={ascii_run.stderr_text!r}"
     )

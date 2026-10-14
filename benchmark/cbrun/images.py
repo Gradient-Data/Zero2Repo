@@ -189,13 +189,32 @@ def _build_dockerfile(
     *,
     denylist_snippet: str = "",
     backend: str | None = None,
+    openhands_patch: bool = False,
 ) -> str:
     denylist_block = ""
     if denylist_snippet:
         denylist_block = f"RUN mkdir -p /opt/cbrun/bin\n{denylist_snippet}"
     cli = _cli_install_snippet(environ, backend)
-    # Cursor installs from the official script; other backends need npm.
-    if backend == "cursor":
+    # Cursor installs from the official script; OpenHands is copied from a
+    # prebuilt Python 3.12 image (the CLI pins 3.12, case images are 3.13);
+    # other backends need npm.
+    if backend == "openhands":
+        image = agents.OPENHANDS_CLI_IMAGE
+        install = f"COPY --from={image} /root/.local /root/.local\n"
+        if openhands_patch:
+            install += "COPY openhands_llm_timeout.py /tmp/openhands_llm_timeout.py\n"
+        install += (
+            "RUN ln -sfn /root/.local/bin/openhands /usr/local/bin/openhands "
+            "&& /usr/local/bin/openhands --version"
+        )
+        if openhands_patch:
+            install += (
+                " && /root/.local/share/uv/tools/openhands/bin/python "
+                "/tmp/openhands_llm_timeout.py "
+                "&& rm -f /tmp/openhands_llm_timeout.py"
+            )
+        install += f"\nRUN set -eux; {_agent_user_snippet()}\n"
+    elif backend == "cursor":
         install = f"RUN set -eux; {cli}; {_agent_user_snippet()}\n"
     else:
         install = (
@@ -233,7 +252,13 @@ def ensure_agent_image(
         require_denylist(case_dir)
 
     deliverable = deliverable_image or deliverable_tag(case_id)
-    if not image_exists(deliverable) or (force and case_dir is not None):
+    # With the case at hand, always go through ensure_deliverable_image: it
+    # reuses the tag only while its staged docs and hidden tests still match.
+    if case_dir is not None and deliverable_image is None:
+        from .recipe_image import ensure_deliverable_image
+
+        deliverable = ensure_deliverable_image(case_dir, force=force)
+    elif not image_exists(deliverable) or (force and case_dir is not None):
         if case_dir is None:
             raise RuntimeError(
                 f"deliverable image not found: {deliverable}. Pass case_dir so "
@@ -261,8 +286,20 @@ def ensure_agent_image(
                 case_dir / "source" / "denylist.json",
                 required=enforce_denylist,
             )
+        openhands_patch = False
+        if backend == "openhands":
+            patch = Path(__file__).resolve().parent / "openhands_cli" / "apply_llm_timeout.py"
+            if patch.is_file():
+                (build_ctx / "openhands_llm_timeout.py").write_text(
+                    patch.read_text(encoding="utf-8"), encoding="utf-8"
+                )
+                openhands_patch = True
         dockerfile = _build_dockerfile(
-            deliverable, environ, denylist_snippet=denylist_snippet, backend=backend
+            deliverable,
+            environ,
+            denylist_snippet=denylist_snippet,
+            backend=backend,
+            openhands_patch=openhands_patch,
         )
         fingerprint = digest(
             {

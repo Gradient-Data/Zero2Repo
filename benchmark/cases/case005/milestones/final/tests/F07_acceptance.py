@@ -80,10 +80,10 @@ from F07_helpers import (
     finish_proposing_request,
     http10_expect_request_bytes,
     http11_expect_request_bytes,
-    public_connect_finished,
-    public_expect_headers,
-    public_leftover_http10_get,
-    public_upgrade_finished,
+    fixed_connect_finished,
+    fixed_expect_headers,
+    fixed_leftover_http10_get,
+    fixed_upgrade_finished,
     require_both_switched,
     require_not_switched,
     require_receive_closed,
@@ -191,7 +191,7 @@ def _illegal_http_send(conn: Any, event: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# S. Present-arm encode and pull (L79: no package-disable negative control)
+# S. Present-arm encode and pull
 # ---------------------------------------------------------------------------
 
 
@@ -213,7 +213,7 @@ def test_expect_path_round_trips_when_package_importable():
     fresh_client = client_connection()
     fresh_server = server_connection()
     expect_encoded = require_send_bytes(
-        send_event(fresh_client, make_request(headers=public_expect_headers()))
+        send_event(fresh_client, make_request(headers=fixed_expect_headers()))
     )
     print(f"Expect GET encoded len={len(expect_encoded)}", flush=True)
     assert len(expect_encoded) > 0
@@ -227,7 +227,7 @@ def test_expect_path_round_trips_when_package_importable():
 
 
 def test_get_encode_fails_when_package_not_importable():
-    # L79: this product has no negative control. Present versus hollow is
+    # The product is exercised by
     # real send/pull of the named F07 behavior on a constructed connection,
     # not an import-stripped child. ENCODE_UNAVAILABLE / ENCODED_REQUEST
     # are not product output. The only accepted present-arm outcome is
@@ -250,7 +250,7 @@ def test_get_encode_fails_when_package_not_importable():
     fresh_client = client_connection()
     fresh_server = server_connection()
     expect_encoded = require_send_bytes(
-        send_event(fresh_client, make_request(headers=public_expect_headers()))
+        send_event(fresh_client, make_request(headers=fixed_expect_headers()))
     )
     print(f"present-arm Expect GET encoded len={len(expect_encoded)}", flush=True)
     assert len(expect_encoded) > 0
@@ -454,7 +454,7 @@ def test_http11_expect_content_length_100_sets_waiting_flags():
     client = client_connection()
     server = server_connection()
     encoded = require_send_bytes(
-        send_event(client, make_request(headers=public_expect_headers()))
+        send_event(client, make_request(headers=fixed_expect_headers()))
     )
     feed_ok(server, encoded)
     pull_kind(server, "request")
@@ -488,7 +488,7 @@ def test_they_are_waiting_only_on_server():
     client = client_connection()
     server = server_connection()
     encoded = require_send_bytes(
-        send_event(client, make_request(headers=public_expect_headers()))
+        send_event(client, make_request(headers=fixed_expect_headers()))
     )
     feed_ok(server, encoded)
     pull_kind(server, "request")
@@ -568,7 +568,7 @@ def _expect_pair_flags_on() -> tuple[Any, Any]:
     client = client_connection()
     server = server_connection()
     encoded = require_send_bytes(
-        send_event(client, make_request(headers=public_expect_headers()))
+        send_event(client, make_request(headers=fixed_expect_headers()))
     )
     feed_ok(server, encoded)
     pull_kind(server, "request")
@@ -770,7 +770,7 @@ def _bind_waiting_reports_from_public_expect() -> None:
     client = client_connection()
     server = server_connection()
     encoded = require_send_bytes(
-        send_event(client, make_request(headers=public_expect_headers()))
+        send_event(client, make_request(headers=fixed_expect_headers()))
     )
     feed_ok(server, encoded)
     pull_kind(server, "request")
@@ -887,7 +887,7 @@ def test_connect_empty_body_might_switch_only_after_eom():
 
 
 def test_connect_404_then_eom_allows_next_cycle():
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     encoded = require_send_bytes(send_event(server, make_response(404, headers=[])))
     feed_ok(client, encoded)
     pulled_404 = pull_kind(client, "response")
@@ -910,7 +910,7 @@ def test_connect_404_then_eom_allows_next_cycle():
 
 
 def test_connect_200_enters_switched_protocol():
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     pulled = accept_connect(client, server, 200)
     assert status_code(pulled) == 200
     _require_paused_not_request(client)
@@ -995,7 +995,7 @@ def test_upgrade_switch_state_appears_only_after_request_eom():
 
 
 def test_upgrade_101_enters_switched_like_connect_accept():
-    client, server = public_upgrade_finished()
+    client, server = fixed_upgrade_finished()
     pulled = accept_upgrade(client, server)
     assert status_code(pulled) == 101
     assert event_is_kind(pulled, "informational")
@@ -1004,7 +1004,7 @@ def test_upgrade_101_enters_switched_like_connect_accept():
 
 
 def test_upgrade_200_is_denial_and_allows_next_cycle():
-    client, server = public_upgrade_finished()
+    client, server = fixed_upgrade_finished()
     deny_and_complete(client, server, 200)
     require_start_succeeded(start_next_cycle(client), client)
     require_start_succeeded(start_next_cycle(server), server)
@@ -1205,8 +1205,8 @@ def test_runtime_dual_proposal_accept_each():
 
 def test_client_in_might_switch_cannot_send_another_request():
     for label, factory in (
-        ("connect", public_connect_finished),
-        ("upgrade", public_upgrade_finished),
+        ("connect", fixed_connect_finished),
+        ("upgrade", fixed_upgrade_finished),
     ):
         print(f"second request while might-switch ({label})", flush=True)
         client, _server = factory()
@@ -1231,8 +1231,8 @@ def test_client_in_might_switch_cannot_send_another_request():
 
 def test_second_request_succeeds_after_denial_and_next_cycle():
     for label, factory, deny_status in (
-        ("connect", public_connect_finished, 404),
-        ("upgrade", public_upgrade_finished, 200),
+        ("connect", fixed_connect_finished, 404),
+        ("upgrade", fixed_upgrade_finished, 200),
     ):
         print(f"GET after deny+start ({label}) status={deny_status}", flush=True)
         client, server = factory()
@@ -1249,7 +1249,7 @@ def test_second_request_succeeds_after_denial_and_next_cycle():
 
 
 def test_start_next_cycle_while_might_switch_is_local_not_error():
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     require_our_state(client, "MIGHT_SWITCH_PROTOCOL")
     require_our_state(server, "SEND_RESPONSE")
     client_start = start_next_cycle(client)
@@ -1282,7 +1282,7 @@ def test_start_next_cycle_while_might_switch_is_local_not_error():
     require_both_switched(client)
     require_both_switched(server)
 
-    upgrade_client, upgrade_server = public_upgrade_finished()
+    upgrade_client, upgrade_server = fixed_upgrade_finished()
     upgrade_client_start = start_next_cycle(upgrade_client)
     require_local_cycle_refusal(upgrade_client_start, upgrade_client)
     assert upgrade_client_start.exception is not None
@@ -1331,24 +1331,24 @@ def _trailing_123_then_456(conn: Any) -> None:
 
 
 def test_connect_200_trailing_123_then_456_receive_still_open():
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     accept_connect(client, server, 200)
     _trailing_123_then_456(client)
     _trailing_123_then_456(server)
 
 
 def test_upgrade_101_same_trailing_and_paused():
-    client, server = public_upgrade_finished()
+    client, server = fixed_upgrade_finished()
     accept_upgrade(client, server)
     _trailing_123_then_456(client)
     _trailing_123_then_456(server)
 
 
 def test_switched_does_not_parse_leftover_http_as_request():
-    leftover = public_leftover_http10_get()
+    leftover = fixed_leftover_http10_get()
     for label, factory, accept in (
-        ("connect", public_connect_finished, lambda c, s: accept_connect(c, s, 200)),
-        ("upgrade", public_upgrade_finished, accept_upgrade),
+        ("connect", fixed_connect_finished, lambda c, s: accept_connect(c, s, 200)),
+        ("upgrade", fixed_upgrade_finished, accept_upgrade),
     ):
         print(f"SWITCHED leftover HTTP ({label})", flush=True)
         client, server = factory()
@@ -1367,18 +1367,18 @@ def test_switched_does_not_parse_leftover_http_as_request():
 
 
 def test_http_send_after_switched_is_local_protocol_error():
-    connect_client, connect_server = public_connect_finished()
+    connect_client, connect_server = fixed_connect_finished()
     accept_connect(connect_client, connect_server, 200)
     _illegal_http_send(connect_server, make_data(b"xyz"))
 
-    upgrade_client, upgrade_server = public_upgrade_finished()
+    upgrade_client, upgrade_server = fixed_upgrade_finished()
     accept_upgrade(upgrade_client, upgrade_server)
     _illegal_http_send(
         upgrade_client,
         make_request(headers=[("Host", runtime_host())]),
     )
 
-    eom_client, eom_server = public_connect_finished()
+    eom_client, eom_server = fixed_connect_finished()
     accept_connect(eom_client, eom_server, 200)
     _illegal_http_send(eom_server, make_eom())
     assert named_state("ERROR") == require_our_state(eom_server, "ERROR")
@@ -1386,7 +1386,7 @@ def test_http_send_after_switched_is_local_protocol_error():
 
 
 def test_no_start_next_cycle_out_of_switched():
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     accept_connect(client, server, 200)
     require_neither_error(client)
     require_neither_error(server)
@@ -1400,7 +1400,7 @@ def test_no_start_next_cycle_out_of_switched():
     require_neither_error(server)
     print("SWITCHED start refused, still SWITCHED, not ERROR", flush=True)
 
-    send_pair_client, send_pair_server = public_connect_finished()
+    send_pair_client, send_pair_server = fixed_connect_finished()
     accept_connect(send_pair_client, send_pair_server, 200)
     _illegal_http_send(send_pair_server, make_data(b"nope"))
     our = require_our_state(send_pair_server, "ERROR")
@@ -1422,7 +1422,7 @@ def test_runtime_switched_trailing_concatenates():
         first = b"aaaaa"
         second = b"bbbbb"
     print(f"runtime trailing {first!r} then {second!r}", flush=True)
-    client, server = public_connect_finished()
+    client, server = fixed_connect_finished()
     accept_connect(client, server, 200)
     feed_ok(client, first)
     _require_paused_not_request(client)
@@ -1442,8 +1442,8 @@ def test_runtime_switched_trailing_concatenates():
 
 def test_empty_feed_while_might_switch_stays_paused_with_receive_closed():
     for label, factory in (
-        ("connect", public_connect_finished),
-        ("upgrade", public_upgrade_finished),
+        ("connect", fixed_connect_finished),
+        ("upgrade", fixed_upgrade_finished),
     ):
         print(f"empty feed while might-switch ({label})", flush=True)
         _client, server = factory()
@@ -1459,8 +1459,8 @@ def test_empty_feed_while_might_switch_stays_paused_with_receive_closed():
 
 def test_empty_feed_then_denial_pulls_connection_closed():
     for label, factory, deny_status in (
-        ("connect", public_connect_finished, 404),
-        ("upgrade", public_upgrade_finished, 200),
+        ("connect", fixed_connect_finished, 404),
+        ("upgrade", fixed_upgrade_finished, 200),
     ):
         print(f"empty feed then deny ({label}) status={deny_status}", flush=True)
         client, server = factory()
@@ -1482,7 +1482,7 @@ def test_empty_feed_then_denial_pulls_connection_closed():
 
 
 def test_empty_feed_then_acceptance_stays_paused():
-    connect_client, connect_server = public_connect_finished()
+    connect_client, connect_server = fixed_connect_finished()
     feed_empty(connect_server)
     _require_paused_not_cc(connect_server)
     require_receive_closed(connect_server)
@@ -1490,7 +1490,7 @@ def test_empty_feed_then_acceptance_stays_paused():
     _require_paused_not_cc(connect_server)
     require_receive_closed(connect_server)
 
-    upgrade_client, upgrade_server = public_upgrade_finished()
+    upgrade_client, upgrade_server = fixed_upgrade_finished()
     feed_empty(upgrade_server)
     _require_paused_not_cc(upgrade_server)
     accept_upgrade(upgrade_client, upgrade_server)
@@ -1501,8 +1501,8 @@ def test_empty_feed_then_acceptance_stays_paused():
 
 def test_empty_feed_after_acceptance_stays_paused():
     for label, factory, accept in (
-        ("connect", public_connect_finished, lambda c, s: accept_connect(c, s, 200)),
-        ("upgrade", public_upgrade_finished, accept_upgrade),
+        ("connect", fixed_connect_finished, lambda c, s: accept_connect(c, s, 200)),
+        ("upgrade", fixed_upgrade_finished, accept_upgrade),
     ):
         print(f"accept then empty feed ({label})", flush=True)
         client, server = factory()
@@ -1523,10 +1523,10 @@ def test_empty_feed_after_acceptance_stays_paused():
 
 
 def test_leftover_get_http10_after_denial_and_next_cycle():
-    leftover = public_leftover_http10_get()
+    leftover = fixed_leftover_http10_get()
     for label, factory, deny_status in (
-        ("connect", public_connect_finished, 404),
-        ("upgrade", public_upgrade_finished, 200),
+        ("connect", fixed_connect_finished, 404),
+        ("upgrade", fixed_upgrade_finished, 200),
     ):
         print(f"leftover HTTP/1.0 after deny+start ({label})", flush=True)
         client, server = factory()
@@ -1567,8 +1567,8 @@ def test_runtime_leftover_http10_after_denial():
     leftover = f"GET {target} HTTP/1.0\r\n\r\n".encode("ascii")
     print(f"runtime leftover target={target!r}", flush=True)
     for label, factory, deny_status in (
-        ("connect", public_connect_finished, 404),
-        ("upgrade", public_upgrade_finished, 200),
+        ("connect", fixed_connect_finished, 404),
+        ("upgrade", fixed_upgrade_finished, 200),
     ):
         client, server = factory()
         feed_ok(server, leftover)
@@ -1589,8 +1589,8 @@ def test_runtime_leftover_http10_after_denial():
 
 
 def test_leftover_not_parsed_until_denial_and_start():
-    leftover = public_leftover_http10_get()
-    client, server = public_connect_finished()
+    leftover = fixed_leftover_http10_get()
+    client, server = fixed_connect_finished()
     feed_ok(server, leftover)
     _require_paused_not_request(server)
     start_fail = start_next_cycle(server)
@@ -1600,7 +1600,7 @@ def test_leftover_not_parsed_until_denial_and_start():
     assert not event_is_kind(still.value, "request")
     print("no-deny start does not unlock leftover GET", flush=True)
 
-    upgrade_client, upgrade_server = public_upgrade_finished()
+    upgrade_client, upgrade_server = fixed_upgrade_finished()
     feed_ok(upgrade_server, leftover)
     _require_paused_not_request(upgrade_server)
     require_local_cycle_refusal(start_next_cycle(upgrade_server), upgrade_server)
@@ -1661,8 +1661,8 @@ def test_pipelining_paused_unblocks_after_start_without_switch_deny():
 
 
 def test_switch_paused_does_not_unblock_by_feeding_or_start_alone():
-    leftover = public_leftover_http10_get()
-    client, server = public_connect_finished()
+    leftover = fixed_leftover_http10_get()
+    client, server = fixed_connect_finished()
     accept_connect(client, server, 200)
     feed_ok(server, leftover)
     _require_paused_not_request(server)
@@ -1677,7 +1677,7 @@ def test_switch_paused_does_not_unblock_by_feeding_or_start_alone():
     assert not event_is_kind(still.value, "request")
     print("accepted switch: feed and start do not yield the leftover GET", flush=True)
 
-    maybe_client, maybe_server = public_upgrade_finished()
+    maybe_client, maybe_server = fixed_upgrade_finished()
     feed_ok(maybe_server, leftover)
     _require_paused_not_request(maybe_server)
     require_local_cycle_refusal(start_next_cycle(maybe_server), maybe_server)

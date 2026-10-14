@@ -104,7 +104,6 @@ STRUCTURE_QUOTED = (
     "... x",
     "- value",
     "? value",
-    "=",
     "foo: bar",
     "foo:",
     "foo #bar",

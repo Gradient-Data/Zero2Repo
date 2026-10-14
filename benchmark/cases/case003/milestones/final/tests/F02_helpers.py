@@ -1,7 +1,7 @@
 # feature: F02
 """Runtime token unique to FP-02 YAML 1.1 non-octal leading-zero integers.
 
-Draws a leading-zero digit string that is not public ``09`` and that
+Draws a leading-zero digit string that is not the suite-named ``09`` and that
 cannot be legal octal (it contains 8 or 9). Generation failure raises.
 
 Also exports independent integer-scaled magnitudes for an unsigned
@@ -57,7 +57,7 @@ def unsigned_exponent_magnitude(token: str) -> int:
     coefficient is the integer formed by the digits with the decimal
     point removed; the result is that integer times ``10**(exp - scale)``
     where *scale* is the number of fractional digits. That is the same
-    arithmetic as the public oracles ``-2 * 10**5`` and ``12 * 10**3``,
+    arithmetic as the suite-named values ``-2 * 10**5`` and ``12 * 10**3``,
     and it is the IEEE/JSON value of tokens the sealed generator draws.
     Does not parse YAML. Raises if the token is not ``digits.digits``
     then ``e`` then digits, or if the scaled magnitude would not be an
@@ -93,7 +93,7 @@ def unsigned_exponent_magnitude(token: str) -> int:
 
 
 def non_octal_leading_zero_token() -> str:
-    """Leading ``0`` plus digits that include 8 or 9. Not public ``09``.
+    """Leading ``0`` plus digits that include 8 or 9. Not the suite-named ``09``.
 
     The extra digits are not an octal-only leading-zero token. Raises if
     a qualifying token cannot be drawn.

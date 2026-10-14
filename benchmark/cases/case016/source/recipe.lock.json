@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "case_id": "case016",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "resolved": {
+    "python": {
+      "pyyaml": "6.0.3"
+    },
+    "apt": {}
+  },
+  "public": true,
+  "runner": {
+    "install_command": "export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get install -y --no-install-recommends python3-pip && printf '[global]\\nbreak-system-packages = true\\n' > /etc/pip.conf && python3 -m pip install --no-cache-dir --break-system-packages --disable-pip-version-check 'pytest==9.0.3' 'pyyaml==6.0.3' && rm -rf /var/lib/apt/lists/*",
+    "build_command": "true"
+  }
+}

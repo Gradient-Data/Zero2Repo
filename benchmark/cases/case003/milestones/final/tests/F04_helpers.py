@@ -1,10 +1,10 @@
 # feature: F04
 """Schemas that apply merge keys under FP-04.
 
-L181 turns ``<<`` on under YAML 1.1, or under Core with the merge tag.
-Those two option bags are this slice's new name. Public several-merge
-YAML is a frozen PRD literal in the feature test file, not assembled
-here. Runtime unique-key several-merge still uses the sealed assembler.
+Merge keys apply under YAML 1.1, or under Core with the merge tag.
+Those two option bags are this slice's new name. The suite-named
+several-merge document is a constant in the feature test file, not
+assembled here. Runtime unique-key several-merge still uses the sealed assembler.
 """
 
 from __future__ import annotations

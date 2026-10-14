@@ -159,62 +159,29 @@ def require_event(result: CallResult) -> Any:
 
 
 def suggested_status(exc: BaseException) -> int:
-    """Read the integer suggested-status carrier from a protocol error.
+    """Read the suggested status from a protocol error.
 
-    Raises :class:`HarnessError` when no integer carrier is present.
-    Never defaults to 400.
+    The Interface Contract states the carrier: ``error_status_hint``,
+    exactly an ``int``. Missing or non-int raises :class:`HarnessError`;
+    never defaults to 400.
     """
-    found: list[int] = []
-    seen: set[int] = set()
-
-    def _add(value: Any) -> None:
-        if type(value) is int and value not in seen:
-            seen.add(value)
-            found.append(value)
-
     try:
-        mapping = getattr(exc, "__dict__", None)
-        if isinstance(mapping, dict):
-            for value in mapping.values():
-                _add(value)
-    except Exception as probe_exc:
+        value = getattr(exc, "error_status_hint")
+    except AttributeError as probe_exc:
         raise HarnessError(
-            f"cannot read exception fields: {probe_exc}"
-        ) from probe_exc
-
-    try:
-        names = dir(exc)
-    except Exception as probe_exc:
-        raise HarnessError(
-            f"cannot list exception attributes: {probe_exc}"
-        ) from probe_exc
-    for name in names:
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception:
-            continue
-        if callable(value):
-            continue
-        _add(value)
-
-    if not found:
-        raise HarnessError(
-            "protocol error has no integer suggested status: "
+            "protocol error has no error_status_hint: "
             f"{type(exc).__name__}: {exc!r}"
+        ) from probe_exc
+    except Exception as probe_exc:
+        raise HarnessError(
+            f"cannot read error_status_hint: {probe_exc}"
+        ) from probe_exc
+    if type(value) is not int:
+        raise HarnessError(
+            f"error_status_hint is not an int: {type(value)!r} {value!r}"
         )
-    if len(found) == 1:
-        print(f"suggested_status={found[0]}", flush=True)
-        return found[0]
-    httpish = [value for value in found if 100 <= value <= 599]
-    if len(httpish) == 1:
-        print(f"suggested_status={httpish[0]}", flush=True)
-        return httpish[0]
-    raise HarnessError(
-        f"protocol error has several integer fields {found!r}; "
-        "cannot classify suggested status"
-    )
+    print(f"suggested_status={value}", flush=True)
+    return value
 
 
 def require_local_refusal(
@@ -350,7 +317,7 @@ def http_field_absent(event: Any, field: str) -> None:
 
 
 def runtime_token() -> str:
-    """Process-local alphanumeric token that avoids public sample spellings."""
+    """Process-local alphanumeric token that avoids fixture spellings."""
     seed = time.time_ns() ^ (os.getpid() << 16)
     token = f"t{seed:x}"
     if token.lower() in _PUBLIC_TOKENS:
@@ -360,7 +327,7 @@ def runtime_token() -> str:
 
 
 def runtime_int() -> int:
-    """Process-local positive integer that avoids public sample statuses."""
+    """Process-local positive integer that avoids fixture statuses."""
     n = int((time.time_ns() % 800) + 50)
     forbidden = {0, 1, 2, 100, 199, 200, 204, 999}
     if n in forbidden:

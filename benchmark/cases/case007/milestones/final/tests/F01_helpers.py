@@ -3,7 +3,7 @@
 
 Helpers classify outcomes of the two public secret helpers. They never
 return ``None`` to mean "the observation could not be classified".
-Alphabets are the sets named in the PRD, not a copy of product source.
+Alphabets are the sets the PRD states, not a copy of product source.
 """
 
 from __future__ import annotations
@@ -14,12 +14,12 @@ from typing import Any
 
 from _harness import CallResult, HarnessError, call, require_exception, require_text
 
-# L100: every character is one of A–Z or 2–7.
+# every character is one of A–Z or 2–7.
 BASE32_ALPHABET = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
-# L102: every character is one of A–F or 0–9.
+# every character is one of A–F or 0–9.
 HEX_ALPHABET = frozenset("ABCDEF0123456789")
 
-# L104 / L114: N>=5 draws, then not all identical. Not pairwise distinct.
+# N>=5 draws, then not all identical. Not pairwise distinct.
 NONCONSTANT_DRAWS = 5
 
 # Consecutive integers in the unpublished-length band. After removing
@@ -59,7 +59,7 @@ def require_secret(result: CallResult, length: int, alphabet: Collection[str]) -
 
 
 def require_secret_refused(result: CallResult) -> BaseException:
-    """Require a failure with no secret string handed back (L108–L109).
+    """Require a failure with no secret string handed back.
 
     The caller must observe a failure (any exception; class and message
     are not pinned) and ``value`` must not be a secret string. Returning
@@ -111,7 +111,7 @@ def collect_secrets(
 
 
 def require_not_constant(secrets_drawn: Iterable[str]) -> None:
-    """Require that the draws are not a single canned string (L104 / L114).
+    """Require that the draws are not a single canned string.
 
     Needs at least two successful secrets. Does not require adjacent
     draws to differ, pairwise uniqueness, or an entropy bound.

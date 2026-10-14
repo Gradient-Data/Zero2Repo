@@ -70,8 +70,8 @@ _NO_EXPECTED = object()
 class MarkedDecodeError(Exception):
     """Test-process decode error that carries a runtime marker.
 
-    Not a product type. Used so payload-decode failures can be told
-    apart without pinning product exception class names.
+    Not a product type. Used so a payload-decode failure's retained
+    ``original_error`` can be identified.
     """
 
     def __init__(self, marker: str) -> None:
@@ -479,77 +479,33 @@ def _token_forms(token: str | bytes) -> list[str | bytes]:
     return forms
 
 
-def _inspectable_text_and_bytes(
-    exc: BaseException, *, depth: int = 0
-) -> list[str | bytes]:
-    """Collect str/bytes from args and public non-callable attributes.
-
-    Used to inspect an unsigned payload on a signature-mismatch failure.
-    Recurses one level into a nested ``BaseException``. Does not search
-    repr.
-    """
-    found: list[str | bytes] = []
-    args = getattr(exc, "args", ())
-    for item in args:
-        if isinstance(item, bytearray):
-            found.append(bytes(item))
-        elif isinstance(item, (str, bytes)):
-            found.append(item)
-        elif isinstance(item, BaseException) and depth < 1:
-            found.extend(_inspectable_text_and_bytes(item, depth=depth + 1))
-    try:
-        names = dir(exc)
-    except Exception as probe_exc:
-        raise HarnessError(
-            f"cannot list attributes on failure object: {probe_exc}"
-        ) from probe_exc
-    for name in names:
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception:
-            continue
-        if callable(value):
-            continue
-        if isinstance(value, bytearray):
-            found.append(bytes(value))
-        elif isinstance(value, (str, bytes)):
-            found.append(value)
-        elif isinstance(value, BaseException) and depth < 1:
-            found.extend(_inspectable_text_and_bytes(value, depth=depth + 1))
-    return found
-
-
 def unsigned_payload_on_failure(
     exc: BaseException, *, token: str | bytes
 ) -> list[str | bytes]:
-    """Return inspectable unsigned payload candidates from a failure object.
+    """Return the unsigned payload a signature-mismatch failure carries.
 
-    Collects bytes or text from args and public non-callable attributes.
-    Drops values equal to the full token. Does not rsplit the token.
-    Raises if nothing remains that can be decoded later. Never returns an
-    empty list or ``None`` to mean "no payload was found".
+    Reads the stated ``payload`` attribute. A value equal to the full token
+    is not the payload section. Raises if the attribute is missing or holds
+    no payload. Never returns an empty list or ``None``.
     """
-    excluded = set()
-    for form in _token_forms(token):
-        excluded.add(form)
-    found: list[str | bytes] = []
-    for item in _inspectable_text_and_bytes(exc):
-        if item in excluded:
-            continue
-        found.append(item)
+    value = getattr(exc, "payload", None)
+    if isinstance(value, bytearray):
+        value = bytes(value)
     print(
-        f"inspectable payload candidates={[type(x).__name__ for x in found]} "
-        f"n={len(found)}",
+        f"failure payload attribute type={type(value).__name__}",
         flush=True,
     )
-    if not found:
-        raise HarnessError(
-            "failure object carries no inspectable unsigned payload "
-            "(bytes or text) distinct from the full token"
+    if not isinstance(value, (str, bytes)):
+        raise AssertionError(
+            "failure object's payload attribute carries no unsigned payload; "
+            f"type={type(exc).__name__} payload={value!r}"
         )
-    return found
+    if value in set(_token_forms(token)):
+        raise AssertionError(
+            "failure object's payload attribute is the full token, not the "
+            "payload section"
+        )
+    return [value]
 
 
 def decode_inspected_payload(payload: str | bytes, dumps_loads: Any = None) -> Any:
@@ -627,94 +583,27 @@ def require_recovered_from_failure(
     )
 
 
-def _retained_failure_objects(exc: BaseException) -> list[BaseException]:
-    """Collect the failure and every exception it retained.
-
-    Walks nested exception fields and language-level chaining. An
-    unmarked nested exception is not the original error — the caller
-    still requires the marker. Cycles are skipped. Never returns an
-    empty list.
-    """
-    found: list[BaseException] = []
-    seen: set[int] = set()
-
-    def visit(obj: BaseException) -> None:
-        ident = id(obj)
-        if ident in seen:
-            return
-        seen.add(ident)
-        found.append(obj)
-        try:
-            names = dir(obj)
-        except Exception as probe_exc:
-            raise HarnessError(
-                f"cannot list attributes on failure object: {probe_exc}"
-            ) from probe_exc
-        for name in names:
-            if name.startswith("_"):
-                continue
-            try:
-                value = getattr(obj, name)
-            except Exception:
-                continue
-            if isinstance(value, BaseException):
-                visit(value)
-        cause = obj.__cause__
-        if isinstance(cause, BaseException):
-            visit(cause)
-        if not getattr(obj, "__suppress_context__", False):
-            context = obj.__context__
-            if isinstance(context, BaseException):
-                visit(context)
-
-    visit(exc)
-    if not found:
-        raise HarnessError("failure walk produced no exception objects")
-    return found
-
-
 def require_marker_on_failure(exc: BaseException, marker: str) -> str:
-    """Require *marker* to remain observable on a payload-decode failure.
+    """Require the payload-decode failure to retain the original decode error.
 
-    L142 retains the original decode error so two marked codecs stay
-    distinguishable. The form of that retention is not pinned. An
-    unmarked nested exception is not the original error. Missing marker
-    raises — never a sentinel.
+    Reads the stated ``original_error`` attribute: it must be the decode
+    error the dump/load object raised, so two marked codecs stay
+    distinguishable. Missing marker raises — never a sentinel.
     """
     if not marker:
         raise HarnessError("decode marker must be non-empty")
-    for item in _retained_failure_objects(exc):
-        if isinstance(item, MarkedDecodeError) and item.marker == marker:
-            print(
-                f"decode marker on retained failure itself marker={marker!r}",
-                flush=True,
-            )
-            return marker
-        marker_attr = getattr(item, "marker", None)
-        if marker_attr == marker:
-            print(
-                f"decode marker on retained field marker={marker!r}",
-                flush=True,
-            )
-            return marker
-        for payload in _inspectable_text_and_bytes(item):
-            if isinstance(payload, bytes):
-                try:
-                    text = as_text(payload)
-                except HarnessError:
-                    continue
-            else:
-                text = payload
-            if marker in text:
-                print(
-                    f"decode marker in inspectable text marker={marker!r}",
-                    flush=True,
-                )
-                return marker
+    original = getattr(exc, "original_error", None)
+    print(
+        f"failure original_error type={type(original).__name__}",
+        flush=True,
+    )
+    if isinstance(original, MarkedDecodeError) and original.marker == marker:
+        print(f"decode marker on original_error marker={marker!r}", flush=True)
+        return marker
     raise AssertionError(
         "payload-decode failure did not retain the original decode error "
-        f"(marker {marker!r} is gone); "
-        f"failure_type={type(exc).__name__} args={getattr(exc, 'args', ())!r}"
+        f"on original_error (marker {marker!r}); "
+        f"failure_type={type(exc).__name__} original_error={original!r}"
     )
 
 

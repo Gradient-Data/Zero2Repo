@@ -32,7 +32,6 @@ from _helpers import (
     require_tagging_unsuccessful,
     tag_value,
     tagged_of,
-    unload_packaged_taggers,
 )
 
 LANG_ENG = "eng"
@@ -143,30 +142,20 @@ def _unsupported_language_name() -> str:
 def _empty_resources():
     """No packaged tagger models on the search list."""
     with workspace() as ws:
-        unload_packaged_taggers()
         with bound_resource_path(ws, present=False):
-            unload_packaged_taggers()
-            try:
-                yield ws
-            finally:
-                unload_packaged_taggers()
+            yield ws
 
 
 @contextmanager
 def _tagger_resources(*languages: str, universal: bool = False):
     """Install only the named perceptron trees, optionally the universal tables."""
     with workspace() as ws:
-        unload_packaged_taggers()
         for language in languages:
             install_perceptron(ws, language)
         if universal:
             install_universal_tagset(ws)
         with bound_resource_path(ws, present=True):
-            unload_packaged_taggers()
-            try:
-                yield ws
-            finally:
-                unload_packaged_taggers()
+            yield ws
 
 
 def _constructed_tagger(cls, *args, **kwargs):
@@ -498,7 +487,7 @@ def test_recommended_english_homepage_proper_vs_common_noun():
 
 # ---------------------------------------------------------------------------
 # F. Russian RNC and universal
-# English present-tables mapping is not asserted; see prd_questions.json.
+# English mapping with the tables present is outside the specification.
 # ---------------------------------------------------------------------------
 
 

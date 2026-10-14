@@ -7,13 +7,15 @@ formats with sorted names and no-value / empty-string rules; global
 --file / --quote / --export / --version; usage-style unopenable paths
 versus missing-key empty output; set without both arguments does not
 write; default set/unset do not follow symbolic links. Exit numbers,
-Click exception types, pip install wording, and shlex.quote bytes are
-not pinned.
+Click exception types, and shlex.quote bytes are not pinned; reports are
+read by the exit status, channel and usage label the Interface Contract
+states.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
 
 from _harness import HarnessError, RunResult, Workspace, path_is_file, path_is_symlink
@@ -28,8 +30,10 @@ from _helpers import (
     require_cli_unsuccessful,
     require_independent_line,
     require_utf8_text,
-    strip_cli_covariates,
-    strip_path_covariates,
+    EXIT_OPERATION_FAILURE,
+    EXIT_USAGE_FAILURE,
+    has_usage_label,
+    require_exit,
     unique_token,
 )
 
@@ -156,15 +160,16 @@ def test_cli_without_extra_does_not_run_subcommands_and_identifies_extra(isolate
     )
     extra_get_text = _require_nonempty_report(extra_get, origin="extra-less get")
 
-    argv_tokens = ("list", "get")
-    stripped_list = strip_cli_covariates(extra_list_text, [ws.path, ".env"], argv_tokens)
-    stripped_get = strip_cli_covariates(extra_get_text, [ws.path, ".env"], argv_tokens)
-    assert stripped_list, "extra-less list report is only argv/path echo"
-    assert stripped_get, "extra-less get report is only argv/path echo"
-    assert stripped_list == stripped_get, (
-        "extra-less list and get have no shared remainder after stripping "
-        f"paths and subcommand words: list={stripped_list!r} get={stripped_get!r}"
+    require_exit(extra_list, EXIT_OPERATION_FAILURE, origin="extra-less list")
+    require_exit(extra_get, EXIT_OPERATION_FAILURE, origin="extra-less get")
+    assert re.search(r"(?<![A-Za-z0-9_])cli(?![A-Za-z0-9_])", extra_list.stderr_text), (
+        f"extra-less report does not name the cli extra: {extra_list.stderr_text!r}"
     )
+    assert extra_list.stderr_text == extra_get.stderr_text, (
+        "extra-less report differs between subcommands: "
+        f"{extra_list.stderr_text!r} vs {extra_get.stderr_text!r}"
+    )
+    assert not has_usage_label(extra_list_text), "extra-less report carries the usage label"
 
     missing_name = unique_token()
     usage = require_cli_unsuccessful(
@@ -172,11 +177,9 @@ def test_cli_without_extra_does_not_run_subcommands_and_identifies_extra(isolate
         origin="extra-present set name-only",
     )
     usage_text = _require_nonempty_report(usage, origin="extra-present set name-only")
-    extra_vs_usage = strip_path_covariates(extra_list_text, [ws.path, ".env"])
-    usage_stripped = strip_path_covariates(usage_text, [ws.path, ".env"])
-    assert extra_vs_usage != usage_stripped, (
-        "extra-less report is indistinguishable from missing-argument usage "
-        f"after stripping paths: {extra_vs_usage!r}"
+    require_exit(usage, EXIT_USAGE_FAILURE, origin="extra-present set name-only")
+    assert has_usage_label(usage.stderr_text), (
+        f"missing-argument report has no usage label: {usage.stderr_text!r}"
     )
 
     missing_rel = f"missing-{unique_token()}.env"
@@ -188,21 +191,12 @@ def test_cli_without_extra_does_not_run_subcommands_and_identifies_extra(isolate
     unopenable_text = _require_nonempty_report(
         unopenable, origin="extra-present unopenable list"
     )
-    contrast_tokens = ("list", "get", "--file", "-f", missing_rel)
-    extra_vs_file = strip_cli_covariates(
-        extra_list_text,
-        [ws.path, ".env", missing_path, missing_rel],
-        contrast_tokens,
+    require_exit(unopenable, EXIT_USAGE_FAILURE, origin="extra-present unopenable list")
+    assert missing_rel in unopenable.stderr_text, (
+        f"could-not-open report does not name the path: {unopenable.stderr_text!r}"
     )
-    file_stripped = strip_cli_covariates(
-        unopenable_text,
-        [ws.path, ".env", missing_path, missing_rel],
-        contrast_tokens,
-    )
-    assert extra_vs_file != file_stripped, (
-        "extra-less report reuses the unopenable-file identification "
-        f"after stripping paths and argv: extra={extra_vs_file!r} "
-        f"unopenable={file_stripped!r}"
+    assert not has_usage_label(unopenable_text), (
+        "could-not-open report carries the missing-argument usage label"
     )
 
     absent_dir = ws.mkdir(unique_token())
@@ -212,6 +206,10 @@ def test_cli_without_extra_does_not_run_subcommands_and_identifies_extra(isolate
         origin="extra-less set",
     )
     _require_nonempty_report(extra_set, origin="extra-less set")
+    require_exit(extra_set, EXIT_OPERATION_FAILURE, origin="extra-less set")
+    assert extra_set.stderr_text == extra_list.stderr_text, (
+        "extra-less set report differs from extra-less list"
+    )
     _require_missing_file(ws, f"{absent_dir.name}/.env", origin="extra-less set")
 
 
@@ -350,7 +348,9 @@ def test_unset_removes_binding_and_identifies_removed_name(isolated_ws):
     ws = isolated_ws
     ws.write(".env", "a=b\n")
     public = require_cli_success(cli_invoke(ws, ["unset", "a"]), origin="unset a")
-    assert public, "unset success confirmation is empty"
+    assert len(public.splitlines()) == 1 and "a" in public, (
+        f"unset confirmation is not one line naming a: {public!r}"
+    )
     print(f"unset a confirmation={public!r}", flush=True)
     leftover = _file_text(ws, ".env", origin="after unset a")
     require_absent_independent_line(leftover, "a=b", origin="after unset a")
@@ -372,25 +372,12 @@ def test_unset_removes_binding_and_identifies_removed_name(isolated_ws):
     r2 = require_cli_success(
         cli_invoke(ws, ["unset", n2], cwd=d2), origin="unset name-two"
     )
-    p1 = ws.resolve(f"{d1.name}/.env")
-    p2 = ws.resolve(f"{d2.name}/.env")
-    id_paths = [p1, p2, d1, d2]
-    stripped_one = strip_path_covariates(r1, id_paths)
-    stripped_two = strip_path_covariates(r2, id_paths)
-    assert n1 in stripped_one, (
-        "unset confirmation does not contain the removed name after "
-        f"stripping paths: name={n1!r} text={stripped_one!r}"
-    )
-    assert n2 in stripped_two, (
-        "unset confirmation does not contain the removed name after "
-        f"stripping paths: name={n2!r} text={stripped_two!r}"
-    )
-    remainder_one = strip_cli_covariates(r1, id_paths, [n1])
-    remainder_two = strip_cli_covariates(r2, id_paths, [n2])
-    assert remainder_one == remainder_two, (
-        "unset confirmation remainder after stripping paths and the removed "
-        f"name is not stable: {remainder_one!r} vs {remainder_two!r}"
-    )
+    for text, name, other in ((r1, n1, n2), (r2, n2, n1)):
+        lines = text.splitlines()
+        assert len(lines) == 1 and name in lines[0], (
+            f"unset confirmation is not one line naming {name!r}: {text!r}"
+        )
+        assert other not in text, f"unset confirmation names {other!r}: {text!r}"
 
     keep_name, keep_val = unique_token(), unique_token()
     drop_name, drop_val = unique_token(), unique_token()
@@ -729,6 +716,7 @@ def test_file_flag_selects_path_and_omitted_file_reads_cwd_env(isolated_ws):
         origin="get A in child without .env",
     )
     report = _require_nonempty_report(walked, origin="no-walk get")
+    require_exit(walked, EXIT_USAGE_FAILURE, origin="no-walk get")
     assert walked.stdout_text != "x\n", (
         f"omitted --file walked to the ancestor and printed {walked.stdout_text!r}"
     )
@@ -892,22 +880,16 @@ def test_unopenable_path_is_usage_class_distinct_from_missing_or_empty_key(isola
     )
     list_report = _require_nonempty_report(list_miss, origin="list missing file")
     get_report = _require_nonempty_report(get_miss, origin="get missing file")
-    remainder_one = strip_path_covariates(
-        list_report, [miss_one_path, missing_one, ws.path]
-    )
-    remainder_two = strip_path_covariates(
-        cli_streams(list_miss_two), [miss_two_path, missing_two, ws.path]
-    )
-    assert remainder_one, "missing-file list report is only the path"
-    assert remainder_two, "other missing-file list report is only the path"
-    assert remainder_one == remainder_two, (
-        "two missing-file reports are not the same kind after stripping paths: "
-        f"{remainder_one!r} vs {remainder_two!r}"
-    )
-    get_remainder = strip_path_covariates(
-        get_report, [miss_one_path, missing_one, ws.path]
-    )
-    assert get_remainder, "missing-file get report is only the path"
+    for result, rel, origin in (
+        (list_miss, missing_one, "list missing file"),
+        (get_miss, missing_one, "get missing file"),
+        (list_miss_two, missing_two, "list other missing file"),
+    ):
+        require_exit(result, EXIT_USAGE_FAILURE, origin=origin)
+        assert result.stdout_text == "", f"{origin} wrote stdout {result.stdout_text!r}"
+        assert rel in result.stderr_text, (
+            f"{origin} report does not name the path {rel!r}: {result.stderr_text!r}"
+        )
 
     dir_rel = unique_token()
     dir_path = ws.mkdir(dir_rel)
@@ -921,9 +903,11 @@ def test_unopenable_path_is_usage_class_distinct_from_missing_or_empty_key(isola
     )
     dir_report = _require_nonempty_report(list_dir, origin="list directory")
     get_dir_report = _require_nonempty_report(get_dir, origin="get directory")
-    dir_remainder = strip_path_covariates(dir_report, [dir_path, dir_rel, ws.path])
-    assert dir_remainder, "directory list report is only the path"
-    assert get_dir_report, "directory get report is empty"
+    for result, origin in ((list_dir, "list directory"), (get_dir, "get directory")):
+        require_exit(result, EXIT_USAGE_FAILURE, origin=origin)
+        assert dir_rel in result.stderr_text, (
+            f"{origin} report does not name the path {dir_rel!r}: {result.stderr_text!r}"
+        )
 
     present_get = require_cli_success(
         cli_invoke(ws, ["get", present]),
@@ -1061,16 +1045,15 @@ def test_set_without_both_arguments_is_usage_failure(isolated_ws):
     )
     unopen_report = _require_nonempty_report(unopenable, origin="unopenable contrast")
     for result, origin in ((no_args, "set without args"), (no_value, "set name only")):
-        stripped_usage = strip_path_covariates(
-            cli_streams(result), [missing_path, missing_rel, ws.path, ".env"]
+        require_exit(result, EXIT_USAGE_FAILURE, origin=origin)
+        assert result.stdout_text == "", f"{origin} wrote stdout {result.stdout_text!r}"
+        assert has_usage_label(result.stderr_text), (
+            f"{origin} report has no usage label: {result.stderr_text!r}"
         )
-        stripped_file = strip_path_covariates(
-            unopen_report, [missing_path, missing_rel, ws.path, ".env"]
-        )
-        assert stripped_usage != stripped_file, (
-            f"{origin} report reuses the unopenable-file identification: "
-            f"{stripped_usage!r}"
-        )
+    require_exit(unopenable, EXIT_USAGE_FAILURE, origin="unopenable contrast")
+    assert not has_usage_label(unopen_report), (
+        "could-not-open report carries the missing-argument usage label"
+    )
 
     absent = ws.mkdir(unique_token())
     require_cli_unsuccessful(

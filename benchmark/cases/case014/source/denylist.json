@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "case_id": "case014",
+  "ecosystem": "source",
+  "install_ban": [
+    "INSLIB",
+    "github.com/jnz/INSLIB",
+    "github.com/jnz/inslib",
+    "ins-lib",
+    "ins_lib",
+    "inslib",
+    "jnz/INSLIB",
+    "jnz/inslib",
+    "libINSLIB",
+    "libinslib",
+    "python-inslib",
+    "python3-inslib"
+  ],
+  "import_ban": [
+    "INSLIB",
+    "INSLIB/",
+    "inslib",
+    "inslib/"
+  ],
+  "notes": "Bans the upstream INSLIB C library and ctypes Python package (PyPI name INSLIB/inslib, GitHub jnz/INSLIB, libinslib, Debian python-inslib) and the INSLIB import/include root; allows runner-provided build-essential, python3/pip, pyyaml, numpy, pytest, GNU make, libm, and the KFCore/c Kalman submodule listed as workspace build support."
+}

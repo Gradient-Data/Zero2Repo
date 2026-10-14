@@ -95,7 +95,7 @@ def test_google_href_gains_trailing_slash(language: str) -> None:
 
 
 @pytest.mark.parametrize("language", BOTH_LANGS)
-def test_readme_illustration_idna_and_percent_path(language: str) -> None:
+def test_idn_host_and_non_ascii_path_normalized(language: str) -> None:
     assert "\u2011" in SEVEN_ELEVEN_INPUT
     assert "\u00e9" in SEVEN_ELEVEN_INPUT
     outcome = require_parse_href(
@@ -562,7 +562,7 @@ def test_href_from_file_empty_when_percent_expansion_exceeds_cap() -> None:
 
 
 @pytest.mark.parametrize("language", BOTH_LANGS)
-def test_can_parse_agrees_on_oracle_inputs(language: str) -> None:
+def test_can_parse_agrees_on_fixed_inputs(language: str) -> None:
     successes = (
         GOOGLE_URL,
         SEVEN_ELEVEN_INPUT,

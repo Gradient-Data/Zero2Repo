@@ -66,9 +66,9 @@ DEFAULT_PROG_NAME = "cli"
 # Isolated child / in-process environments start from this Unicode locale.
 _DEFAULT_LOCALE = "C.UTF-8"
 
-# The product locates packaged resources (sentence models, tagger models)
-# through this environment variable. Isolated environments set it to the
-# workspace resource directory so host-installed data cannot leak in.
+# Product resource-search environment variable. Isolated environments never
+# set it; any inherited value is dropped (see _ISOLATE_UNSET). Tests choose
+# resource locations through the public search list instead.
 RESOURCE_PATH_ENV = "LINGORA_DATA"
 
 # Substrate keys copied from the caller when building an isolated env.
@@ -686,8 +686,8 @@ def isolated_environ(
     """Build an environment that does not inherit the caller's extras.
 
     Copies a whitelist of substrate keys from *base* (or ``os.environ``),
-    points ``HOME`` and the XDG dirs at *home*, points the product's
-    resource-search variable at *data*, prepends or strips the repository
+    points ``HOME`` and the XDG dirs at *home*, leaves the product's
+    resource-search variable unset, creates *data*, prepends or strips the repository
     root on ``PYTHONPATH`` according to *include_product*, unsets
     pager/editor/proxy side-channels, sets a Unicode locale, and applies
     *updates* last (``None`` unsets). Does not mutate ``os.environ``.
@@ -723,7 +723,6 @@ def isolated_environ(
     env["XDG_CACHE_HOME"] = str(cache_dir)
     env["XDG_DATA_HOME"] = str(data_xdg)
     env["XDG_STATE_HOME"] = str(state_dir)
-    env[RESOURCE_PATH_ENV] = str(data_path)
     env.setdefault("LANG", _DEFAULT_LOCALE)
     env.setdefault("LC_ALL", _DEFAULT_LOCALE)
     env.setdefault("TERM", "dumb")

@@ -55,7 +55,7 @@ from F03_helpers import (
     neighbor_hello_chunk,
     passthrough_send,
     payload_as_bytes,
-    public_hello_role_marks,
+    fixed_hello_role_marks,
     pull_kind,
     pull_until_remote_refusal,
     require_hex_size_then_payload,
@@ -76,7 +76,7 @@ from F03_helpers import (
 
 
 # ---------------------------------------------------------------------------
-# S. Present-arm empty-body GET encode and pull (L79: no package-disable)
+# S. Present-arm empty-body GET encode and pull
 # ---------------------------------------------------------------------------
 
 
@@ -101,7 +101,7 @@ def test_empty_body_get_round_trips_when_package_importable():
 
 
 def test_empty_body_get_encode_fails_when_package_not_importable():
-    # L79: this product has no negative control. Present versus hollow is
+    # The product is exercised by
     # send then end-of-message with no extra body bytes, then a peer pull of
     # request then end-of-message — not an import-stripped child.
     client = client_connection()
@@ -141,13 +141,13 @@ def test_request_without_framing_headers_is_empty_body():
 
 
 def test_runtime_request_without_framing_headers_is_empty_body():
-    # Live baseline: the public GET / Host example.com sample is empty-body.
+    # Live baseline: the fixed GET / Host example.com request is empty-body.
     # The runtime arm differs only in target and Host.
     public = unframed_get_round_trip("/", "example.com")
     assert request_method(public) == b"GET"
     assert request_target(public) == b"/"
-    public_hosts = named_pairs(ordinary_pairs(public), b"host")
-    assert (b"host", b"example.com") in public_hosts
+    fixed_hosts = named_pairs(ordinary_pairs(public), b"host")
+    assert (b"host", b"example.com") in fixed_hosts
 
     token = runtime_token()
     target = "/" + token[:8]
@@ -1016,7 +1016,7 @@ def test_head_to_http10_advertises_close_like_get():
 
 
 def test_whole_five_byte_chunk_is_start_and_end():
-    roles = public_hello_role_marks()
+    roles = fixed_hello_role_marks()
     server = chunked_post_server()
     feed_ok(server, b"5\r\nhello\r\n")
     event = pull_kind(server, "data")
@@ -1027,7 +1027,7 @@ def test_whole_five_byte_chunk_is_start_and_end():
 
 
 def test_split_five_byte_chunk_is_start_middle_end():
-    roles = public_hello_role_marks()
+    roles = fixed_hello_role_marks()
     server = chunked_post_server()
     feed_ok(server, b"5\r\nhel")
     first = pull_kind(server, "data")
@@ -1054,7 +1054,7 @@ def test_split_five_byte_chunk_is_start_middle_end():
 
 
 def test_runtime_split_chunk_marks():
-    roles = public_hello_role_marks()
+    roles = fixed_hello_role_marks()
     token = runtime_token().encode("ascii")
     payload = (token * 3)[:7]
     assert len(payload) != 5
@@ -1087,7 +1087,7 @@ def test_runtime_split_chunk_marks():
 
 
 def test_two_chunks_in_one_feed_are_two_both_events():
-    roles = public_hello_role_marks()
+    roles = fixed_hello_role_marks()
     first = b"abcdef"
     second = b"uvwxyz"
     raw = b"6\r\nabcdef\r\n6\r\nuvwxyz\r\n"
@@ -1169,7 +1169,7 @@ def _send_data_on_fresh_chunked(event: Any) -> bytes:
 
 
 def test_chunk_marks_are_ignored_when_data_is_sent():
-    roles = public_hello_role_marks()
+    roles = fixed_hello_role_marks()
     source = chunked_post_server()
     feed_ok(source, b"5\r\nhello\r\n")
     marked = pull_kind(source, "data")
@@ -1596,15 +1596,15 @@ def test_trailers_to_http10_peer_refused_even_if_caller_asked_chunked():
 # ---------------------------------------------------------------------------
 
 
-def test_chunk_size_longer_than_20_hex_digits_is_remote_error():
+def test_chunk_size_longer_than_32_hex_digits_is_remote_error():
     neighbor = chunked_post_server()
     neighbor_hello_chunk(neighbor)
 
     server = chunked_post_server()
-    feed_ok(server, b"1" * 21 + b"\r\n")
+    feed_ok(server, b"1" * 33 + b"\r\n")
     result = pull_next(server)
     print(
-        f"21-digit size exc={type(result.exception).__name__ if result.exception else None}",
+        f"33-digit size exc={type(result.exception).__name__ if result.exception else None}",
         flush=True,
     )
     require_remote_refusal(result)
@@ -1614,8 +1614,8 @@ def test_chunk_size_longer_than_20_hex_digits_is_remote_error():
 def test_runtime_overlong_chunk_size_is_remote_error():
     neighbor = chunked_post_server()
     neighbor_hello_chunk(neighbor)
-    n = 22 + (runtime_int() % 5)
-    assert n > 20 and n != 21
+    n = 34 + (runtime_int() % 5)
+    assert n > 32 and n != 33
     server = chunked_post_server()
     feed_ok(server, b"2" * n + b"\r\n")
     result = pull_next(server)

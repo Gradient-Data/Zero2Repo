@@ -2,9 +2,11 @@
 
 ## Product overview
 
-**Hrefparse** is a C++ library that parses, validates, normalizes, and mutates URLs according to the WHATWG URL Standard. It also implements URLPattern matching (compatible with the web-platform URLPattern tests) and URL Search Params query-string handling from the same family of web platform APIs. Internationalized domain names follow Unicode Technical Standard #46 (ToASCII / ToUnicode), including Punycode for non-ASCII labels.
+**Hrefparse** is a C++ library that parses, validates, normalizes, and mutates URLs according to the WHATWG URL Standard. It also implements URLPattern matching according to the WHATWG URLPattern Standard and URL Search Params query-string handling from the same family of web platform APIs. Internationalized domain names follow Unicode Technical Standard #46 (ToASCII / ToUnicode), including Punycode for non-ASCII labels.
 
-A common use is to take a URL string and produce its WHATWG-normalized href. That is a different contract from RFC 3986 parsers (for example curl): Hrefparse rewrites hosts and paths. The README’s canonical illustration is graded below: the input `https://www.7‑Eleven.com/Home/Privacy/Montréal` (Unicode hyphen in the host, accented path segment) must normalize to `https://www.xn--7eleven-506c.com/Home/Privacy/Montr%C3%A9al`. Leaving the string unchanged, or applying only RFC 3986 encoding, is a failure of the product.
+A common use is to take a URL string and produce its WHATWG-normalized href. That is a different contract from RFC 3986 parsers (for example curl): Hrefparse rewrites hosts and paths: it always applies WHATWG normalization (it does not merely copy the input) and never applies RFC 3986 encoding alone.
+
+**Normative references.** The WHATWG URL Standard (URL parsing, host parsing, serialization, the URL API getters and setters, `application/x-www-form-urlencoded`, and `URLSearchParams`), the WHATWG URLPattern Standard, and UTS #46 are binding wherever this document does not state a product-specific rule. Where this document states a product-specific rule (the length cap, standalone IDNA input bounds, the accept/refuse report of writers, host kinds, origin of `file:` URLs), that rule governs.
 
 This document specifies **user- and integrator-observable behavior only**. Exact published symbol names, header paths, and other Interface Contract details are out of scope here. Every feature point below corresponds to behavior that exists in the finished Hrefparse library. Feature points are ordered so foundational capabilities come first; a later feature point may depend on an earlier one, never the reverse.
 
@@ -15,23 +17,21 @@ This document specifies **user- and integrator-observable behavior only**. Exact
 | **href** | The full serialized URL after WHATWG parsing or mutation (the URL Standard’s href). |
 | **Base URL** | An already-parsed absolute URL used to resolve a relative input. |
 | **Special scheme** | One of the WHATWG special schemes: `ftp`, `file`, `http`, `https`, `ws`, `wss`. These schemes have dedicated parsing rules and (except `file`) a default port. |
-| **Non-special scheme** | Any other scheme (for example `git`, `mailto`, `data`, `non-spec`). |
-| **Opaque path** | A non-hierarchical path, as in `mailto:` or `data:` URLs. Host mutation is refused; path shortening with `..` does not apply the same way as for hierarchical paths. |
+| **Non-special scheme** | Any other scheme. |
+| **Opaque path** | A non-hierarchical path (the URL Standard’s opaque path). Host mutation is refused; path shortening with `..` does not apply. |
 | **Host** | Hostname plus port when a non-default port is present (WHATWG host). |
 | **Hostname** | The host without a port (WHATWG hostname). Domain names, IPv4 addresses, and IPv6 addresses are the three host kinds. |
-| **Origin** | The WHATWG serialized origin (scheme, host, and port for tuple origins; the Standard’s opaque-origin serialization for opaque URLs). Credentials, path, query, and fragment are not part of the origin. |
+| **Origin** | The WHATWG serialized origin (scheme, host, and port for tuple origins; the Standard’s opaque-origin serialization for opaque origins). Credentials, path, query, and fragment are not part of the origin. |
 | **IDNA** | Internationalized Domain Names in Applications: ToASCII / ToUnicode per UTS #46, with Punycode (`xn--`) labels in ASCII hosts. UTS #46 CheckBidi and CheckJoiners validity checks are not part of this product's obligations. |
 | **URL Search Params** | The WHATWG query-string list of key/value pairs (the search parameters API), independent of a full URL object. |
 | **URLPattern** | The WHATWG URLPattern matcher: patterns over URL components, with named groups, wildcards, and optional custom regular expressions. |
-| **Length cap** | A process-wide maximum byte length for a URL’s serialized href (and for related search-parameter input). Default is the maximum 32-bit unsigned integer (about four gigabytes). The caller may lower it. |
-| **Core capability** | A user-observable capability that reflects Hrefparse’s design goal; acceptance must prove the real library behavior, not a stub. |
-| **Discrimination** | An assertion’s ability to distinguish a faithful implementation from a hollow, skipped, or proxy one. |
+| **Length cap** | A process-wide maximum byte length for a URL’s raw input and serialized href (and for related search-parameter input). Default is the maximum 32-bit unsigned integer. The caller may lower it. |
 
 ## Public surface inventory
 
-Hrefparse is a **library**. Integrators reach it by compiling and linking the Hrefparse C++ library (including the documented single-header amalgamation) or by using the matching **C interface**. A command-line convenience named `hrefparsec` can validate, normalize, and print href or a chosen component from one URL or from a file/pipe of URLs; it is the same parse-and-inspect behavior, not a separate product.
+Hrefparse is a **library**. Integrators reach it by compiling and linking the Hrefparse C++ library (including the documented single-header amalgamation) or by using the matching **C interface**. An optional command-line tool may exist; it is not part of the required product.
 
-The library’s public, independently verifiable surfaces are:
+The library’s public surfaces are:
 
 - Parse a URL string (ASCII or valid UTF-8), optionally against a base URL; report success or failure; serialize the href.
 - Answer whether a string (optionally with a base) would parse successfully, in agreement with an actual parse of the same input, including length-cap rejections.
@@ -47,31 +47,24 @@ Feature points below group these entries by capability. They do not invent addit
 ## Non-functional constraints
 
 - **Form factor:** An embeddable C++20 library with a C interface. No runtime third-party dependency. A recent C++ compiler is required (GCC 12 or newer, LLVM 14 or newer, or Microsoft Visual Studio 2022). CMake 3.16 or newer builds the library from this repository.
-- **Platforms:** Windows, Linux, and macOS are first-class. This case’s acceptance targets Linux x86_64 with a C++20 toolchain and CMake.
-- **Hardware:** CPU-only. No GPU or accelerator is required or claimed. The mandatory execution substrate is a real host that can compile Hrefparse from source and run a parse against the locally built library.
+- **Platforms:** Windows, Linux, and macOS are first-class. The documented execution target is Linux x86_64 with a C++20 toolchain and CMake.
+- **Hardware:** CPU-only. No GPU or accelerator is required or claimed.
 - **Input encoding:** Public string inputs are ASCII or valid UTF-8. The caller is responsible for UTF-8 validity.
-- **Default length cap:** The maximum 32-bit unsigned integer until the caller lowers it. The cap applies to both the raw input and the **normalized** href (percent-encoding expansion counts). The same cap applies to filesystem-path conversion and to URL Search Params construction and reset. Individual search-parameter append/set calls are not length-capped.
+- **Default length cap:** The maximum 32-bit unsigned integer until the caller lowers it. The cap is inclusive: a length equal to the cap is accepted, a greater length is rejected. For URLs it applies to both the raw input and the **normalized** href (percent-encoding expansion counts). The same cap applies to filesystem-path conversion and to URL Search Params construction and reset (measured on the query string after a leading `?` is dropped). Individual search-parameter append/set calls are not length-capped.
+- **Standalone IDNA input bound:** Standalone ToASCII and ToUnicode share one fixed input bound in bytes. Its value is the implementer's choice, at least 1024 and less than 20000. Standalone ToASCII accepts inputs up to the bound; a longer input fails and yields no usable domain, whatever its content. Standalone ToUnicode never fails; an input longer than the bound is returned unchanged.
 - **URLPattern regular expressions:** Hrefparse does not ship a regular-expression engine. The caller supplies an engine that can compile a pattern (with or without case folding), search (yielding capture groups), and match (yes or no). That is a security boundary: the C++ standard library’s regular expressions are not treated as a safe default for untrusted patterns.
-- **Two in-memory layouts (narrative only, not graded as distinct products):** Callers may request a compact form backed by one serialized string, or a form that stores components as separate strings. Both must expose the same parse, inspect, and mutate outcomes described here. Choosing a layout is not a separate feature point.
+- **Two in-memory layouts:** Callers may request a compact form backed by one serialized string, or a form that stores components as separate strings. Both expose the same parse, inspect, and mutate outcomes described here. Choosing a layout is not a separate feature point.
 
-## Capability discrimination (global)
+## Required substance (global)
 
-Every feature point below is a **core capability**. The mandatory substrate is a real CPU host with Hrefparse compiled from this repository’s sources and linked into the test process. None of these capabilities is an accelerator-backed GPU feature.
-
-For every feature point:
-
-- **Present:** The linked Hrefparse library produces the WHATWG (and, for URLPattern, URLPattern-standard) outcomes described below.
-- **Absent / hollow:** Parse always succeeds or always fails; href is a copy of the input; IDNA hosts are not Punycode-encoded; setters ignore WHATWG validation; search parameters do not percent-encode; URLPattern always matches or never captures groups.
-
-Cheaper proxies (hard-coded href tables, RFC 3986-only parsers, in-memory URL objects that do not implement WHATWG setters, or a URLPattern that only does literal string equality) do **not** satisfy core capabilities. There is no approved degradation scenario that replaces WHATWG parsing with a looser parser for a core capability.
-
-**Negative control (library substrate):** When the Hrefparse library is deliberately not linked, or the built artifact is removed from the link/search path in an isolated subprocess, a parse of an absolute `https` URL must fail to produce a successful Hrefparse URL — a hard assertion, not a skip.
+Every feature point below is implemented in the compiled Hrefparse library file; the public headers declare the API and programs obtain its behavior by linking that library.
 
 ## Non-goals
 
 - Being an RFC 3986 parser, or matching curl’s “leave the string unchanged” behavior.
 - Shipping a regular-expression engine for URLPattern.
-- Guaranteeing a particular nanosecond-per-URL benchmark number (speed is a design goal, not a graded oracle).
+- Parts of the cited standards outside the surfaces this document describes: reporting non-fatal validation errors (a parse or a write reports only success or failure and the resulting components), the JavaScript binding surface (thrown exceptions, static members), and URLPattern pattern lists, pattern comparison, and generating a URL from a pattern.
+- Guaranteeing a particular nanosecond-per-URL speed (speed is a design goal, not a requirement).
 - Language bindings maintained outside this repository (Rust, Go, Python, and others).
 - Treating build options, amalgamation scripts, release automation, fuzzers, or benchmarks as user-facing product capabilities.
 
@@ -85,32 +78,25 @@ Cheaper proxies (hard-coded href tables, RFC 3986-only parsers, in-memory URL ob
 
 **Normal behavior:**
 
-- Parsing a well-formed absolute URL succeeds and yields a URL whose href is the WHATWG-normalized serialization, which may differ from the input. Leading and trailing C0 controls and spaces are stripped. ASCII tab, line feed, and carriage return are then removed wherever they remain; they are not percent-encoded. A leading and trailing space around `https://www.google.com` still parses with href `https://www.google.com/`. Parsing `http://ab?a` immediately followed by an ASCII tab then `b` succeeds with href `http://ab/?ab`. The same position with a space instead of a tab percent-encodes: `http://ab?x y` succeeds with href `http://ab/?x%20y`.
-- The README illustration is required: parsing `https://www.7‑Eleven.com/Home/Privacy/Montréal` succeeds, and the href is `https://www.xn--7eleven-506c.com/Home/Privacy/Montr%C3%A9al` (IDNA ToASCII on the host, percent-encoding of the path). A parser that returns the input unchanged fails this obligation.
-- Special schemes are exactly `ftp`, `file`, `http`, `https`, `ws`, and `wss`. Default ports used in parsing and serialization are: `http` and `ws` → 80; `https` and `wss` → 443; `ftp` → 21; `file` has none. A default port is omitted from the href (for example `https://example.com:443/` serializes without `:443`).
-- Relative inputs resolve against a successful base. Parsing `/hello` with no base fails. Parsing `/hello` against base `https://www.google.com` succeeds with href `https://www.google.com/hello`. Parsing `../other/page` against `https://example.com/dir/` succeeds with href `https://example.com/other/page`.
-- Host parsing follows the WHATWG host parser, not dotted-decimal-only IPv4. Parsing `http://0300.168.0xF0` succeeds with hostname `192.168.0.240` and href `http://192.168.0.240/`. IPv6 hosts appear in brackets in the href (for example `http://[::1]/`).
-- Path spaces are percent-encoded as `%20` in the href. Parsing `http://www.google.com/%37/ /` succeeds with href `http://www.google.com/%37/%20/`. A plus in a path is not treated as a space: `http://www.google.com/%37+/` keeps `%37+` in the path.
-- Scheme and host matching for special-scheme URLs is ASCII-case-insensitive: parsing `http://GOOgoo.com` against base `http://other.com/` succeeds with hostname `googoo.com`.
-- A `file:` path whose first segment is a normalized Windows drive letter (exactly one ASCII letter followed by `:`) is protected from `..` shortening: `file:c:/..` serializes as `file:///c:/`. A longer first segment that merely starts with letter-colon is not protected: `file:c:x/..` serializes as `file:///`.
-- Filesystem-path conversion produces a `file:` href that matches the href obtained by starting from `file://` and assigning that path as the pathname, for paths such as `/home/user/txt.txt`, an empty path, and a Windows-style path with backslashes.
+- Parsing follows the URL Standard’s basic URL parser and the href is the Standard’s URL serializer output, which may differ from the input. Leading and trailing C0 controls and spaces are stripped. ASCII tab, line feed, and carriage return are then removed wherever they remain; they are never percent-encoded. Code points in the path, query, and fragment are percent-encoded with the Standard’s percent-encode sets (UTF-8 bytes, so a remaining space becomes `%20` in path and query; `+` is literal and never means a space). A `%` that does not start a valid percent-sequence is kept verbatim in path, query, and fragment.
+- Special schemes are exactly `ftp`, `file`, `http`, `https`, `ws`, and `wss`. Default ports used in parsing and serialization are: `http` and `ws` → 80; `https` and `wss` → 443; `ftp` → 21; `file` has none. A default port is omitted from the href; a non-default port is kept.
+- Relative inputs resolve against a successfully parsed base per the URL Standard, including `.` and `..` segment handling. A relative input with no base fails.
+- Scheme and host of special-scheme URLs are ASCII-case-insensitive and serialize lowercased.
+- Hosts go through the WHATWG host parser. For special schemes the host is percent-decoded, converted with the Standard’s domain-to-ASCII (UTS #46 ToASCII with Unicode Normalization Form C, Punycode `xn--` labels for non-ASCII labels, mapping of Unicode look-alike punctuation), and checked for forbidden domain code points. A host that the Standard reads as an IPv4 address (decimal, octal with a `0` prefix, or hexadecimal with a `0x` prefix parts) serializes as dotted decimal; IPv6 hosts serialize in brackets in the Standard’s compressed form. Non-special schemes use the Standard’s opaque-host parser.
+- Windows drive letters are handled as the URL Standard specifies for `file:` URLs; no other scheme receives drive-letter treatment.
+- Filesystem-path conversion returns the href obtained by parsing `file://` and then setting the given path as the pathname with the URL Standard’s pathname setter.
 - The “can this parse” entry returns yes if and only if parse of the same input (and base, when given) would succeed — including when the length cap rejects a normalized href that is longer than the input. It does not require the caller to keep the URL object.
-- Standalone ToASCII on a domain with non-ASCII labels yields a Punycode ASCII domain; standalone ToUnicode reverses Punycode labels. Host parsing of an http(s) URL uses the same ToASCII mapping, including Unicode Normalization Form C reordering when the host is not already NFC (for example `http://%C3%A1%CC%A3/` has hostname `xn--lsa752l`).
-- When the length cap is set to 1024 bytes, parsing `https://example.com/` plus 1024 ASCII `a` characters in the path fails. Parsing `https://example.com/ok` succeeds. An input whose raw size is under the cap but whose normalized href (after `%20` expansion of spaces in the path) would exceed the cap also fails, and “can this parse” agrees.
+- Standalone ToASCII follows the Standard’s domain-to-ASCII with beStrict false: an all-ASCII input within the IDNA input bound succeeds and yields the input ASCII-lowercased, with no further validation; forbidden host code points are a host-parser failure, not a standalone ToASCII failure. An input with non-ASCII code points is processed with UTS #46 (UseSTD3ASCIIRules false, Transitional_Processing false, VerifyDnsLength false) and yields an ASCII domain with Punycode labels, or fails when a label is invalid. Host parsing of a special-scheme URL yields the same ASCII domain as standalone ToASCII of the same host.
+- Standalone ToUnicode decodes Punycode labels back to Unicode per UTS #46 (labels that cannot be decoded are kept as they are); ToASCII of that result returns the original ASCII domain.
+- When the caller lowers the length cap to N bytes, any parse whose raw input or normalized href is longer than N fails, and “can this parse” agrees; percent-encoding expansion counts toward the normalized length.
 
 **Boundary / error behavior:**
 
-- The empty string, a fragment-only input such as `#x` with no base, and a host containing a literal space such as `http://www.google com/` fail to parse.
-- A relative path such as `/hello-world` fails without a base and succeeds with base `https://www.google.com`.
-- A percent-encoded host that is not a valid host, such as `http://www.google%X%.com/`, fails. A percent-encoded path that is not a valid percent-sequence, such as `http://www.google.com/%X%`, still parses; the href keeps `%X%`.
-- When the length cap would be exceeded, parse fails, filesystem-path conversion yields an empty string, and the URL is not produced. Raising the cap back to the default restores acceptance of ordinary-length URLs.
-- Standalone ToASCII of `www.google.com` succeeds. Standalone ToASCII of the ASCII domain `www.google com` (embedded space) also succeeds and yields that lowercased ASCII domain; a space is a host-parse failure (`http://www.google com/`), not a standalone ToASCII failure. Standalone ToASCII of a 20000-byte ASCII domain (twenty thousand letter `a` characters) fails and yields no usable ASCII domain; a short internationalized label still converts to Punycode.
+- Every input that the URL Standard’s basic URL parser rejects (with the given base, or with no base) fails.
+- When the length cap would be exceeded, parse fails, filesystem-path conversion yields an empty string, and no URL is produced. Raising the cap back to the default restores acceptance of ordinary-length URLs.
+- Standalone ToASCII of an input longer than the IDNA input bound fails and yields no usable domain.
 - A failed parse does not yield a usable URL. The caller can tell success from failure before reading href or any component.
 
-**Verifiable oracle:**
-
-- Success: `https://www.google.com` parses and the href is `https://www.google.com/`; the 7‑Eleven / Montréal input parses to `https://www.xn--7eleven-506c.com/Home/Privacy/Montr%C3%A9al`; `/hello` fails alone and succeeds against `https://www.google.com`; `http://0300.168.0xF0` normalizes to `http://192.168.0.240/`; `file:c:/..` keeps `file:///c:/` while `file:c:x/..` becomes `file:///`; a tab inside a query is removed while a space in that position becomes `%20`; “can this parse” matches parse success and failure on those inputs and on a length-cap rejection whose normalized href overruns a 1024-byte cap; ToASCII of an internationalized label is Punycode, and that same mapping appears in the hostname of a parsed http URL; ToASCII of twenty thousand `a` characters fails; ToASCII of `www.google com` succeeds as ASCII while parse of `http://www.google com/` fails.
-- Failure / absence: parse always copies the input to href; the 7‑Eleven host is not Punycode; relative URLs never resolve; IPv4 mixed-base hosts are left uncanonicalized; tabs in the query are percent-encoded rather than removed; “can this parse” disagrees with parse; length-cap overruns still succeed; there is no failure outcome for empty, space-in-host, or oversized-domain input; standalone ToASCII of `www.google com` is rejected as if it were a host parse.
 
 ---
 
@@ -120,34 +106,24 @@ Cheaper proxies (hard-coded href tables, RFC 3986-only parsers, in-memory URL ob
 
 **Normal behavior:**
 
-- After parsing `https://username:password@www.google.com:8080/pathname?query=true#hash-exists`, the components are: href the full serialization; origin `https://www.google.com:8080`; protocol `https:` (scheme plus colon); username `username`; password `password`; port `8080`; hash `#hash-exists`; host `www.google.com:8080`; hostname `www.google.com`; pathname `/pathname`; search `?query=true`. Host kind is domain.
-- After parsing `https://www.google.com` (no path in the input), pathname is `/` and href ends with `/`.
-- Setting username `username` and password `password` on `https://www.google.com` yields href `https://username:password@www.google.com/`.
-- Setting protocol `wss` on `https://www.google.com` succeeds; protocol becomes `wss:` and href becomes `wss://www.google.com/`. Setting protocol `http` on that result succeeds (special scheme to special scheme).
-- Setting host `github.com`, port `8080`, pathname `/my-super-long-path`, search `target=self`, and hash `is-this-the-real-life` on a parsed `https://www.google.com` makes those readers return `github.com`, `8080`, `/my-super-long-path`, `?target=self`, and `#is-this-the-real-life` respectively. Search and hash writers accept values with or without a leading `?` or `#`; the readers always include the delimiter when the component is present, and return the empty string when it is absent.
-- Setting host `changed-host:9090` updates both hostname and port together. Setting hostname does not consume a port. Host includes the port when a non-default port is present; hostname never does.
-- Clearing port, search, or hash removes that component: port reader returns empty and “has port” is false; search and hash readers return empty.
-- Replacing href with `https://www.google.com` succeeds and rebuilds all components from that parse. Replacing href with `http://0300.168.0xF0` yields href `http://192.168.0.240/` (same IPv4 canonicalization as FP-01).
-- Origin for a special-scheme URL other than `file:` is scheme plus host plus non-default port, without credentials or path. Origin for an opaque URL such as a `mailto:` or `data:` URL is the WHATWG opaque-origin serialization (exact token belongs in the Interface Contract), distinguishable from a tuple origin that contains `https` and a hostname. A `file:` origin is that same opaque-origin serialization, not a `file://` tuple.
-- After parsing `http://127.0.0.1/`, host kind is IPv4. After parsing `http://[::1]/`, host kind is IPv6. After parsing `https://example.com/`, host kind is domain. Those three kinds are mutually distinguishable.
-- Setting an empty host on a non-special hierarchical URL that has no authority, such as `non-special:/x`, succeeds and the href becomes `non-special:///x` (empty authority inserted). The same holds when setting hostname to empty on `sc:/x` → `sc:///x`.
-- Changing protocol from non-special `git` to non-special `svn` on `git://example.com/` succeeds. Changing protocol from `a://h:0` to `b` keeps port `0` in the href (`b://h:0`), because a non-special scheme has no default port that would drop it.
-- “Has credentials” is true when username or password is non-empty. “Has hostname” is true when a host is present (including an empty host). “Has port”, “has search”, and “has hash” track those components independently of the others.
+- Readers return the URL Standard’s URL API getter values: protocol is the scheme followed by `:`; username and password are the stored credentials (empty when absent); host is the serialized host followed by `:` and the port when a port is present; hostname is the serialized host without a port; port is the decimal port without a colon, empty when absent (a default port is never stored); pathname of a hierarchical URL of a special scheme is at least `/`; search and hash include their leading `?` or `#` when the component is present and non-empty, and are empty otherwise.
+- Origin of a URL whose scheme is special and not `file` is the tuple-origin serialization: scheme, `://`, host, and `:port` only for a non-default port — never credentials, path, query, or fragment. Every other URL, including every `file:` URL (with or without a host), has an opaque origin and returns the Standard’s opaque-origin serialization; that string is the same for all such URLs.
+- Writers apply the URL Standard’s setter algorithms for href, protocol, username, password, host, hostname, port, pathname, search, and hash. Search and hash writers accept values with or without a leading `?` or `#`. A host value that carries a port sets hostname and port together; a hostname write never changes the port.
+- Each writer except search and hash reports whether the write was accepted or refused. A write is refused exactly when the Standard’s setter rejects the value or ignores the write; a refused write leaves the URL unchanged (same href, same components). An accepted write leaves the URL exactly as the Standard’s setter would.
+- Replacing the href parses the new value exactly as FP-01 parse does and rebuilds every component from it; a value FP-01 would reject is refused.
+- Setting an empty host or hostname on a URL with a non-special scheme and a hierarchical path but no authority inserts an empty authority, as the Standard’s setter does; the URL then has a hostname (an empty one).
+- A non-special scheme has no default port, so a port is kept across a protocol change between non-special schemes.
+- Clearing port, search, or hash removes only that component; the other components, including the other two of these three, are unchanged, and the origin loses a cleared port.
+- Host kind distinguishes domain, IPv4, and IPv6 hosts: three distinct values, the same value for every host of one kind.
+- “Has credentials” is true when username or password is non-empty. “Has hostname” is true when a host is present (including an empty host). “Has port”, “has search”, and “has hash” are true exactly when that component is present, independently of the others.
 
 **Boundary / error behavior:**
 
-- A mutation that the WHATWG URL Standard rejects leaves the URL unchanged (same href, same components). The caller can tell a refused host/hostname/protocol/pathname/username/password/port/href write from a successful one.
-- `mailto:a@b.com` refuses host and hostname writes (opaque path / cannot-have-a-host). `file:` with an empty host refuses a protocol change to `https` or to a non-special scheme; after a host such as `google.com` is set, changing protocol to `https` succeeds (`https://google.com/`). Changing protocol from `https://example.com/` to a non-special scheme such as `foo` is refused; protocol stays `https:` and href is unchanged.
-- A failed host or hostname write on an authority-less non-special URL such as `non-spec:/x` must not invent an authority: href stays `non-spec:/x`, not a triple-slash form.
-- Setting pathname on an opaque-path URL is refused. Setting username or password is refused when the URL cannot have credentials (no host).
-- Setting port to the empty string removes the port. Setting port on a URL that cannot have a port is refused.
-- When a write would make the serialized href exceed the length cap, the URL is left unchanged. Host, hostname, protocol, username, password, port, pathname, and href writes that overrun are refused. Search and hash writes that overrun also leave search, hash, and href unchanged (there is no separate success flag; the observation is that the URL did not change). Percent-encoding expansion counts: a short string of spaces that would encode past the cap is refused the same way.
-- Invalid percent-encoding in a host write is refused on a special-scheme URL (`www.google%X%.com`); on a non-special hierarchical URL that same sequence is accepted as a host, and an authority is inserted if the URL had none. The same sequence in an href path write is accepted, matching FP-01.
+- Every write that the Standard’s setter algorithm rejects or ignores is refused, as is every value the component’s parser rejects. A refused host or hostname write never inserts an authority.
+- Host and hostname writes use the host parser of the URL’s scheme: the WHATWG host parser for special schemes and the opaque-host parser, which does not validate percent-sequences, for non-special schemes.
+- Setting port to the empty string removes the port.
+- When a write would make the serialized href exceed the length cap, the URL is left unchanged. Host, hostname, protocol, username, password, port, pathname, and href writes that overrun are refused. Search and hash writes that overrun also leave search, hash, and href unchanged (there is no separate success report; the URL simply does not change). Percent-encoding expansion counts toward the cap.
 
-**Verifiable oracle:**
-
-- Success: the fully qualified Google URL above yields the listed component strings and origin without credentials; protocol `wss` on `https://www.google.com` yields `wss://www.google.com/`; username and password appear in the href; search and hash readers include `?` and `#` only when present; refused writes on `mailto:` and empty-host `file:` leave href unchanged; `https` → `foo` protocol change is refused; empty host on `non-special:/x` becomes `non-special:///x` while a garbage host write leaves `non-spec:/x` untouched; IPv4, IPv6, and domain host kinds are distinguishable; a length-cap overrun on pathname or search leaves the original href.
-- Failure / absence: component readers return raw substrings of the input without WHATWG delimiters or default `/` pathname; refused setters still mutate href; special-to-non-special protocol changes succeed; origin includes username; host and hostname are not distinguishable when a port is present; over-length writes still grow the href.
 
 ---
 
@@ -157,27 +133,20 @@ Cheaper proxies (hard-coded href tables, RFC 3986-only parsers, in-memory URL ob
 
 **Normal behavior:**
 
-- Constructing from `a=b&c=d&e=f` yields three pairs in that order. Appending `g` / `h` adds a fourth pair; get of `g` is `h`; size is 4.
-- Append of the same key twice preserves both pairs. Get returns the first value. Get-all returns every value in insertion order. Has-by-key is true if any pair has that key.
-- Set of an existing key replaces the first matching pair’s value and deletes later pairs with that key, keeping the first pair’s position. Set of `key1` to `hello` on `key1=value1&key1=value2` serializes as `key1=hello`. Set of `key1` to `value3` on `key1=value1&key1=value2&key2=value1` serializes as `key1=value3&key2=value1`.
-- Remove-by-key deletes every pair with that key. Remove-by-key-and-value deletes only matching pairs: after `key1=value1&key1=value2&key2=value2`, removing `key2` leaves two `key1` pairs; then removing `key1`/`value2` leaves `key1=value1`.
-- Sort orders pairs by key using UTF-16 code-unit comparison (not UTF-8 bytes) and is stable for equal keys: `z=b&a=b&z=a&a=a` sorts to keys `a`, `a`, `z`, `z` with values `b`, `a`, `b`, `a` respectively. The keys U+1F308 and U+FB03 sort with U+1F308 first.
-- Serialize does **not** include a leading `?`. Application/x-www-form-urlencoded rules apply: a space in a value serializes as `+` (get still returns a space); a plus sign serializes as `%2B`; an ampersand in a key or value serializes as `%26`; empty values produce `a=`; an empty key is allowed (`a=&=&=b` after appending `a`/empty, empty/empty, empty/`b`).
-- Non-ASCII values round-trip: appending a value containing `é` serializes with percent-encoding (`%C3%A9` for that character) and get returns the original Unicode value.
-- Iterators over keys, values, and entries walk the current list in order. After a mutation of the list, previously obtained iterators are not required to remain valid.
+- Construction and reset parse the input with the `application/x-www-form-urlencoded` parser: a leading `?` is dropped and is never part of the first key; pairs are split on `&`, empty pieces are skipped, a piece without `=` has an empty value, and `+` and percent-sequences in names and values are decoded.
+- The object is an ordered list of pairs. Append adds a pair at the end; the same key may appear several times. Get returns the first value for a key; get-all returns every value for a key in list order; has-by-key is true if any pair has that key; has-by-key-and-value is true if any pair matches both. Size counts every pair, duplicates included.
+- Set replaces the value of the first pair with that key, removes every later pair with that key, and keeps the first pair’s position; when the key is absent it appends a new pair.
+- Remove-by-key deletes every pair with that key. Remove-by-key-and-value deletes only pairs that match both.
+- Sort is a stable sort of the pairs by key, comparing keys as sequences of UTF-16 code units (not UTF-8 bytes); pairs with equal keys keep their relative order.
+- Serialize applies the `application/x-www-form-urlencoded` serializer and has no leading `?`: a space becomes `+`; bytes outside the urlencoded set (including `+`, `&`, `=`, and the UTF-8 bytes of non-ASCII code points) are percent-encoded with uppercase hex; an empty key or value serializes as the empty string around `=`. Readers return the decoded values (a space, not `+`; the original Unicode, not percent-sequences).
+- Iterators over keys, values, and entries walk the current list in order, once per pair. After a mutation of the list, previously obtained iterators are not required to remain valid.
 - Reset replaces the list from a new query string, subject to the length cap.
 
 **Boundary / error behavior:**
 
-- Construction or reset with a query string longer than the length cap leaves the object empty (size 0, serialize empty). Append and set of individual pairs are not rejected for length.
-- Get of a missing key yields no value (distinguishable from a present key whose value is the empty string). Has is false for a missing key. Get-all of a missing key is an empty list.
-- A key with no `=` in the input has an empty value (`bbb&bb` contributes empty values for those keys).
-- Leading `?` on the constructor input is ignored as a query delimiter, not stored as part of the first key.
+- Construction or reset with a query string longer than the length cap leaves the object empty (size 0, serialize empty, no key present); a query string exactly at the cap is accepted. Append and set of individual pairs are not rejected for length.
+- Get of a missing key yields no value, distinguishable from a present key whose value is the empty string. Has is false for a missing key. Get-all of a missing key is an empty list.
 
-**Verifiable oracle:**
-
-- Success: `a=b&c=d&e=f` plus append `g`/`h` makes get `g` equal `h`; set collapses duplicate keys while preserving later different keys; remove-by-value leaves the non-matching duplicate; sort of `z=b&a=b&z=a&a=a` yields the stable key order above; sorting the keys U+1F308 and U+FB03 puts U+1F308 first; serialize of a space is `a=b+c` while get returns `b c`; serialize of `+` uses `%2B`; size 0 after constructing from an over-length string under a lowered cap; get of a missing key is empty while get of a key whose value was appended as empty is present-and-empty.
-- Failure / absence: the list is a single opaque string; set appends instead of replacing; sort reorders values within the same key; spaces stay as `%20` in search-params serialization (URL path encoding rather than form encoding); over-length construction still populates pairs.
 
 ---
 
@@ -187,24 +156,15 @@ Cheaper proxies (hard-coded href tables, RFC 3986-only parsers, in-memory URL ob
 
 **Normal behavior:**
 
-- Compiling pathname `/books/:id` with base `https://example.com` succeeds. Test against `https://example.com/books/123` is true. Execute/match against that URL succeeds with a result: pathname group `id` is `123`, and the other components that were fixed by the base (protocol `https`, hostname `example.com`) match as well.
-- Named groups (`:name`) bind the segment up to the next separator. Multiple named pathname groups map independently: a pathname-only pattern `/:a/:b` matching pathname `/foo/bar` binds `a` to `foo` and `b` to `bar`; `/:a/:b/:c` matching `/x/y/z` binds `a` to `x`, `b` to `y`, and `c` to `z`. A custom regular-expression group on a named segment (digits-only on `:id`, or letters-only on `:a`) captures only when the custom expression matches: pathname `/:a` with a letters-only custom group matching `/hello` binds `a` to `hello`, and `https://example.com/books/abc` does not match a digits-only `:id` pattern that otherwise matches `/books/123`.
-- A full wildcard is the `*` in a component pattern and matches remaining input in that component. Compiling the pathname-only pattern `/foo/*` succeeds. Matching pathname `/foo/bar` is a match. Matching pathname `/foo/bar/baz` is a match (the remaining part after `/foo/` may include a slash). Matching pathname `/foo` is no-match. Literal text matches exactly: compiling pathname-only `/foo/bar` matches pathname `/foo/bar` and is no-match against `/foo/baz`.
-- A named group may be marked optional. Compiling the pathname-only pattern `/foo/:bar?` (named group `bar` optional) succeeds. Matching pathname `/foo/bar` is a match and binds `bar` to `bar`. Matching pathname `/foo` is also a match: the optional group does not participate, and the capture for `bar` is absent (the Standard leaves it undefined), distinguishable from the bound case. Matching pathname `/foo/bar/baz` or `/foobar` is no-match. Compiling a pathname-only named group `foo` marked optional (`:foo?`) is reported as not containing regular-expression groups. Compiling the same named group with a custom expression `hi` is reported as containing regular-expression groups.
-- Execute/match returns, on success, a result with one sub-result per component in the finite set above. Each sub-result includes the component input string and a map of named groups to captured strings (or an absent capture where the Standard leaves the group undefined). Test returns only yes or no and must agree with whether execute/match produced a match.
-- Ignore-case is a compile-time choice. Compiling a pathname-only pattern `/foo/bar` with ignore-case, then matching pathname `/FOO/BAR`, succeeds. Compiling the same pathname pattern without ignore-case, then matching `/FOO/BAR`, is no-match.
-- A pathname-only initializer such as `/:a/:b` compiles without a base URL. A relative pattern string such as `/books/:id` compiles when given base `https://example.com`, as in the library’s documented example.
-- Each compiled component’s pattern string is readable and reflects the pattern that was compiled for that component: a pathname-only initializer `/:a/:b` does not leave the pathname pattern empty.
-- The library reports whether the compiled pattern contains regular-expression groups, distinguishable from a pattern that uses only literals, named segment wildcards, and full wildcards.
+- Compiling and matching follow the URLPattern Standard: a pattern string is split into components, resolved against the base URL when one is given (components the base fixes must then match as well); an initializer compiles only the components it sets, the others matching anything. Named groups `:name` match one segment up to the next separator of the component; a full wildcard `*` matches the rest of the component, separators included; a `?` modifier makes a group optional, and an optional group that does not participate has no captured value, distinguishable from a bound group; a parenthesized regular expression after a group name restricts what the group matches; literal text matches exactly.
+- Each component is compiled to a regular expression in ECMAScript syntax as the URLPattern Standard generates it, and handed to the caller’s engine together with the ignore-case choice. Ignore-case is a compile-time choice applied to every component.
+- Test returns yes exactly when execute/match produces a match. On a match, execute/match returns one sub-result for each of the eight components, each with the component input string and a map from every group name of that component to its captured string (or no value for a group that did not participate).
+- Each compiled component’s pattern string is readable and is the URLPattern Standard’s normalized pattern string for that component.
+- The library reports whether the compiled pattern contains regular-expression groups: true exactly when some group carries a custom regular expression; false for patterns made only of literals, named groups without a custom expression (optional or not), and full wildcards.
 
 **Boundary / error behavior:**
 
-- Compile fails (no usable URLPattern) for a syntactically invalid pattern, for a custom regular expression that the supplied engine cannot compile, and when the caller does not supply a usable engine. That failure is distinguishable from a compiled pattern that simply matches nothing.
-- Test or execute/match of a URL that does not match returns no-match (test is false; execute/match has no match payload), not a compile error. That outcome is distinguishable from a pattern that never compiled.
-- Matching the input `?` against a pattern compiled from `/foo` with base `http://example.com` completes and yields a defined yes or no; it does not abort.
-- URLPattern is not available through the C interface. C callers are not required to compile patterns; C++ callers of the complete library are.
+- Compile fails (no usable URLPattern) for a syntactically invalid pattern, for a custom regular expression that the supplied engine cannot compile, and whenever the engine reports that it cannot create an expression. That failure is distinguishable from a compiled pattern that simply matches nothing.
+- Test or execute/match of an input that does not match — including an input that cannot be parsed as a URL — returns no-match (test is false; execute/match has no match payload), not an error.
+- URLPattern is not available through the C interface.
 
-**Verifiable oracle:**
-
-- Success: `/books/:id` with a digits-only custom group and base `https://example.com` matches `https://example.com/books/123` with group `id` equal to `123` and does not match `https://example.com/books/abc`; pathname-only `/:a/:b` matching `/foo/bar` binds `a` to `foo` and `b` to `bar` rather than swapping them; pathname-only `/foo/*` matches `/foo/bar` and `/foo/bar/baz` and does not match `/foo`; pathname-only `/foo/:bar?` matches `/foo/bar` with group `bar` bound to `bar` and matches `/foo` with group `bar` absent, and does not match `/foo/bar/baz` or `/foobar`; pathname-only `/foo/bar` matches `/foo/bar` and does not match `/foo/baz`; test agrees with execute/match on those pathnames; a pattern that fails to compile cannot be tested; pathname `/foo/bar` with ignore-case matches `/FOO/BAR` and the same pattern without ignore-case does not; an optional named group is not reported as a regular-expression group, while a custom-expression group is.
-- Failure / absence: URLPattern always returns true; named groups are missing or assigned in the wrong order; test and execute/match disagree; compile never fails; ignore-case compiles match the same as default compiles on `/FOO/BAR`; matching is implemented as href string equality without component structure.

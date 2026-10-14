@@ -26,7 +26,7 @@ from optlyn import (
 from optlyn.testing import CliRunner
 
 from F08_helpers import _name_derived_prompt_tokens, _print_prompt_arith
-from _harness import invoke
+from _harness import InvokeResult, invoke
 from _helpers import (
     assert_abort_indication_unlike_usage,
     assert_abort_without_marker,
@@ -81,6 +81,23 @@ def _secret_mark(secret: str, salt: str) -> str:
 def _dispatch(cli, args, **kwargs):
     kwargs.setdefault("prog_name", PROG)
     return invoke(cli, args, **kwargs)
+
+
+def _runner_dispatch(cli, args, *, stdin: str) -> InvokeResult:
+    """Run *cli* through the product's own ``CliRunner`` (hidden input is fed
+    the way the runner feeds it) and present the outcome in harness form."""
+    got = CliRunner().invoke(cli, list(args), input=stdin, prog_name=PROG)
+    return InvokeResult(
+        exit_code=got.exit_code,
+        stdout=got.stdout_bytes,
+        stderr=got.stderr_bytes,
+        output=got.output.encode("utf-8"),
+        return_value=None,
+        exception=got.exception,
+        exc_info=None,
+        args=tuple(args),
+        cwd="",
+    )
 
 
 def _tty_styled_prompt_script(greeting: str, payload: str, typed: str) -> str:
@@ -945,12 +962,12 @@ def test_password_option_accepts_matching_hidden_lines():
         print(f"SALT:{salt}", flush=True)
 
     leaf = _cmd(callback, password_option(flag, dest))
-    matched = _dispatch(leaf, [], stdin=f"{secret}\n{secret}\n")
-    rematch = _dispatch(
+    matched = _runner_dispatch(leaf, [], stdin=f"{secret}\n{secret}\n")
+    rematch = _runner_dispatch(
         leaf, [], stdin=f"{first}\n{second}\n{secret}\n{secret}\n"
     )
-    one_eof = _dispatch(leaf, [], stdin=f"{secret}\n")
-    usage = _dispatch(leaf, [unknown], stdin=f"{secret}\n{secret}\n")
+    one_eof = _runner_dispatch(leaf, [], stdin=f"{secret}\n")
+    usage = _runner_dispatch(leaf, [unknown], stdin=f"{secret}\n{secret}\n")
     print(
         f"matched={matched.stdout_text!r} rematch={rematch.stdout_text!r} "
         f"one_eof={one_eof.exit_code}",

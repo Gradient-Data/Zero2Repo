@@ -50,6 +50,15 @@ def _restore_process_state():
     previous_stderr = sys.stderr
     previous_time = sys.modules.get("time")
     previous_time_fn = getattr(previous_time, "time", None) if previous_time else None
+    previous_time_ns_fn = (
+        getattr(previous_time, "time_ns", None) if previous_time else None
+    )
+    previous_datetime_mod = sys.modules.get("datetime")
+    previous_datetime_cls = (
+        getattr(previous_datetime_mod, "datetime", None)
+        if previous_datetime_mod
+        else None
+    )
     try:
         yield
     finally:
@@ -63,3 +72,16 @@ def _restore_process_state():
         time_mod = sys.modules.get("time")
         if previous_time is not None and previous_time_fn is not None and time_mod is previous_time:
             time_mod.time = previous_time_fn
+        if (
+            previous_time is not None
+            and previous_time_ns_fn is not None
+            and time_mod is previous_time
+        ):
+            time_mod.time_ns = previous_time_ns_fn
+        datetime_mod = sys.modules.get("datetime")
+        if (
+            previous_datetime_mod is not None
+            and previous_datetime_cls is not None
+            and datetime_mod is previous_datetime_mod
+        ):
+            datetime_mod.datetime = previous_datetime_cls

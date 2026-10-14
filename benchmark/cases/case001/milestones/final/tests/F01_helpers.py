@@ -273,7 +273,7 @@ def runtime_token() -> str:
 
 
 def runtime_int() -> int:
-    """Process-local positive integer away from the public oracle literals."""
+    """Process-local positive integer away from the document literals."""
     n = int(uuid.uuid4().hex[:8], 16) % 900000 + 10000
     if n in _RESERVED_INTS:
         n += 17
@@ -287,5 +287,5 @@ def runtime_depth(*, low: int = 8, high: int = 20) -> int:
     span = high - low + 1
     depth = low + (int(uuid.uuid4().hex[:4], 16) % span)
     if depth in {310, 470}:
-        raise HarnessError(f"runtime_depth produced oracle depth {depth}")
+        raise HarnessError(f"runtime_depth produced a stated nesting depth {depth}")
     return depth

@@ -15,11 +15,17 @@ benchmark/cases/_mapping.private.json
 benchmark/cases/*/controls/
 .DS_Store
 
-# Local working notes (not published). Tracked review/rejudge entries stay.
-doc/*
-!doc/rejudge.py
-!doc/benchmark_review_guide.md
-!doc/case009_cow_probe.md
+# Internal harness tests. Not part of the released benchmark.
+benchmark/tests/
+
+# Local agent CLI image and patches. Support is the runner; this tree is not published.
+benchmark/cbrun/openhands_cli/
+
+# Notes, review guides, and one-off delivery writeups.
+doc/
+
+# Delivery-only measurement. Not part of the harness.
+tools/tencent_v3_baselines.py
 
 # Paper draft (not published with the benchmark)
-latex/
+paper/

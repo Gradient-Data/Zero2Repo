@@ -188,8 +188,8 @@ def require_time(
 def require_no_document_mapping(result: CallResult) -> BaseException:
     """Require that the parse failed as the decode error (a value error).
 
-    FP-02 L151–L155 illegal integer, float, string, and date-time tokens fail
-    the same way as FP-04 (L189, L193): the product's decode error, a kind of
+    FP-02 illegal integer, float, string, and date-time tokens fail
+    the same way as FP-04: the product's decode error, a kind of
     value error, with no document mapping. Recursion errors are not this
     carrier.
     """
@@ -252,7 +252,7 @@ def unclosed(form: str, text: str, *, key: str = "k") -> str:
 def base_digit_string(base: int) -> tuple[str, int]:
     """Process-local digit run for *base* 2, 8, or 16, plus ``int(digits, base)``.
 
-    The digit string is not one of the public hex/octal/binary oracle tokens.
+    The digit string is not one of the hex/octal/binary document literals.
     It is not a TOML parse; callers still go through the string-parse entry.
     """
     if base not in (2, 8, 16):

@@ -1,0 +1,15 @@
+{
+  "schema_version": 3,
+  "case_id": "case_widget",
+  "sensitive_terms": [
+    "widgetlib",
+    "WidgetLib",
+    "Jane Doe",
+    "janedoe",
+    "acme/widgetlib",
+    "cmd/gizmo",
+    "gizmo-cli",
+    "widget-core",
+    "src/widgetlib.py"
+  ]
+}

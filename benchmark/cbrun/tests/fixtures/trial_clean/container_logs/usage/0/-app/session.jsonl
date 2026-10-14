@@ -1,0 +1,17 @@
+{"type": "queue-operation", "content": "Build widget things"}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_1", "name": "Bash", "input": {"command": "pip install requests pytest && npm install left-pad"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_1", "content": "Successfully installed requests-2.32.0\nCollecting pytest", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_2", "name": "Bash", "input": {"command": "cat > /app/notes.py <<'EOF'\n# unlike widgetlib we do X; see https://github.com/acme/widgetlib\nimport widgetlib\nEOF\npython3 -m pytest -q"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_2", "content": "1 passed", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_3", "name": "Write", "input": {"file_path": "/app/widgetlib_compat.py", "content": "import urllib.request\nurllib.request.urlopen('https://github.com/acme/widgetlib')"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_3", "content": "ok", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_4", "name": "WebSearch", "input": {"query": "widgetlib parse semantics edge cases"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_4", "content": "results...", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_5", "name": "Bash", "input": {"command": "mkdir -p /app/cmd/gizmo && cd /app && go build ./cmd/gizmo && ls cmd/gizmo"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_5", "content": "main.go", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_6", "name": "Bash", "input": {"command": "go mod download && npm pack && curl -sI https://registry.npmjs.org/left-pad | head -1"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_6", "content": "HTTP/2 200", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_7", "name": "Read", "input": {"file_path": "/app/widgetlib/__init__.py"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_7", "content": "...", "is_error": false}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_8", "name": "Bash", "input": {"command": "curl -sSL -o /tmp/data.zip https://www.example.gov/data/model2025.zip"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_8", "content": "", "is_error": false}]}}

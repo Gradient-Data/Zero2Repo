@@ -281,7 +281,7 @@ def _reapply_via_file_checkout(ws, rel: str, *, env_updates=None):
 
 
 def _skip_download_errors_on_unlike_off(*, via: str) -> None:
-    """Graded skip-download-errors cannot-download contrast (L442/L441/L444).
+    """Graded skip-download-errors cannot-download contrast (FP-15).
 
     *via* is ``git`` (local Git config) or ``lfsconfig``. Named-only leftovers
     must not present Git SET exit 0 as this feature's oracle.
@@ -1531,7 +1531,7 @@ def test_lockable_readonly_non_truthy_disables_rather_than_default_enabled():
 
 
 # ---------------------------------------------------------------------------
-# I. L442 catalog: already-traceable endpoint + default-remote observations
+# I. FP-15 catalog: already-traceable endpoint + default-remote observations
 # ---------------------------------------------------------------------------
 
 
@@ -1539,7 +1539,7 @@ def test_git_config_catalog_is_observable_on_the_public_surface():
     """Endpoint SET names the dedicated indication; default remote is contacted.
 
     Catalog knobs that take effect on transfer, prune, storage, or agent
-    paths are asserted by the later L442 take-effect tests, not as
+    paths are asserted by the later FP-15 take-effect tests, not as
     environment-report substrings.
     """
     url_a = runtime_http_url("endpoint")
@@ -1580,7 +1580,7 @@ def test_git_config_catalog_is_observable_on_the_public_surface():
 
 
 # ---------------------------------------------------------------------------
-# J. L442 Git-config catalog take-effect (not environment-report echoes)
+# J. FP-15 Git-config catalog take-effect (not environment-report echoes)
 # ---------------------------------------------------------------------------
 
 
@@ -1729,7 +1729,7 @@ def test_concurrent_transfers_bound_prevents_overlap_unlike_unbounded():
 
 
 def test_git_config_fetch_include_and_exclude_select_fetch_paths():
-    """Fetch include/exclude take-effect is not this suite (L443).
+    """Fetch include/exclude take-effect is not this suite (FP-15).
 
     Git SET exit 0 of those named-only keys is not an F15-graded contrast.
     The remaining graded arm is Git-config skip-download-errors on a
@@ -1772,7 +1772,7 @@ def test_git_config_lock_verification_refuses_foreign_lock_unlike_disabled():
 
 
 def test_ssh_transfer_modes_select_different_transfer_families():
-    """Pure SSH transfer mode take-effect is not this suite (L443 / FP-17).
+    """Pure SSH transfer mode take-effect is not this suite (FP-15 / FP-17).
 
     Git SET exit 0 of never/always/negotiate is not an F15-graded contrast.
     The remaining graded arm is Git-config skip-download-errors on a
@@ -1782,7 +1782,7 @@ def test_ssh_transfer_modes_select_different_transfer_families():
 
 
 def test_relocated_storage_root_receives_cleaned_objects_not_default_path():
-    """Storage-location take-effect is not this suite (L443 / FP-05).
+    """Storage-location take-effect is not this suite (FP-15 / FP-05).
 
     Git SET exit 0 of a storage path is not the relocated store layout.
     The remaining graded arm is Git-config skip-download-errors on a
@@ -1792,7 +1792,7 @@ def test_relocated_storage_root_receives_cleaned_objects_not_default_path():
 
 
 def test_prune_recentness_and_verify_default_take_effect():
-    """Prune recentness and verify-default take-effect is not this suite (L443).
+    """Prune recentness and verify-default take-effect is not this suite (FP-15).
 
     Git SET exit 0 of those named-only keys is not a keep/delete contrast.
     The remaining graded arm is Git-config skip-download-errors on a
@@ -1837,7 +1837,7 @@ def test_tus_and_basic_transfers_only_change_advertised_adapter_list():
 
 
 def test_registered_custom_agent_is_advertised_and_launched_when_selected():
-    """Custom-agent advertise/launch/skip-batch is not this suite (L443 / FP-16).
+    """Custom-agent advertise/launch/skip-batch is not this suite (FP-15 / FP-16).
 
     Git SET exit 0 of a custom-agent path is not that advertise-or-launch
     contrast. The remaining graded arm is Git-config skip-download-errors
@@ -1847,14 +1847,14 @@ def test_registered_custom_agent_is_advertised_and_launched_when_selected():
 
 
 # ---------------------------------------------------------------------------
-# K. L441 .lfsconfig allowlist take-effect
+# K. FP-15 .lfsconfig allowlist take-effect
 # ---------------------------------------------------------------------------
 
 
 def test_lfsconfig_fetch_include_and_exclude_select_fetch_paths():
-    """Fetch include/exclude are named accepted ``.lfsconfig`` keys (L441).
+    """Fetch include/exclude are named accepted ``.lfsconfig`` keys (FP-15).
 
-    Path-selection take-effect is not this suite (L443). Git SET exit 0
+    Path-selection take-effect is not this suite (FP-15). Git SET exit 0
     into that file is not product acceptance. The remaining graded
     accepted-key arm is skip-download-errors in ``.lfsconfig``.
     """
@@ -1862,7 +1862,7 @@ def test_lfsconfig_fetch_include_and_exclude_select_fetch_paths():
 
 
 def test_lfsconfig_allow_incomplete_push_lets_missing_object_proceed():
-    """allow-incomplete-push is a named accepted ``.lfsconfig`` key (L441).
+    """allow-incomplete-push is a named accepted ``.lfsconfig`` key (FP-15).
 
     A missing-object push that proceeds without a PUT is not an F15-graded
     contrast. Git SET exit 0 into that file is not product acceptance.
@@ -1910,7 +1910,7 @@ def test_lfsconfig_locks_verify_refuses_foreign_lock_unlike_absent_file():
 
 
 def test_lfsconfig_url_scoped_access_sends_basic_on_first_request():
-    """URL-scoped access is a named accepted ``.lfsconfig`` key (L441).
+    """URL-scoped access is a named accepted ``.lfsconfig`` key (FP-15).
 
     First-request HTTP Basic is not an F15-graded contrast. Git SET
     exit 0 into that file is not product acceptance. The remaining graded

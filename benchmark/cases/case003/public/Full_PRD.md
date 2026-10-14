@@ -2,9 +2,7 @@
 
 ## Product overview
 
-**YMLCODEC** is a YAML parser and writer for JavaScript. It reads YAML text into ordinary JavaScript values and writes JavaScript values back as YAML text. It supports the YAML 1.2 specification as the default loading dialect and the YAML 1.1 type set when the caller asks for that dialect. The product advertises that it is a complete YAML 1.2 implementation; that completeness claim is background. Graded behavior is the concrete parse, type-resolution, and dump outcomes named in the feature points below.
-
-A common first use is to take a one-key mapping such as `answer: 42` and obtain a plain object whose `answer` property is the number 42, then write that object back to YAML. Leaving `42` as the string `42`, or writing a document that re-parses as a different value, is a failure of the product.
+**YMLCODEC** is a YAML parser and writer for JavaScript. It reads YAML text into ordinary JavaScript values and writes JavaScript values back as YAML text. It supports the YAML 1.2 specification as the default loading dialect and the YAML 1.1 type set when the caller asks for that dialect. The required behavior is the parse, type-resolution, and dump outcomes stated in the feature points below.
 
 This document specifies **user- and integrator-observable behavior only**. Exact published symbol names and other Interface Contract details are out of scope here. Every feature point below corresponds to behavior that exists in the finished YMLCODEC library. Feature points are ordered so foundational capabilities come first; a later feature point may depend on an earlier one, never the reverse.
 
@@ -18,7 +16,7 @@ This document specifies **user- and integrator-observable behavior only**. Exact
 | **Multi-document parse** | The library entry that accepts a stream and returns every constructed document, in order, as a list. An empty stream yields an empty list. |
 | **Dump** | The library entry that serializes one JavaScript value as YAML text. |
 | **Schema** | The finite set of tags that decide how a node is constructed on load and how a JavaScript value is identified on dump. The four built-in schemas are **Failsafe**, **JSON**, **Core**, and **YAML 1.1**. |
-| **Tag** | A YAML type name such as `!!null`, `!!bool`, `!!int`, `!!float`, `!!str`, `!!seq`, `!!map`, or a local tag such as `!point`. An explicit tag is written on the node; an implicit tag is inferred from plain scalar text. |
+| **Tag** | A YAML type name such as `!!null`, `!!bool`, `!!int`, `!!float`, `!!str`, `!!seq`, `!!map`, or a local tag written with a single `!`. An explicit tag is written on the node; an implicit tag is inferred from plain scalar text. |
 | **Failsafe schema** | Only strings, sequences, and mappings. Plain scalars stay strings. |
 | **JSON schema** | Failsafe plus the JSON subset of null, boolean, integer, and float. |
 | **Core schema** | Failsafe plus the YAML 1.2 Core notations for null, boolean, integer, and float. This is the default schema for both parse entries. |
@@ -28,14 +26,12 @@ This document specifies **user- and integrator-observable behavior only**. Exact
 | **Legacy map** | An alternative `!!map` container: a plain object that stringifies complex keys instead of rejecting them. |
 | **Merge key** | The YAML 1.1 mapping key `<<`. Its value is one mapping, or a sequence of mappings, whose pairs are copied into the surrounding mapping. The Core schema does not include merge keys. |
 | **Anchor / alias** | An `&name` label on a node and a later `*name` reference to that same constructed value. |
-| **Core capability** | A user-observable capability that reflects YMLCODEC’s design goal; acceptance must prove the real library behavior, not a stub. |
-| **Discrimination** | An assertion’s ability to distinguish a faithful implementation from a hollow, skipped, or proxy one. |
 
 ## Public surface inventory
 
-YMLCODEC is a **library**. Integrators reach it by installing the ymlcodec package and calling the published parse and dump entries. A command-line convenience named `ymlcodec` can turn a YAML file into JSON text, or a JSON file into YAML text, for a quick check; it is the same parse-and-dump behavior, not a separate product, and is not a graded feature point.
+YMLCODEC is a **library**. Integrators reach it by installing the ymlcodec package and calling the published parse and dump entries. A command-line convenience ships alongside; it is not a feature point.
 
-The library’s public, independently verifiable surfaces are:
+The library’s public, independently usable surfaces are:
 
 - Parse one YAML document from a string, or fail when the stream is empty or contains more than one document.
 - Parse every document in a multi-document stream, including an empty stream.
@@ -50,33 +46,22 @@ Feature points below group these entries by capability. They do not invent addit
 
 ## Non-functional constraints
 
-- **Form factor:** A TypeScript/JavaScript library with no compiled native extensions. A current Node.js LTS interpreter and npm are sufficient to install from this repository, run the documented bundle step, and exercise a parse against the locally built artifact.
+- **Form factor:** A TypeScript/JavaScript library with no compiled native extensions. A current Node.js LTS interpreter and npm are sufficient to install from this repository, run the documented bundle step, and parse with the locally built artifact.
 - **Layout.** The package manifest is `package.json` at the built repository root.
-- **Platforms:** Linux, macOS, and Windows. This case’s acceptance targets Linux with Node.js.
-- **Hardware:** CPU-only. No GPU or accelerator is required or claimed. The mandatory execution substrate is a real host that can load the locally built YMLCODEC artifact and run a parse of a one-key mapping.
+- **Platforms:** Linux, macOS, and Windows. Documented execution is Linux with Node.js.
+- **Hardware:** CPU-only. No GPU or accelerator is required or claimed.
 - **Default load dialect:** YAML 1.2 Core. Merge keys and the YAML 1.1-only types are off until the caller selects the YAML 1.1 schema or adds those tags.
-- **Default dump dialect:** A YAML 1.1 schema slightly extended so that YAML 1.2 octal integers (`0o…`) and exponent-only floats are treated as typed scalars when deciding whether a string needs quotes. That combination is what makes dump quoting safe across both dialects.
+- **Default dump dialect:** Dump identifies values with the YAML 1.1 type set, and decides whether a string can be written plain by the quoting rule in FP-05.
 - **Untrusted input:** The YAML design allows a tiny document to expand into a huge object graph. The library exposes the limits in FP-07. Walking a constructed value after a successful parse (for example by converting it to JSON) is the caller’s responsibility; the library does not automatically refuse a graph that is cheap to construct but expensive to walk.
 - **JavaScript-specific tags:** Tags that construct functions, regular expressions, or other JavaScript-only values are not part of this library. They live in a separate optional package and are out of scope here.
-
-## Capability discrimination (global)
-
-Every feature point below is a **core capability**. The mandatory substrate is a real CPU host with YMLCODEC built from this repository’s sources and loaded into the test process. None of these capabilities is an accelerator-backed GPU feature.
-
-For every feature point:
-
-- **Present:** The loaded YMLCODEC library produces the YAML 1.2 / YAML 1.1 outcomes described below.
-- **Absent / hollow:** Parse always succeeds or always fails; every scalar stays a string; dump writes JSON or a single quoted blob; schemas do not change resolution; limits never fire.
-
-Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset that does not implement Core integer and boolean rules, or a dumper that does not quote schema collisions) do **not** satisfy core capabilities. There is no approved degradation scenario that replaces YAML parsing with a JSON parser for a core capability.
 
 ## Non-goals
 
 - Being a JSON-only parser, or treating YAML as a thin skin over JSON.
 - Shipping JavaScript-specific tags (functions, regular expressions, and similar) inside this library.
-- Guaranteeing a particular nanosecond-per-document benchmark number (speed is a design goal, not a graded oracle).
-- Treating the command-line convenience, the online demo, the benchmark harness, the distribution bundler, or the YAML Test Suite runner as independent product capabilities.
-- Treating the low-level event stream, document tree, and tree visitor as a separate graded product. Those layers exist so advanced callers can build their own pipeline; the graded parse and dump entries already cover the outcomes a first-time integrator needs.
+- Guaranteeing a particular nanosecond-per-document speed (speed is a design goal, not a requirement).
+- Treating the command-line convenience, the online demo, the speed-measurement scripts, the distribution bundler, or the runner for the external YAML conformance corpus as independent product capabilities.
+- Treating the low-level event stream, document tree, and tree visitor as a separate product. Those layers exist so advanced callers can build their own pipeline; the parse and dump entries already cover the outcomes a first-time integrator needs.
 
 ---
 
@@ -88,33 +73,25 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Normal behavior:**
 
-- A single-document parse of `answer: 42` under the default Core schema succeeds and yields a plain object whose `answer` property is the number 42, not the string `42`.
-- A single-document parse of a stream that contains exactly one document returns that document’s constructed value, including when the document is a bare scalar (`hello`), a sequence (`- a\n- b`), or a mapping.
-- A leading byte-order mark is ignored: a single-document parse of the text that begins with a byte-order mark and then `foo: bar` yields the same object as a parse of `foo: bar` alone.
-- A multi-document parse of a stream with two documents separated by `---` — first document `1`, second document `2` — returns a two-element list whose values are the numbers 1 and 2, in that order.
-- A multi-document parse of a stream whose only content is two document-start markers (two empty documents) returns a two-element list of null values.
-- A multi-document parse of empty text, or of text that is only whitespace and comments, returns an empty list.
-- An alias refers to the constructed value of its anchor. A single-document parse of `base: &base { a: 1 }\ncopy: *base` yields a mapping whose `copy` value is the same object as `base` (same identity, not a separately constructed copy).
-- A recursive alias is allowed for the default sequence and mapping tags: a single-document parse of `&a [*a]` succeeds, and the sole sequence item is the sequence itself.
-- Duplicate keys in one mapping are rejected by default. A single-document parse of `a: 1\na: 2` fails. When JSON-parse compatibility is enabled, that same text succeeds and the `a` property is 2 (the later pair wins). The same compatibility switch applies to every document of a multi-document parse.
-- Double-quoted scalars fold a carriage-return/line-feed pair to a space the same way they fold a line-feed: a single-document parse of a double-quoted `folded` then a carriage-return/line-feed then `to a space` yields the string `folded to a space`. A backslash immediately before that line break joins the lines without a space. Single-quoted scalars fold that same carriage-return/line-feed pair to a space (`folded` then a carriage-return/line-feed then `to a space` yields `folded to a space`); they have no backslash-join form.
-- An eight-digit Unicode escape inside a double-quoted scalar is decoded: a single-document parse of a double-quoted `\U0001F600` yields the corresponding Unicode character.
-- A `%TAG` directive may use digits in the handle. A stream that declares `%TAG !a1! tag:yaml.org,2002:` and then a document `--- !a1!str 123` parses as the string `123`.
+- Plain scalars are resolved by the active schema (FP-02); under the default Core schema a plain scalar written in Core integer or float notation is constructed as a number, not a string.
+- A single-document parse of a stream that contains exactly one document returns that document’s constructed value, whether the document is a scalar, a sequence, or a mapping.
+- A leading byte-order mark is ignored: it does not change the constructed value.
+- The multi-document parse returns one list element per document, in stream order. A document with no content constructs null.
+- The multi-document parse of a stream with zero documents (empty text, or text that is only whitespace and comments) returns an empty list.
+- An alias is the same constructed value as its anchor (same identity, not a separately constructed copy). A collection may contain an alias to itself under the default sequence and mapping tags; the constructed collection then contains itself.
+- Duplicate keys in one mapping are rejected by default. When JSON-parse compatibility is enabled, duplicates are accepted and the last occurrence of a key wins. The switch applies to every document of a multi-document parse.
+- In double-quoted and single-quoted scalars, a carriage-return/line-feed line break folds exactly as a line-feed break does (a single break between two non-empty lines becomes one space). In a double-quoted scalar a backslash immediately before a line break joins the lines without a space; single-quoted scalars have no backslash-join form.
+- Every YAML 1.2 double-quoted escape is decoded, including the eight-hex-digit `\U` escape for code points outside the Basic Multilingual Plane.
+- `%TAG` directives follow the YAML 1.2 grammar: a named tag handle consists of word characters (letters, digits, `-`) between two `!`, and a tag written with a declared handle expands to the declared prefix.
 
 **Boundary / error behavior:**
 
-- A single-document parse of empty text fails. A single-document parse of text that is only whitespace and comments (for example three spaces, a newline, a `# comment` line) also fails. In both cases the multi-document parse of the same text succeeds with an empty list. The caller can tell these two entries apart on empty input.
-- A single-document parse of a stream that contains more than one document fails. The two-document stream `--- # first document\n--- # second document\n` fails on the single-document entry and succeeds on the multi-document entry.
-- An unknown explicit tag is rejected. A single-document parse of `!unknown_scalar_tag foo` under the default Core schema fails. (Catch-all prefix tags in FP-06 are the way to accept unknown tags.)
-- An explicit tag on the wrong node kind is rejected. A single-document parse of `--- !!str [not a scalar]` fails.
-- Malformed YAML fails and does not yield a constructed value. The following inputs each fail on both parse entries: a line of only `@` characters; a null byte in the middle of `foobar`; an unclosed single-quoted scalar; an unclosed double-quoted scalar; an alias whose name was never anchored; a `%YAML 2.0` directive; a flow mapping that opens with `{` and closes with `]`; a non-printable character such as the byte 0x01, 0x7F, or 0x9F; unpaired UTF-16 surrogate code units such as U+DC00 followed by U+D800; a quoted scalar that contains the byte 0x03.
-- When a source-path label is supplied (for example `my.yml`) and parse fails, the failure is distinguishable from a success, and an observer can see that the label is part of the failure report. A parse of `@` with that label fails and the report includes that label. A parse of `a: 1` then a carriage-return/line-feed then `@`, with a source-path label, fails at a site after one line break, and the report presents a line-break count of one; a parse of `@` then a carriage-return/line-feed then `a: 1` fails at a site with line-break count zero, and the report presents that count of zero. The count is how many line breaks precede the error site, treating a carriage-return/line-feed pair as one break the same way this feature already folds that pair in quoted scalars. Those two reports present those two counts, in that direction. The count is not a byte offset, a column, or a parse-step. How the count is stored or printed, and whether it is numbered from zero or from one, is the implementer's and is not scored.
-- A failed parse does not yield a usable document. The caller can tell success from failure before reading any constructed value.
-
-**Verifiable oracle:**
-
-- Success: `answer: 42` parses as an object whose `answer` is the number 42; a leading byte-order mark does not change `foo: bar`; the two-document stream `1` then `2` yields `[1, 2]` on the multi-document entry and fails on the single-document entry; empty text fails on the single-document entry and yields an empty list on the multi-document entry; `copy: *base` after `&base { a: 1 }` shares identity with `base`; `&a [*a]` is a sequence that contains itself; `a: 1\na: 2` fails unless JSON-parse compatibility is on, in which case `a` is 2; a double-quoted or single-quoted `folded` then a carriage-return/line-feed then `to a space` yields `folded to a space`; `\U0001F600` in double quotes decodes to that character; `%TAG !a1! tag:yaml.org,2002:` then `--- !a1!str 123` is the string `123`; a supplied source-path label appears in the failure report for `@`; a parse of `a: 1` then a carriage-return/line-feed then `@` presents line-break count one, and a parse of `@` then a carriage-return/line-feed then `a: 1` presents line-break count zero.
-- Failure / absence: every scalar stays a string; empty text is treated as null or as success on the single-document entry; a second `---` is silently ignored; aliases copy by value and break cycles; duplicate keys silently keep the first pair; unknown tags are accepted as strings; malformed input yields a partial object; failures carry no source-path label when one was supplied; a later-line failure that presents the same line-break count as a first-line `@` failure, or that presents only a byte offset, a column, or a parse-step in place of that count, is hollow.
+- The single-document parse fails on a stream with zero documents (empty, or whitespace and comments only), and on a stream with more than one document. The multi-document parse succeeds on both. The caller can tell these two entries apart on such input.
+- An explicit tag that the active schema does not define is rejected and the parse fails. (Catch-all prefix tags in FP-06 are the way to accept unknown tags.) A tag handle that no `%TAG` directive of that document declares is also a failure.
+- An explicit tag on a node of a kind the tag does not construct is rejected and the parse fails.
+- Input that is not a well-formed YAML 1.2 stream fails on both parse entries and yields no value.
+- When a source-path label is supplied and a parse fails, the failure report includes that label, and the error position it carries includes the line of the error site, given as the number of line breaks that precede the error site (a carriage-return/line-feed pair counts as one break, the same way it folds in quoted scalars). This count is neither a byte offset nor a column.
+- A failed parse does not yield a usable document (and, for the multi-document entry, no prefix of the list). The caller can tell success from failure before reading any constructed value.
 
 ---
 
@@ -122,25 +99,37 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Public entry:** The schema selection on both parse entries (FP-01) and on dump (FP-05). The four built-in schemas are exactly Failsafe, JSON, Core, and YAML 1.1. Single-document and multi-document parse use Core when the caller does not choose a schema. YAML 1.1 extra types beyond these Core/JSON/Failsafe scalars are specified in FP-04.
 
+Notation in this feature point: patterns are written as regular expressions that must match the whole plain scalar text; `[-+]?` is an optional sign.
+
 **Normal behavior:**
 
-- Under **Failsafe**, a single-document parse of `v: 1` yields an object whose `v` is the string `1`. A parse of `flag: true` yields the string `true`. Sequences and mappings still construct as arrays and plain objects.
-- Under **JSON**, the only implicit null is the lowercase word `null`. A parse of `english: null` yields a null value. A parse of `canonical: ~` yields the string `~`. A parse of an empty mapping value (`empty:` with nothing after the colon) yields an empty string, not null. `Null` and `NULL` stay strings. The only implicit booleans are `true` and `false`; `True`, `TRUE`, `False`, `FALSE`, and all YAML 1.1 words (`yes`, `no`, `on`, `off`, and their case variants) stay strings. Implicit integers are JSON decimal integers without a leading plus and without a leading zero; `+685230`, `0123`, `0b1010`, `0o123`, and `0x1A` stay strings. Implicit floats include a signed exponent (`-2E+05`, `12e03`) but not a leading plus on the number, not a leading dot, not `.inf` / `.nan`, and not a leading zero (`01.0` stays a string). An explicit empty `!!null` node is still null.
-- Under **Core** (the parse default), implicit nulls are the empty scalar, `~`, `null`, `Null`, and `NULL`. Implicit booleans are `true` / `True` / `TRUE` and `false` / `False` / `FALSE`; the YAML 1.1 words `y`, `yes`, `on`, `n`, `no`, `off` and their case variants stay strings. Implicit integers accept an optional leading plus, treat a leading-zero token such as `0123` as decimal 123, accept `0o123` as octal 83, and accept `0x1A` as hexadecimal 26; they do not treat `0b1010`, `+0o123`, `-0x1A`, `1_000`, or `1:23` as integers (those stay strings). An explicit `!!int` may still resolve forms the implicit rule rejects: `!!int +0o123` is 83 and `!!int -0x1A` is -26. Implicit floats accept a leading plus, a leading dot (`.5` is 0.5), and the infinity / not-a-number spellings `.inf`, `-.Inf`, `+.INF`, `.NAN` (any of the case patterns `.inf` / `.Inf` / `.INF` and `.nan` / `.NaN` / `.NAN`, with an optional sign on infinity). A trailing-dot decimal such as `12.` is a float. Underscored floats such as `1_000.0` stay strings. A single `.` stays a string. An overflow such as `1e999` stays a string on implicit resolve and is rejected as an explicit `!!float`.
-- Under **YAML 1.1**, Core’s `true` / `false` spellings still resolve as booleans, and the additional words `y`, `Y`, `yes`, `Yes`, `YES`, `on`, `On`, `ON` are true and `n`, `N`, `no`, `No`, `NO`, `off`, `Off`, `OFF` are false. Implicit integers treat a leading-zero token such as `0123` as octal 83, accept `0b1010` as 10, accept `0x1A` as 26, accept underscores (`1_000` is 1000), and accept sexagesimal (`1:23` is 83). The YAML 1.2 `0o123` prefix stays a string; `09` stays a string; `1:99` stays a string because minutes and seconds are base 60. An explicit `!!int 0o123` under YAML 1.1 fails (that prefix is not YAML 1.1 integer text). Implicit floats accept underscores and sexagesimal (`190:20:30.15`) and require a sign on an exponent (`685.23015e03` stays a string; `685.230_15e+03` is a float).
-- Across JSON, Core, and YAML 1.1, the following implicit or explicit forms construct the same values: decimal `685230` and `-685230`; `0`; an explicit `!!int +685230`; an explicit `!!int 0b1010` (10) and `!!int 0x1A` (26); canonical / exponential / fixed floats that equal 685230.15; `-1.0`; `0.`; `-0.0`; an explicit `!!float .inf`, `!!float -.Inf`, `!!float .NaN`, `!!float +12.3`, and `!!float .5`. A decimal integer that is `1` followed by 399 zeros stays a string rather than becoming a number.
-- An explicit empty `!!str` is the empty string. An explicit empty `!!seq` is an empty array. An explicit empty `!!map` is an empty mapping (plain object under the default map). An explicit `!!seq` on a non-empty scalar (`!!seq foo`) fails.
-- An explicit tag that cannot resolve its text fails and does not yield a value: `!!bool garbage`, `!!int 1.5`, and `!!float abc` each fail on JSON, Core, and YAML 1.1. An explicit empty `!!bool`, `!!int`, or `!!float` node also fails.
+- **Failsafe.** Every scalar, plain or quoted, is a string. Sequences and mappings still construct as arrays and plain objects.
+- **JSON** (the YAML 1.2 JSON schema), implicit resolution of plain scalars:
+  - null: exactly `null`. Booleans: exactly `true` and `false`.
+  - integer: `-?(0|[1-9][0-9]*)`.
+  - float: `-?(0|[1-9][0-9]*)(\.[0-9]*)?([eE][-+]?[0-9]+)?` (when not already an integer).
+  - Everything else, including an empty plain value, is a string.
+- **Core** (the YAML 1.2 Core schema, the parse default), implicit resolution of plain scalars:
+  - null: the empty scalar, `~`, `null`, `Null`, `NULL`.
+  - booleans: `true`, `True`, `TRUE`, `false`, `False`, `FALSE`.
+  - integer: `[-+]?[0-9]+` read as decimal (leading zeros allowed and still decimal), or `0o[0-7]+` read as octal, or `0x[0-9a-fA-F]+` read as hexadecimal. The prefixed forms take no sign. There is no binary form, no underscore, and no base-60 form.
+  - float: `[-+]?[0-9]+(\.[0-9]*)?([eE][-+]?[0-9]+)?`, `[-+]?\.[0-9]+([eE][-+]?[0-9]+)?`, infinity `[-+]?\.(inf|Inf|INF)`, and not-a-number `\.(nan|NaN|NAN)` (when not already an integer). No underscores.
+  - Everything else is a string.
+- **YAML 1.1** (the YAML 1.1 type repository), implicit resolution of plain scalars:
+  - null: as Core.
+  - booleans: true is `true|True|TRUE|y|Y|yes|Yes|YES|on|On|ON`; false is `false|False|FALSE|n|N|no|No|NO|off|Off|OFF`.
+  - integer: binary `[-+]?0b[01_]+`; octal `[-+]?0[0-7_]+` (a leading zero means octal); hexadecimal `[-+]?0x[0-9a-fA-F_]+`; base 60 `[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+`; decimal `[-+]?(0|[1-9][0-9_]*)`. Underscores are ignored when computing the value.
+  - float: `[-+]?([0-9][0-9_]*)?\.[0-9_]*([eE][-+][0-9]+)?` (the exponent sign is required); base 60 `[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+\.[0-9_]*`; infinity and not-a-number as Core. Underscores are ignored when computing the value. Text that matches but has no digits is a string.
+  - The YAML 1.2 `0o` octal prefix is not YAML 1.1 notation.
+- **Explicit `!!int` and `!!float`.** Under JSON and Core an explicit `!!int` accepts an optional sign on every integer form: `[-+]?0b[01]+`, `[-+]?0o[0-7]+`, `[-+]?0x[0-9a-fA-F]+`, `[-+]?[0-9]+`; an explicit `!!float` accepts the Core float notation (including a leading `+`, a leading dot, and the infinity / not-a-number spellings) under both. Under YAML 1.1 an explicit tag accepts exactly the YAML 1.1 notation above. An explicit `!!bool` or `!!null` accepts the active schema’s spellings.
+- **Numbers outside the JavaScript range.** An integer or float text whose value does not convert to a finite JavaScript number (it would overflow to an infinity) is not a number: implicitly it stays a string, and under an explicit `!!int` / `!!float` tag the parse fails. The infinity spellings are the only way to obtain an infinite value.
+- An explicit empty `!!str` is the empty string. An explicit empty `!!seq` is an empty array. An explicit empty `!!map` is an empty mapping (plain object under the default map). An explicit empty `!!null` is null on every typed schema.
+- An explicit tag whose text does not match that tag’s notation fails and does not yield a value.
 
 **Boundary / error behavior:**
 
-- Switching schema is the only way these implicit rules change. A parse of `v: 1` under Failsafe is the string `1`; the same text under Core is the number 1. A parse of `yes` under Core is the string `yes`; under YAML 1.1 it is boolean true.
-- Sexagesimal, underscore, leading-zero-octal, and YAML 1.1 boolean words are not Core behavior. An implementation that applies those rules under Core fails this feature point even if it is correct under the YAML 1.1 schema.
-
-**Verifiable oracle:**
-
-- Success: `v: 1` is a string under Failsafe and a number under Core; JSON keeps `True`, `~`, `+685230`, `.5`, and `.inf` as strings and accepts `null` / `true` / `false` / `-2E+05`; Core accepts `True`, `~`, `+685230`, `0o123` as 83, `0x1A` as 26, `.5`, and `.inf`, and keeps `yes`, `0b1010`, and `1_000` as strings; YAML 1.1 accepts `yes` / `on` / `0123` as octal / `0b1010` / `1_000` / `1:23` and keeps `0o123` as a string; explicit `!!int 0o123` fails under YAML 1.1; explicit `!!int 0b1010` is 10 on all three typed schemas; explicit `!!bool garbage` fails on all three; empty `!!str` is `""`; empty `!!seq` is `[]`; a decimal integer that is `1` followed by 399 zeros stays a string on JSON, Core, and YAML 1.1.
-- Failure / absence: every schema behaves like Failsafe; Core treats `yes` as boolean or `0123` as octal; JSON accepts `~` as null; YAML 1.1 rejects `yes`; explicit `!!int 1.5` succeeds; a decimal integer that is `1` followed by 399 zeros becomes a number.
+- Switching schema is the only way these implicit rules change; the same text may be a string under one schema and a number or boolean under another.
+- Base-60, underscore, leading-zero-octal, binary, and the YAML 1.1 boolean words are not Core behavior.
 
 ---
 
@@ -150,21 +139,16 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Normal behavior:**
 
-- Under the default plain-object map, a parse of `Clark: Evans\nBrian: Ingerson\nOren: Ben-Kiki` yields a plain object with those three string properties and those three string values. Non-string scalar keys become strings: a mapping whose key is `~` and whose value is `null key` (as in the Core null example that uses `~` as a key) stores the property name `null`, not a null key. A numeric plain key such as `1: num` stores the property name `1` (the string).
-- A mapping key that is the JavaScript prototype-accessor name (the `__proto__` key) becomes an **own** data property of the result. A parse of `{ __proto__: { polluted: true } }` yields an object that has its own `__proto__` property whose value is `{ polluted: true }`, whose prototype is still the ordinary object prototype, and that does not have a `polluted` property inherited through the prototype.
-- When the real-map tag replaces the default map, a parse of `Clark: Evans` yields a `Map` whose entries are the string key `Clark` and the string value `Evans`. Numeric keys stay numbers and stay distinct from their string form: a parse of `1: num\n"1": str` yields a `Map` of size 2, with number 1 mapping to `num` and string `1` mapping to `str`. Object and array keys are kept as constructed values and survive a dump-then-parse round trip under that same schema: a `Map` that maps `[1, 2]` to `arr` and maps a one-entry `Map` of `x` → 1 to `obj` comes back with those same key values. Dumping a plain object `{ a: 1, b: 2 }` under the real-map schema and parsing the result yields a `Map` with those two string keys, not a plain object.
-- When the legacy-map tag replaces the default map, a sequence used as a key is stringified: a parse of an explicit key that is the sequence `foo`, `bar` with value `baz` (the YAML is `? - foo` then `  - bar` then `: baz`) yields a plain object whose property name is `foo,bar`. A mapping used as a key is stringified to the ordinary JavaScript object rendering. The prototype-accessor key is still stored as an own data property, as with the default map.
+- Under the default plain-object map, each scalar key becomes a property name by JavaScript string conversion of the constructed key. String keys and values are kept as is.
+- A key whose string form is `__proto__` is always stored as an **own** data property of the result, with its constructed value. It never changes the result’s prototype, and nothing becomes inherited through it. This holds for the default map and the legacy map.
+- When the real-map tag replaces the default map, every mapping is a JavaScript `Map` whose keys are the constructed keys, unconverted: keys of different type or identity stay distinct even when their string forms are equal, and sequence or mapping keys are kept as constructed values. Under that schema, dump writes such keys back so that a dump-then-parse round trip restores them, and a plain object dumped under that schema parses back as a `Map` with the same string keys.
+- When the legacy-map tag replaces the default map, a key that is a sequence becomes a property name by JavaScript string conversion of the array (items joined by commas, a plain-object item rendered as the ordinary object string), and a key that is a mapping becomes the ordinary JavaScript object string. Scalar keys behave as under the default map.
 
 **Boundary / error behavior:**
 
-- The default plain-object map rejects a sequence used as a key. A parse of an explicit key that is the sequence `foo`, `bar` with value `baz` (the YAML is `? - foo` then `  - bar` then `: baz`) fails. The default map also rejects a mapping used as a key (`{ a: 1 }` as an explicit key; the YAML is `? { a: 1 }` then `: value`).
-- The legacy map rejects a nested array inside a key. A parse of an explicit key that is a sequence containing another sequence (`nested`) (the YAML is `? - - nested` then `: value`) fails. The same nested-array key delivered through an alias also fails.
+- The default plain-object map rejects a sequence or a mapping used as a key; the parse fails.
+- The legacy map rejects a sequence key that has a sequence among its items, however the key is reached (written directly or through an alias); the parse fails.
 - These three mapping tags share the `!!map` name: attaching the real-map tag or the legacy-map tag replaces the default map for that schema. They are not three simultaneous containers in one schema.
-
-**Verifiable oracle:**
-
-- Success: default parse of `Clark: Evans` is a plain object; `{ __proto__: { polluted: true } }` does not pollute the prototype; default parse of a sequence key fails; real-map parse of `1: num` and `"1": str` keeps two distinct keys; real-map dump-then-parse of a `Map` with an array key restores that array key; legacy-map parse of a `foo`/`bar` sequence key yields the property `foo,bar`; legacy-map parse of a nested-array key fails.
-- Failure / absence: default map silently stringifies a sequence key; the `__proto__` key changes the object’s prototype so that a `polluted` property appears as inherited; real-map still returns a plain object and collapses `1` with `"1"`; legacy-map rejects the same keys the default map rejects, or accepts nested-array keys.
 
 ---
 
@@ -174,23 +158,20 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Normal behavior:**
 
-- **`!!binary`.** Under the YAML 1.1 schema, an explicit `!!binary` scalar whose text is Base64 (whitespace inside the Base64 is ignored) constructs a `Uint8Array` of the decoded bytes. A value that is already a `Uint8Array` dumps as `!!binary` and parses back to the same bytes. An empty `!!binary` node is an empty `Uint8Array`.
-- **`!!timestamp`.** Under the YAML 1.1 schema, the following implicit forms construct date values in UTC: `2001-12-15T02:59:43.1Z`; `2001-12-14t21:59:43.10-05:00`; `2001-12-14 21:59:43.10 -5`; `2001-12-15 2:59:43.10` (no zone, treated as UTC); `2002-12-14` (midnight UTC). A one-digit month such as `2002-1-1` stays a string. A date value dumps as a timestamp and parses back to the same instant. An empty `!!timestamp` node fails. Impossible calendar values stay strings when implicit and fail when written as explicit `!!timestamp`: `2023-02-30`, `2023-01-01 24:00:00`, `2023-01-01 00:60:00`, `2023-01-01 00:00:00 +24`, and `2023-01-01 00:00:00 +1:60`.
-- **`!!set`.** Under the YAML 1.1 schema, `!!set { Boston Red Sox, Detroit Tigers, New York Yankees }` constructs a JavaScript `Set` of those three strings. A `Set` dumps with an explicit `!!set` tag and parses back as a `Set` with the same members. An empty `!!set` node is an empty `Set`. Each set item must have a null value; a `? key` / `: not null` pair under `!!set` fails.
-- **`!!omap`.** Under the YAML 1.1 schema, an explicit `!!omap` sequence of single-key mappings constructs an array of those mappings, in order: `!!omap [ one: 1, two: 2, three: 3 ]` is `[{ one: 1 }, { two: 2 }, { three: 3 }]`. Keys across items must be unique. An empty `!!omap` is an empty array. When the real-map tag is also attached, each item is a one-entry `Map` instead of a plain object. `!!omap` and `!!pairs` are load-only compatibility types: they are not identified on dump, so a dumped result is a plain sequence (or sequence of mappings), not an `!!omap` / `!!pairs` node.
-- **`!!pairs`.** Under the YAML 1.1 schema, `!!pairs [ meeting: with team, meeting: with boss ]` constructs an array of two-element arrays: `[['meeting', 'with team'], ['meeting', 'with boss']]`. Duplicate keys are allowed. An empty `!!pairs` is an empty array. A complex key is rejected under the default map and preserved under the real-map tag: `!!pairs [ ? [ foo, bar ] : baz ]` fails on the default map and yields `[[['foo', 'bar'], 'baz']]` on the real-map schema.
-- **Merge keys.** The Core schema does not apply `<<` as a merge. A parse of a `defaults` mapping anchored with `adapter: postgres` and `host: localhost`, plus a `development` mapping that contains `<<: *defaults` and `database: app_development`, under Core without the merge tag, yields a `development` object that has a property literally named `<<` (whose value is that defaults mapping) and a `database` property, and does **not** have `adapter` or `host` of its own. Under the YAML 1.1 schema, or under Core with the merge tag attached, that same document yields a `development` mapping with `adapter`, `host`, and `database`, and no `<<` property. Several merge keys in one mapping all apply: `<<: {x: 1, 'y': 2}` then `foo: bar` then `<<: {z: 3, t: 4}` yields `x`, `y`, `foo`, `z`, and `t`. An explicit pair overrides a merged pair of the same key: `<< : [ { r: 10 }, { x: 0 } ]` with an explicit `x: 1` yields `x: 1` and `r: 10`. A merge value may be one mapping or a sequence of mappings. When the value is a sequence, a key already brought in by an earlier mapping in that sequence is not overwritten by a later mapping: `<<: [ { r: 10 }, { r: 1 } ]` yields `r: 10`, not `r: 1`. A merge into a mapping whose tag rejects the incoming pair fails (a `!!set` whose merge source is `{ a: 1 }` fails, because a set item cannot have a non-null value). A merge source that is a scalar, or a merge sequence that contains a scalar, fails.
+- **`!!binary`.** An explicit `!!binary` scalar is RFC 4648 Base64 text (standard alphabet, `=` padding required so the length is a multiple of four); whitespace inside it is ignored. It constructs a `Uint8Array` of the decoded bytes; empty text is an empty `Uint8Array`. A `Uint8Array` dumps as `!!binary` and parses back to the same bytes.
+- **`!!timestamp`.** Implicit and explicit timestamps follow the YAML 1.1 timestamp format: a date-only form `YYYY-MM-DD` (four-digit year, two-digit month and day), or a date-time form `YYYY-M[M]-D[D]` then `T`, `t`, or one or more spaces/tabs, then `h[h]:mm:ss`, an optional fraction `.` digits, and an optional zone (spaces or tabs may precede it) that is `Z` or a sign with a one- or two-digit hour and optional `:mm`. A timestamp constructs a JavaScript `Date` for that instant; a date-only form is midnight UTC, and a date-time without a zone is UTC. Text that matches the shape but names an impossible calendar date, an hour above 23, a minute or second above 59, a zone hour above 23, or a zone minute above 59 is not a timestamp: implicitly it stays a string, and as an explicit `!!timestamp` it fails. An empty `!!timestamp` fails. A `Date` dumps as a timestamp that parses back to the same instant.
+- **`!!set`.** A `!!set` mapping constructs a JavaScript `Set` of its keys; every value must be null. An empty `!!set` is an empty `Set`. A `Set` dumps with an explicit `!!set` tag and parses back as a `Set` with the same members.
+- **`!!omap`.** A `!!omap` sequence of single-key mappings constructs an array of those mappings, in order (plain objects; one-entry `Map`s when the real-map tag is attached). Keys must be unique across items. An empty `!!omap` is an empty array.
+- **`!!pairs`.** A `!!pairs` sequence of single-key mappings constructs an array of two-element `[key, value]` arrays, in order. Repeated keys are allowed. An empty `!!pairs` is an empty array. A complex key follows the active map’s key policy: rejected under the default map, kept as the constructed value under the real-map tag.
+- `!!omap` and `!!pairs` are load-only compatibility types: they are not identified on dump, so a dumped result is a plain sequence, not an `!!omap` / `!!pairs` node.
+- **Merge keys.** Under Core without the merge tag, `<<` is an ordinary key and nothing is merged. Under the YAML 1.1 schema, or under Core with the merge tag attached, a `<<` key whose value is a mapping (or a sequence of mappings) copies each pair of the source into the enclosing mapping, and no `<<` property appears. Several `<<` keys in one mapping all apply. A pair written explicitly in the enclosing mapping wins over a merged pair with the same key, wherever it is written. Within one sequence of sources, an earlier source wins over a later one for the same key. Merged pairs are added through the enclosing mapping’s own tag, so a merge into a mapping whose tag rejects the incoming pair fails.
 
 **Boundary / error behavior:**
 
-- `!!omap` on a mapping (not a sequence) fails. An `!!omap` item that is a scalar, an item with more than one key, or a repeated key across items fails. The same three item rules apply to `!!pairs`, except that repeated keys are allowed for `!!pairs`.
-- `!!binary` rejects text that is not valid Base64, including a run of `@` characters and an unpadded wrong-length payload such as `AAA`.
+- `!!omap` on a mapping (not a sequence) fails. An `!!omap` item that is not a mapping, an item with more than one key, or a repeated key across items fails. The same item rules apply to `!!pairs`, except that repeated keys are allowed.
+- `!!binary` rejects text with characters outside the Base64 alphabet and text whose length (whitespace removed) is not a multiple of four.
+- A merge source that is not a mapping, or a merge sequence that contains a non-mapping, fails.
 - Merge-key processing is counted against the merge-key budget in FP-07.
-
-**Verifiable oracle:**
-
-- Success: YAML 1.1 parse of `!!binary` Base64 yields a `Uint8Array` that dump-then-parse restores; `2001-12-15T02:59:43.1Z` is that UTC instant and `2002-1-1` is a string; `!!set { a, b }` is a `Set` and dumps with `!!set`; `!!omap [ one: 1, two: 2 ]` is two single-key objects and rejects a duplicate `a`; `!!pairs` keeps two `meeting` pairs; Core without the merge tag does not copy `<<: *defaults` into the parent; Core with the merge tag (or YAML 1.1) does copy `adapter` and `host` and lets an explicit pair win; `<<: [ { r: 10 }, { r: 1 } ]` yields `r: 10`; a scalar merge source fails.
-- Failure / absence: binary stays a Base64 string; timestamps stay strings; `!!set` is a plain object of nulls; `!!omap` / `!!pairs` accept multi-key items; Core always merges `<<`; YAML 1.1 never merges `<<`.
 
 ---
 
@@ -200,57 +181,52 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Normal behavior:**
 
-- Dump of `{ answer: 42 }` under the default dump schema produces YAML text that a Core or YAML 1.1 parse reads back as an object whose `answer` is the number 42. Dump of a string that needs no quoting (for example `hello`) is that string followed by a newline, in plain style.
-- The default dump schema is the YAML 1.1 schema extended so that YAML 1.2 `0o` integers and exponent-only floats count as typed scalars for quoting. A dump of the string `0o123` or `12e03` is therefore quoted. A dump of the string `yes` is quoted (YAML 1.1 would otherwise read it as boolean true). The same quoting applies to the other YAML 1.1 boolean words listed under YAML 1.1 in FP-02 (`Yes`, `YES`, `on`, `n`, `no`, `off`, and their case variants). A dump of the string `yes` under the JSON schema is unquoted (plain), because JSON has no `yes` boolean. A dump of the string `true`, `42`, `99.9`, or `null` is quoted so that a parse does not change the type.
-- Strings that would be read as YAML structure are quoted. Dump of `---` is a quoted `---`. Dump of `...` is a quoted `...`. Dump of `--- x` and `... x` (the marker, a space, and more text) is quoted. Dump of `- value`, `? value`, `=`, `foo: bar`, `foo:`, and `foo #bar` is quoted. Dump of `---x`, `...x`, `http://example.com`, and `foo#bar` stays plain. A string that begins or ends with a space is quoted (` leading space`, `trailing space `).
-- When quotes are required, the default quote style is single quotes. The caller may choose double quotes instead: dump of `null` with double-quote style is a double-quoted `null`. A “quote every non-key string” switch quotes values such as `world` in `{ hello: world }` while leaving the key `hello` unquoted unless other rules require quotes.
-- Integers that JavaScript would print in exponential notation at or above `1e21` dump as floats (`1.e+21`), not as an integer tag whose text is exponential. `1e20` still dumps as a decimal integer. Those values parse back to the same number under JSON, Core, and YAML 1.1.
-- Special floats dump in a form the selected schema will read back: not-a-number, positive infinity, negative infinity, and a small exponent such as `1e-7` survive dump-then-parse on JSON, Core, and YAML 1.1.
-- By default, a second occurrence of the same object (including a cycle) becomes an alias to an anchor on the first occurrence. Dump of an array that contains the same `{ k: 1 }` object twice produces one anchored mapping and one alias. A “do not reuse references” switch dumps that array as two separate mappings with no anchors.
-- Default indentation is two spaces: dump of `{ a: { b: 1 } }` puts `b` on the next line, indented two spaces under `a`. An indent width of four spaces uses four spaces. Default line width is 80 columns; a long scalar such as `one two three four five six seven eight nine ten` under a line width of 20 is folded onto several lines, and under the default width it stays on one line.
-- Sequences under a mapping key are indented under that key by default (`a:\n  - 1`). A “no extra sequence indent” switch aligns the dash with the key (`a:\n- 1`). A nested sequence starts on the parent dash line by default (`- - 1`); a switch forces the nested sequence onto the next line.
-- A flow-style depth of 0 dumps the whole value in flow style (`{a: [1, 2]}` for `{ a: [1, 2] }`). A flow-style depth of 1 dumps the root as a block mapping and the nested sequence as `[1, 2]`. The default depth never switches to flow. Optional flow presentation switches pad inside brackets (`[ 1, 2 ]`), drop the space after commas (`[1,2]`), drop the space after colons (`{a:1}`), and quote flow keys (`{"a": 1}`).
-- When a dumped node has both an anchor and an explicit tag, the default order is the anchor then the tag. A switch reverses that order to the tag then the anchor. A dump of two references to one custom-tagged mapping therefore emits the tag after the anchor by default, and emits the tag before the anchor when that switch is on.
-- When a comparator-less key sort is requested, dump of `{ b: 1, a: 2 }` emits `a` before `b`. Without that request, keys stay in insertion order (`b` then `a`). Complex keys are not reordered relative to each other.
-- Unrepresentable values (a function, a regular expression) cause dump to fail by default. When the skip-unrepresentable switch is on, a function in a mapping is omitted (`{ a: <function>, b: 2 }` dumps as `b: 2`) and a function in a sequence is omitted (`[<function>, 'a']` dumps as `- a`). An `undefined` sequence item dumps as null even without that switch (`[undefined]` dumps as `- null`). An `undefined` mapping value omits that pair. An `undefined` root dumps as empty text.
+- Dump writes YAML text that the selected schema (and, under the default dump schema, both the Core and the YAML 1.1 parse) reads back as the same value. The text ends with a newline unless it is empty.
+- **Quoting rule.** A string is written as a plain scalar when all of the following hold; otherwise it is quoted. An implementation may additionally quote a string whose first character YAML 1.1 reserves as an indicator of a type of its own.
+  - Read back, the plain text resolves to a string: no implicit tag of the dump schema resolves it to another type. Under the default dump schema this means neither the YAML 1.1 schema nor the YAML 1.2 Core schema (FP-02) resolves it to null, a boolean, an integer, a float, a timestamp, or a merge key. Under an explicitly chosen schema, only that schema’s implicit tags count.
+  - It is a valid YAML 1.2 plain scalar in its context (block or flow): written unquoted at that position, the YAML 1.2 grammar reads it back as one plain scalar with exactly that content.
+  - It is a single line of printable characters no longer than the line width (see below).
+- When quotes are required, the default quote style is single quotes; the caller may choose double quotes. A string containing characters outside the YAML printable set is written double-quoted with escapes. A multi-line string is written in a block scalar style. A “quote every non-key string” switch quotes every string value while leaving keys unquoted unless the quoting rule requires quotes.
+- **Numbers.** An integer whose JavaScript decimal string uses exponential notation (magnitude at or above `1e21`) is written in a float form that parses back to the same number; smaller integers are written as decimal integers. Under the default dump schema, every finite number is written in a notation that the JSON, Core, and YAML 1.1 schemas all read back as the same number. Not-a-number, the infinities, negative zero, and small exponents are written in forms the selected schema reads back to the same value.
+- **References.** By default, a second occurrence of the same object (including a cycle) becomes an alias to an anchor placed on the first occurrence. A “do not reuse references” switch writes each occurrence in full with no anchors.
+- **Presentation defaults.** Indentation is two spaces per level; the caller may choose another width. The line width is 80 columns: a plain or folded scalar longer than the width is folded at spaces onto several lines (the width is counted from the scalar’s indentation), and a scalar within the width stays on one line. Block style is used at every depth.
+- Sequences under a mapping key are indented under that key by default; a “no extra sequence indent” switch aligns the dash with the key. A sequence nested directly in a sequence starts on its parent’s dash line by default (`- - <item>`); a switch puts the nested sequence on the next line.
+- A flow-style depth makes every node at that nesting depth and below use flow style; depth 0 writes the whole value in flow style. The default never switches to flow. Optional flow presentation switches pad inside brackets and braces with one space, drop the space after commas, drop the space after colons, and write flow keys double-quoted.
+- When a node has both an anchor and an explicit tag, the default order is the anchor then the tag; a switch reverses that order to the tag then the anchor.
+- Keys keep insertion order by default. When a comparator-less key sort is requested, scalar keys are emitted in ascending order of their written text (plain string comparison); complex keys are not reordered relative to each other.
+- Unrepresentable values (a function, a regular expression) cause dump to fail by default. When the skip-unrepresentable switch is on, such a value is omitted: a mapping pair whose key or value is unrepresentable is dropped, and such a sequence item is dropped. An `undefined` sequence item is written as null even without that switch; an `undefined` mapping value omits that pair; an `undefined` root dumps as empty text.
 
 **Boundary / error behavior:**
 
-- Dump of a function or regular expression without the skip-unrepresentable switch fails and produces no YAML text. Dump of a `Map` that contains a function key, under the real-map schema, fails without that switch and omits that pair with the switch on.
-- A string that contains a colon followed by a flow indicator (`:{`, `:[`, `:,`, `:}`, `:]`, `x:{`) is quoted when dumped in flow style, so that dump-then-parse restores the original string.
-
-**Verifiable oracle:**
-
-- Success: dump of `{ answer: 42 }` parses back with numeric 42; dump of `yes` is quoted under the default dump schema and is plain under JSON; dump of `0o123` and `12e03` is quoted under the default dump schema; dump of `---` and `--- x` is quoted and dump of `---x` is not; dump of a leading-space string is quoted; dump of two references to one object uses an anchor and an alias, and the no-reuse switch inlines both; when a tagged shared mapping is dumped, the default order is anchor then tag and the reverse-order switch emits tag then anchor; indent 4 on `{ a: { b: 1 } }` uses four spaces; flow depth 0 on `{ a: [1, 2] }` is a single flow mapping; sort emits `a` before `b` for `{ b: 1, a: 2 }`; a function makes dump fail without skip and is omitted with skip; `[undefined]` is `- null`; `1e21` dumps as a float that parses back as `1e21`.
-- Failure / absence: dump writes JSON; `yes` is dumped unquoted under the default schema and parses back as boolean true; `0o123` or `12e03` is dumped unquoted under the default schema; shared objects are always inlined or always aliased regardless of the reuse switch; functions are silently omitted without the skip switch; `1e21` dumps as a tagged integer whose text is exponential and does not parse as that number.
+- Dump of a function or regular expression without the skip-unrepresentable switch fails and produces no YAML text.
+- A value that no tag of the dump schema identifies fails; the default plain-object map does not identify a `Map`.
 
 ---
 
 ### FP-06: Custom tags
 
-**Public entry:** The library’s tag-description entries for a scalar tag, a sequence tag, and a mapping tag, and the schema operation that attaches one or more tags to an existing schema (Failsafe, JSON, Core, YAML 1.1, or an already extended schema). This feature point depends on FP-01, FP-02, and FP-05. Built-in tags from FP-02 and FP-04 stay available; a newly attached tag with the same name, the same node kind, and the same exact-versus-prefix matching replaces the earlier one.
+**Public entry:** The library’s tag-description entries for a scalar tag, a sequence tag, and a mapping tag, and the schema operation that attaches one or more tags to an existing schema (Failsafe, JSON, Core, YAML 1.1, or an already extended schema). This feature point depends on FP-01, FP-02, and FP-05. Built-in tags from FP-02 and FP-04 stay available; a newly attached tag with the same name, the same node kind, and the same exact-versus-prefix matching replaces the earlier one and leaves every other tag in place.
 
 **Normal behavior:**
 
-- A **scalar** custom tag turns tagged text into a caller-defined value and, on dump, recognizes that value and writes the tag plus the represented text. A Core schema extended with a `!tag2` scalar that reads a decimal integer into a caller-defined object parses `!tag2` followed by `10` as that object, and dump of that object under the same schema writes the `!tag2` tag.
-- A **sequence** custom tag creates a container and receives each item in order. A Core schema extended with a `!point` sequence that stores three numbers as `x` / `y` / `z` parses `!point [10, 43, 23]` as a point with those coordinates. Dump of that point writes a `!point` sequence of three numbers. A sequence tag that collects items and then yields a different result than the collection itself: a parse of `!point [10, 20]` for a tag that converts two numbers into a frozen point yields that frozen point; an alias to that node refers to the same frozen point (same identity as the converted value).
-- A **mapping** custom tag creates a container and receives each key/value pair. A Core schema extended with a `!space` mapping that understands `height`, `width`, and `points` parses a `!space` node with those keys as a space object, and dump writes those keys back under `!space`.
-- The same tag name may be registered for more than one node kind. A schema that defines both a scalar `!Include` and a mapping `!Include` parses `!Include foobar` as the scalar result and `!Include\n  location: foobar` as the mapping result.
-- An exact tag name wins over a prefix match. In a schema that has an exact `!foo` scalar and prefix-matching `!foo` and `!` scalars, `!foo 1` uses the exact tag, `!foo2 2` uses the `!foo` prefix, and `!bar 3` uses the `!` prefix.
-- Prefix-matching tags are the supported way to accept unknown tags. A Core schema extended with prefix-matching `!` tags for scalar, sequence, and mapping kinds parses `!unknown_scalar_tag foo bar`, `!unknown_sequence_tag [1, 2, 3]`, and `!unknown_mapping_tag { foo: 1, bar: 2 }` as values that remember the tag name and the constructed content, and dump writes those same tag names back.
-- A schema must include the default string tag (`!!str`). Attaching tags to Core, JSON, Failsafe, or YAML 1.1 preserves that tag.
+- A **scalar** custom tag turns the tagged text into the value its resolve step returns, whether the tag and the text are on one line or the text is on the next line. On dump, a value that the tag’s identify step accepts is written with that tag and the text its represent step returns.
+- A **sequence** custom tag creates a container and receives each item in document order, with its zero-based index. A **mapping** custom tag creates a container and receives each key/value pair in document order. When the tag has a finalize step, its result is the constructed value (and the value an alias to that node refers to); otherwise the container is. On dump, a value that the tag’s identify step accepts is written with that tag and the items or pairs its represent step returns, in that order.
+- On dump, a value is written with a custom tag only when that tag’s identify step accepts it; values the step does not accept (including plain numbers, arrays, or objects of the same shape) are written as ordinary YAML.
+- The same tag name may be registered once for each node kind (scalar, sequence, mapping); a node uses the registration for its own kind.
+- Tag lookup: an exact-name tag wins over prefix-matching tags; among prefix-matching tags, the longest matching prefix wins. A prefix-matching tag receives the node’s full tag name, so it can remember it, and may supply the tag name to write on dump.
+- Prefix-matching tags are the supported way to accept unknown local tags of every node kind and write them back with their original names.
+- A schema must include the default string tag (`!!str`). Attaching tags to Core, JSON, Failsafe, or YAML 1.1 preserves that tag and every other built-in tag of that schema, so built-in resolution is unchanged by the attach.
+- A schema created from a tag list consists of exactly those tags; it is not an extension of a built-in schema.
+- Attaching tags yields a new schema and leaves the schema it was attached to unchanged.
+- Each parse or dump call uses only the schema and tags passed to it; a schema or tag passed to one call has no effect on any other call.
 
 **Boundary / error behavior:**
 
-- A recursive alias into a tag that yields a different result than the collection itself fails. A parse of `&point !point [*point]` for a `!point` tag that converts the collected items into a new value fails. A recursive alias into a default sequence (`&a [*a]`) still succeeds (FP-01).
-- A tag that refuses the collected items fails the parse and does not yield a document. A `!point` tag that requires exactly two coordinates fails on `!point [10]`.
+- A recursive alias (a node containing an alias to itself) into a tag that has a finalize step fails, because the final value does not exist while its items are collected. A recursive alias into a default sequence or mapping still succeeds (FP-01).
+- A tag step that refuses the collected items or a pair (by throwing, or by returning a rejection) fails the parse and does not yield a document.
+- A node carrying a local tag that no attached tag matches fails (FP-01).
 - An implicit scalar tag that also matches by tag prefix cannot be used: the schema operation that would attach that combination fails, and the caller does not obtain a usable schema.
-- A schema that does not define the default string tag cannot be used: the schema operation that would create it fails.
-
-**Verifiable oracle:**
-
-- Success: Core plus `!point` / `!space` parses `!point [10, 43, 23]` as that point and a `!space` mapping with `height` / `width` / `points` as that space, and dump-then-parse restores the tagged form; `!Include` as scalar and as mapping are distinct; exact `!foo` wins over a `!foo` prefix; prefix `!` tags round-trip unknown local tags; `&a [*a]` still works for the default sequence; `&point !point [*point]` fails when `!point` converts the collection into a different result; a schema with no string tag cannot be obtained; an implicit prefix-matching scalar cannot be attached.
-- Failure / absence: custom tags are ignored and unknown tags always fail or always become strings; dump of a custom object writes a plain mapping with no tag; exact and prefix tags are indistinguishable; a converting tag accepts a recursive self-alias.
+- A tag list that does not include the default string tag cannot form a schema: the schema operation that would create it fails, whether the list is empty or holds only other tags.
 
 ---
 
@@ -260,16 +236,12 @@ Cheaper proxies (hard-coded document tables, a JSON-only parser, a YAML subset t
 
 **Normal behavior:**
 
-- **Nesting depth.** The omitted collection nesting limit is finite; its exact integer is the implementer’s and is not scored. Aliases do not count toward the limit. Under the omitted default, a flow sequence of ten nested empty sequences succeeds, a closed flow sequence of two hundred nested empty sequences fails as a parse failure (not an uncaught host overflow), and a collection nest of 100000 opening brackets fails as a parse failure. A flow sequence of ten nested empty sequences parses successfully when the limit is 20 and fails when the limit is 5. At that same limit of 5, a sequence of ten aliases to one empty sequence succeeds, and a recursive self-alias into the default sequence still succeeds.
-- **Alias count.** The default alias budget is unlimited. A document with one anchored mapping and two aliases to it parses successfully under the default and under an alias budget of 2, and fails under an alias budget of 1. An alias budget of 0 rejects every alias, including that document. The caller may also request an unlimited budget explicitly. The alias budget is applied **per document**: a two-document stream in which each document has one alias succeeds when the budget is 1, and fails when the budget is 0.
-- **Merge-key work.** The default merge-key budget is 10000 keys processed by `<<` across one single-document or multi-document parse call. When the budget knob is omitted, a document that merges 10000 distinct one-key mappings into one mapping succeeds and that mapping has 10000 keys, and a document that merges 10001 such mappings fails. A document that merges three one-key mappings into a fourth mapping succeeds when the budget is 5 and fails when the budget is 2. Each key of a merge source is counted every time that source is applied, even when the key is already present and is not copied again: applying the same source twice counts twice, and the budget accumulates across the whole call. Merging one three-key mapping once succeeds at budget 5; merging that same mapping twice in one merge sequence (`<<: [*s, *s]`) fails at budget 5 and succeeds at budget 6, and the result still has those three keys. The caller may disable the budget; with the budget disabled, a merge chain that maps 150 keys into one mapping succeeds and that mapping has 150 keys. The merge-key budget is shared across every document of a multi-document parse: two documents that each merge two keys succeed when the budget is 4 and fail when the budget is 3. A merge chain of 100000 steps fails under the default budget, as a parse failure.
+- **Nesting depth.** The nesting depth of a node is the number of nodes on the chain from the document’s root node down to it, inclusive (a collection inside a collection adds one; a scalar inside the innermost collection adds one more). A document in which some chain reaches the nesting limit fails as a parse failure, never as an uncaught host stack overflow, however deep the input. Aliases do not count: an alias contributes no nesting of the node it refers to. When the limit is omitted, a fixed default applies; it is the implementer’s choice, greater than 10 and less than 200.
+- **Alias count.** The alias budget is the number of alias nodes allowed in one document; a document with more aliases than the budget fails. The budget is applied **per document** of a multi-document parse. When omitted, the budget is unlimited; the caller may also request unlimited explicitly, and a budget of 0 rejects every alias.
+- **Merge-key work.** The merge-key budget is the number of keys processed by `<<` across one parse call, shared by every document of a multi-document parse. Each key of a merge source counts every time that source is applied, whether or not the key is copied (a key already present still counts, and applying the same source twice counts twice). A call that processes more keys than the budget fails. When omitted, the budget is 10000; the caller may disable it. Merge keys that do not apply (Core without the merge tag) do no merge work and do not count.
 
 **Boundary / error behavior:**
 
-- Crossing a limit fails the parse and yields no document (and no prefix of the multi-document list). The failure is distinguishable from a successful parse of the same text with a higher budget.
+- Crossing a limit fails the whole parse call and yields no document (and no prefix of the multi-document list). The same text succeeds under a larger limit.
 - These limits do not, by themselves, cap the cost of walking a constructed graph after a successful parse. A document that stays under the alias budget may still be expensive to convert to JSON if aliases repeat a large subgraph; that follow-on walk is outside this feature point (see the untrusted-input note in Non-functional constraints).
 
-**Verifiable oracle:**
-
-- Success: ten nested flow sequences parse at limit 20 and fail at limit 5; at limit 5, ten aliases to one empty sequence succeed and a recursive self-alias succeeds; under the omitted default, ten nested empty flow sequences succeed, a closed nest of two hundred empty flow sequences fails as a parse failure, and 100000 opening brackets fail as a parse failure; two aliases succeed at alias budget 2 and fail at 1; alias budget 0 rejects a single alias; two documents that each contain one alias succeed at alias budget 1; three merged keys succeed at merge budget 5 and fail at 2; omitted merge budget accepts 10000 one-key mappings and rejects 10001; merging one three-key mapping twice in one `<<` sequence fails at budget 5 and succeeds at 6; two documents that each merge two keys fail at merge budget 3 and succeed at 4; disabling the merge budget allows a 150-key merge chain.
-- Failure / absence: hostile nesting throws a host stack overflow instead of a parse failure; 100000 opening brackets succeed under the omitted default; a closed nest of two hundred empty flow sequences succeeds under the omitted default; alias and merge budgets are ignored; the merge budget is applied per document instead of per call; the alias budget is applied per call instead of per document.

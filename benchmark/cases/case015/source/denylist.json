@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "case015",
+  "ecosystem": "source",
+  "install_ban": [
+    "bal-rogg",
+    "bal_rogg",
+    "balrogg",
+    "balrogg-dos",
+    "balrogg-prof",
+    "balrogg_prof",
+    "github.com/iczelia/balrogg",
+    "iczelia/balrogg",
+    "libbalrogg",
+    "libbalrogg-avx2",
+    "libbalrogg-core",
+    "libbalrogg-opus",
+    "libbalrogg-sse2",
+    "libbalrogg_avx2",
+    "libbalrogg_core",
+    "libbalrogg_opus",
+    "libbalrogg_sse2"
+  ],
+  "import_ban": [
+    "balrogg",
+    "balrogg/",
+    "libbalrogg",
+    "libbalrogg/"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Bans the upstream Autotools C99 CLI (AC_INIT/bin_PROGRAMS balrogg, GitHub iczelia/balrogg, hyphen/underscore aliases, companion balrogg_prof, and noinst libbalrogg_* archives) plus include/import roots balrogg and libbalrogg; allows runner-provided build-essential/autoconf/automake, C/math stdlib, GNU make, python3/pytest, and does not ban author/org-only names (iczelia), the vendored yarg CLI parser, or codec stacks (ogg/vorbis/opus/libopus)."
+}

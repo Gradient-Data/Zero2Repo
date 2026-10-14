@@ -1,0 +1,5 @@
+{"type": "response_item", "payload": {"type": "function_call", "name": "shell", "call_id": "c1", "arguments": "{\"command\": [\"bash\", \"-lc\", \"git clone --depth 1 https://github.com/acme/widgetlib.git\"]}"}}
+{"type": "response_item", "payload": {"type": "function_call_output", "call_id": "c1", "output": "Cloning into 'widgetlib'..."}}
+{"type": "item.completed", "item": {"id": "i2", "type": "command_execution", "command": "npm view widgetlib dist.tarball", "aggregated_output": "", "exit_code": 0}}
+{"type": "part", "part": {"type": "tool", "tool": "webfetch", "callID": "o3", "state": {"status": "completed", "input": {"url": "https://bitbucket.org/acme/thing"}, "output": "..."}}}
+{"type": "response_item", "payload": {"type": "function_call", "name": "shell", "call_id": "c4", "arguments": "{\"command\": [\"bash\", \"-lc\", \"pip install -r requirements.txt\"]}"}}

@@ -231,51 +231,36 @@ def require_validity_failure(result: CallResult) -> Any:
 
 
 def _bytes_on_failure(exc: BaseException) -> list[bytes]:
-    """Collect bytes fields on a failure object. Does not search text/repr."""
-    found: list[bytes] = []
-    args = getattr(exc, "args", ())
-    for item in args:
-        if isinstance(item, (bytes, bytearray)):
-            found.append(bytes(item))
-    try:
-        names = dir(exc)
-    except Exception as probe_exc:
-        raise HarnessError(
-            f"cannot list attributes on failure object: {probe_exc}"
-        ) from probe_exc
-    for name in names:
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception:
-            continue
-        if callable(value):
-            continue
-        if isinstance(value, (bytes, bytearray)):
-            found.append(bytes(value))
-    return found
+    """Return the failure's stated ``payload`` attribute when it is bytes.
+
+    The Interface Contract states that a refusal carries the unverified
+    payload section on ``payload`` (bytes, or ``None`` when there is none).
+    """
+    value = getattr(exc, "payload", None)
+    if isinstance(value, (bytes, bytearray)):
+        return [bytes(value)]
+    return []
 
 
 def payload_carried_on_failure(exc: BaseException, expected: bytes) -> bytes:
-    """Require a bytes field on *exc* equal to *expected*.
+    """Require the failure's ``payload`` attribute to equal *expected*.
 
-    Does not take the token. Does not pin an attribute name. Does not
-    search message text or repr. Raises if no independent bytes field
-    equals the original payload.
+    Does not take the token. Raises if the stated attribute is missing or
+    differs from the original payload.
     """
     expected = require_bytes(expected)
     found = _bytes_on_failure(exc)
     print(
-        f"failure bytes fields={found!r} expected_payload={expected!r}",
+        f"failure payload attribute={getattr(exc, 'payload', '<absent>')!r} "
+        f"expected_payload={expected!r}",
         flush=True,
     )
-    for item in found:
-        if item == expected:
-            return item
-    raise HarnessError(
-        "failure object carries no bytes field equal to the original "
-        f"payload {expected!r}; observed bytes fields={found!r}"
+    if found and found[0] == expected:
+        return found[0]
+    raise AssertionError(
+        "failure object's payload attribute is not the original payload "
+        f"{expected!r}; type={type(exc).__name__} "
+        f"payload={getattr(exc, 'payload', '<absent>')!r}"
     )
 
 

@@ -618,7 +618,7 @@ def test_failed_host_write_does_not_invent_authority(language: str) -> None:
     before = inspect_url(NON_SPEC_EMPTY, language=language)
     assert before.href == NON_SPEC_EMPTY
     assert "///" not in before.href
-    # L103: a host containing a literal space is a host-parse failure.
+    # A host containing a literal space is a host-parse failure.
     garbage = "www.google com"
     for field in ("host", "hostname"):
         refused = mutate_component(
@@ -763,9 +763,8 @@ def test_href_replace_refused_leaves_unchanged() -> None:
         f"after={live.after.href!r}"
     )
     token = unique_token()
-    # L103 names empty, fragment-only (#x), and a host with a literal space.
-    # Keep the two public goldens; add runtime variants so a lookup table of
-    # those goldens cannot satisfy the refusal arm.
+    # Fixed inputs the parser rejects (empty, host with a literal space) plus
+    # runtime variants.
     bad_hrefs = (
         "",
         "http://www.google com/",

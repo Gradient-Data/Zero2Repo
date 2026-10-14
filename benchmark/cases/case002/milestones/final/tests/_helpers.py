@@ -7,13 +7,12 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import stat
 import sys
 import uuid
 import zipapp
 from collections.abc import Mapping, Sequence
-from importlib.metadata import PackageNotFoundError, distribution, packages_distributions
+from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -109,15 +108,15 @@ def require_empty_string(mapping: Mapping[str, Any], name: str) -> str:
 def require_no_value(mapping: Mapping[str, Any], name: str) -> Any:
     """Assert *name* is present and is not the empty string.
 
-    Absence is not no-value. The recorded carrier is not pinned to a language
-    sentinel; it must only be distinguishable from ``""`` and from absence.
+    Absence is not no-value. The recorded marker is not pinned to a language
+    sentinel; the Interface Contract states only that it is not a ``str``.
     """
     assert name in mapping, (
         f"{name!r} is absent (not a no-value binding); keys={list(mapping)!r}"
     )
     recorded = mapping[name]
-    assert recorded != "", (
-        f"{name!r} recorded the empty string, not no-value"
+    assert not isinstance(recorded, str), (
+        f"{name!r} recorded text {recorded!r}, not the no-value marker"
     )
     print(f"no-value {name!r} recorded={recorded!r}", flush=True)
     return recorded
@@ -136,36 +135,6 @@ def require_not_two_char_escape(value: object, letter: str) -> None:
         f"parsed value is the two-character literal {literal!r}"
     )
     print(f"escape letter={letter!r} value={value!r} is not {literal!r}", flush=True)
-
-
-def require_decoded_escape_char(value: object, letter: str) -> str:
-    """Return the one-character interpretation of a listed double-quote escape.
-
-    Empty text, the two-character backslash+letter literal, and a dropped
-    backslash (the letter alone, when that letter is not itself the listed
-    result) are not accepted. The concrete code point is not pinned when the
-    PRD does not name it.
-    """
-    if not isinstance(value, str):
-        raise HarnessError(
-            f"escape observation is not text; got {type(value)!r}: {value!r}"
-        )
-    if len(letter) != 1:
-        raise HarnessError(f"letter must be one character; got {letter!r}")
-    literal = "\\" + letter
-    assert len(value) == 1, (
-        f"listed escape {literal!r} did not decode to a single character: {value!r}"
-    )
-    if letter in ("\\", "'"):
-        assert value == letter, (
-            f"listed escape {literal!r} recorded {value!r}, not {letter!r}"
-        )
-    else:
-        assert value != letter, (
-            f"listed escape {literal!r} dropped the backslash and kept {letter!r}"
-        )
-    print(f"decoded escape letter={letter!r} value={value!r}", flush=True)
-    return value
 
 
 def require_script_success(result: RunResult, *, label: str) -> str:
@@ -364,7 +333,7 @@ def run_frozen_packaged_executable(
     src_dir = bundle_dir / unique_token()
     src_dir.mkdir()
     # Freeze-tool bootloaders mark the packaged process before user code.
-    # Construction of the process class, not a suite oracle.
+    # This only constructs the process class.
     (src_dir / "__main__.py").write_text(
         "import sys\nsys.frozen = True\n" + source,
         encoding="utf-8",
@@ -503,33 +472,52 @@ def strip_path_covariates(text: str, paths: Sequence[str | Path]) -> str:
     return stripped
 
 
-def load_with_log_capture(*args: Any, **kwargs: Any) -> tuple[CallResult, list[logging.LogRecord]]:
-    """Call the load entry with a memory handler on the root logger.
 
-    Records are not filtered by logger name. Handler install failure
-    raises. The handler is always detached.
+@contextmanager
+def _capture_all_loggers(records: list[logging.LogRecord]):
+    """Collect records from the root logger and from every non-propagating logger.
+
+    The Contract allows any logger name, so a product logger with
+    ``propagate=False`` is captured too. Each record is kept once.
     """
-    records: list[logging.LogRecord] = []
 
     class _ListHandler(logging.Handler):
         def emit(self, record: logging.LogRecord) -> None:
-            records.append(record)
+            if not any(r is record for r in records):
+                records.append(record)
 
     handler = _ListHandler()
     handler.setLevel(logging.DEBUG)
     root = logging.getLogger()
-    previous_level = root.level
+    targets: list[logging.Logger] = [root]
+    saved: list[tuple[logging.Logger, int]] = []
     try:
-        try:
-            root.addHandler(handler)
-        except Exception as exc:
-            raise HarnessError(f"cannot attach log handler: {exc}") from exc
-        root.setLevel(logging.DEBUG)
-        result = call(load_envfile, *args, **kwargs)
+        for logger in list(logging.Logger.manager.loggerDict.values()):
+            if isinstance(logger, logging.Logger) and not logger.propagate:
+                targets.append(logger)
+        for logger in targets:
+            try:
+                logger.addHandler(handler)
+            except Exception as exc:
+                raise HarnessError(f"cannot attach log handler: {exc}") from exc
+            saved.append((logger, logger.level))
+            logger.setLevel(logging.DEBUG)
+        yield
     finally:
-        root.removeHandler(handler)
-        root.setLevel(previous_level)
+        for logger, level in saved:
+            logger.removeHandler(handler)
+            logger.setLevel(level)
         handler.close()
+
+def load_with_log_capture(*args: Any, **kwargs: Any) -> tuple[CallResult, list[logging.LogRecord]]:
+    """Call the load entry with a memory handler on the root logger.
+
+    Records from every logger are kept (root plus non-propagating
+    loggers). Handler install failure raises. The handler is always detached.
+    """
+    records: list[logging.LogRecord] = []
+    with _capture_all_loggers(records):
+        result = call(load_envfile, *args, **kwargs)
     print(f"captured {len(records)} log records", flush=True)
     return result, records
 
@@ -611,30 +599,12 @@ def call_with_log_capture(
 ) -> tuple[CallResult, list[logging.LogRecord]]:
     """Call a public entry with a memory handler on the root logger.
 
-    Records are not filtered by logger name. Handler install failure
-    raises. The handler is always detached.
+    Records from every logger are kept (root plus non-propagating
+    loggers). Handler install failure raises. The handler is always detached.
     """
     records: list[logging.LogRecord] = []
-
-    class _ListHandler(logging.Handler):
-        def emit(self, record: logging.LogRecord) -> None:
-            records.append(record)
-
-    handler = _ListHandler()
-    handler.setLevel(logging.DEBUG)
-    root = logging.getLogger()
-    previous_level = root.level
-    try:
-        try:
-            root.addHandler(handler)
-        except Exception as exc:
-            raise HarnessError(f"cannot attach log handler: {exc}") from exc
-        root.setLevel(logging.DEBUG)
+    with _capture_all_loggers(records):
         result = call(fn, *args, **kwargs)
-    finally:
-        root.removeHandler(handler)
-        root.setLevel(previous_level)
-        handler.close()
     print(f"captured {len(records)} log records", flush=True)
     return result, records
 
@@ -833,82 +803,22 @@ def cli_streams(result: RunResult) -> str:
 
 
 def installed_distribution_version() -> str:
-    """Return the version of the product package under test.
+    """Return ``<package>.version.__version__`` (Interface Contract: Version).
 
-    Prefers ``__version__`` in the loaded package tree (the code ``python -m``
-    actually imports when ``PYTHONPATH`` includes ``src/``). Falls back to
-    distribution metadata for providers of that import package. Lookup
-    failure or an empty version string is a harness failure, never "no version".
+    A missing module, a missing attribute, a non-text or empty value is a
+    harness failure, never "no version".
     """
+    import importlib
+
     name = product_package_name()
-    recorded = ""
-    pkg = product_package_dir()
-    for rel in ("version.py", "__init__.py"):
-        path = pkg / rel
-        try:
-            text = path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            continue
-        except OSError as exc:
-            raise HarnessError(f"cannot read {path}: {exc}") from exc
-        match = re.search(
-            r'^__version__\s*=\s*[\'"]([^\'"]+)[\'"]',
-            text,
-            re.M,
-        )
-        if match and match.group(1):
-            recorded = match.group(1)
-            print(
-                f"installed version={recorded!r} package={name!r} "
-                f"source={path}",
-                flush=True,
-            )
-            return recorded
-    root = str(repo_root().resolve())
-    providing = list(packages_distributions().get(name, []))
-    ordered = [item for item in providing if item != name]
-    ordered.extend(item for item in providing if item == name)
-    tree_versions: list[str] = []
-    other_versions: list[str] = []
-    for dist_name in ordered:
-        try:
-            dist = distribution(dist_name)
-        except PackageNotFoundError:
-            continue
-        ver = dist.version
-        if not ver:
-            continue
-        blob = ""
-        for filename in ("direct_url.json", "RECORD"):
-            try:
-                text = dist.read_text(filename)
-            except Exception:
-                text = None
-            if text:
-                blob += text
-        if root in blob:
-            tree_versions.append(ver)
-        else:
-            other_versions.append(ver)
-    if tree_versions:
-        recorded = tree_versions[0]
-    elif len(other_versions) == 1:
-        recorded = other_versions[0]
-    elif ordered:
-        try:
-            recorded = distribution(ordered[0]).version
-        except PackageNotFoundError:
-            recorded = ""
-    if not recorded:
-        raise HarnessError(
-            f"cannot read installed version for package {name!r}; "
-            f"distributions={providing!r}"
-        )
-    print(
-        f"installed version={recorded!r} package={name!r} "
-        f"distributions={providing!r}",
-        flush=True,
-    )
+    try:
+        module = importlib.import_module(f"{name}.version")
+    except ImportError as exc:
+        raise HarnessError(f"cannot import {name}.version: {exc}") from exc
+    recorded = getattr(module, "__version__", None)
+    if not isinstance(recorded, str) or not recorded:
+        raise HarnessError(f"{name}.version.__version__ is not a version string: {recorded!r}")
+    print(f"installed version={recorded!r} package={name!r}", flush=True)
     return recorded
 
 
@@ -1025,3 +935,59 @@ def child_argv_probe_source() -> str:
         "for _token in sys.argv:\n"
         "    print('ARGV=' + _token)\n"
     )
+
+
+
+# ---------------------------------------------------------------------------
+# Carriers the Interface Contract states for diagnostics and CLI reports.
+# ---------------------------------------------------------------------------
+
+EXIT_OPERATION_FAILURE = 1
+EXIT_USAGE_FAILURE = 2
+USAGE_LABEL = "Usage:"
+
+
+def diagnostic_lines(text: str) -> list[str]:
+    """Each non-blank line is one diagnostic (Contract: one line per diagnostic)."""
+    return [line for line in text.splitlines() if line.strip()]
+
+
+def require_line_naming(
+    text: str, token: str | Path, *, origin: str, without: str | Path | None = None
+) -> str:
+    """Require a diagnostic line that contains *token* (and not *without*)."""
+    for line in diagnostic_lines(text):
+        if str(token) in line and (without is None or str(without) not in line):
+            print(f"{origin} line naming {str(token)!r}: {line!r}", flush=True)
+            return line
+    raise AssertionError(
+        f"{origin} has no diagnostic line naming {str(token)!r}"
+        + (f" without {str(without)!r}" if without is not None else "")
+        + f"; text={text!r}"
+    )
+
+
+def require_no_line_naming(
+    text: str, token: str | Path, *, origin: str, without: str | Path | None = None
+) -> None:
+    """Require no diagnostic line that contains *token* (and not *without*)."""
+    for line in diagnostic_lines(text):
+        if str(token) in line and (without is None or str(without) not in line):
+            raise AssertionError(
+                f"{origin} has a diagnostic line naming {str(token)!r}: {line!r}"
+            )
+    print(f"{origin} no line naming {str(token)!r}", flush=True)
+
+
+def require_exit(result: RunResult, code: int, *, origin: str) -> None:
+    """Require the Contract-stated exit status *code*."""
+    assert result.returncode == code, (
+        f"{origin} exited {result.returncode}, not {code}; "
+        f"stdout={result.stdout_text!r} stderr={result.stderr_text!r}"
+    )
+    print(f"{origin} exit {code}", flush=True)
+
+
+def has_usage_label(text: str) -> bool:
+    """Whether a line of *text* starts with the Contract's usage label."""
+    return any(line.startswith(USAGE_LABEL) for line in text.splitlines())

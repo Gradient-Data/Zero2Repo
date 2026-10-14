@@ -7,8 +7,9 @@ exported, --file vs cwd, tokens after run belonging to the child,
 --version before run not starting the child, missing-file invalid
 --file vs no-command vs command-not-found, run does not create a
 .env file, and run does not write delivered names into a surviving
-caller's process environment. Exit numbers 1/2, Click types, and
-English sentence spellings are not pinned.
+caller's process environment. Exit numbers 1/2 and Click types are not
+pinned; failure reports are read by the exit status, channel and usage
+label the Interface Contract states.
 """
 
 from __future__ import annotations
@@ -31,14 +32,16 @@ from _helpers import (
     require_labeled_line,
     require_script_success,
     require_surviving_caller_unchanged,
-    strip_cli_covariates,
-    strip_path_covariates,
+    EXIT_OPERATION_FAILURE,
+    EXIT_USAGE_FAILURE,
+    has_usage_label,
+    require_exit,
     unique_token,
 )
 
 PROBE_SCRIPT = "probe.py"
 ARGV_SCRIPT = "argv_probe.py"
-PUBLIC_MISSING_PROGRAM = "i_do_not_exist"
+MISSING_PROGRAM = "i_do_not_exist"
 
 
 def _require_missing_file(ws: Workspace, relpath: str, *, origin: str) -> None:
@@ -58,6 +61,47 @@ def _unlink_workspace_file(ws: Workspace, relpath: str) -> None:
         return
     except OSError as exc:
         raise HarnessError(f"cannot unlink {path}: {exc}") from exc
+
+
+def _require_report_kind(
+    result: RunResult,
+    kind: str,
+    *,
+    origin: str,
+    program: str | None = None,
+    path: str | None = None,
+) -> None:
+    """Read a run failure by the carriers the Contract states for *kind*.
+
+    invalid-file: exit 2, usage label on stderr, nothing on stdout, names the path.
+    no-command: exit 1, report on stdout, no usage label.
+    command-not-found: exit 1, stderr names the program, no usage label.
+    """
+    if kind == "invalid-file":
+        require_exit(result, EXIT_USAGE_FAILURE, origin=origin)
+        assert has_usage_label(result.stderr_text), (
+            f"{origin} invalid-file report has no usage label: {result.stderr_text!r}"
+        )
+        assert result.stdout_text == "", f"{origin} wrote stdout {result.stdout_text!r}"
+        if path is not None:
+            assert path in result.stderr_text, (
+                f"{origin} invalid-file report does not name {path!r}: "
+                f"{result.stderr_text!r}"
+            )
+    elif kind == "no-command":
+        require_exit(result, EXIT_OPERATION_FAILURE, origin=origin)
+        assert result.stdout_text.strip(), f"{origin} no-command report is not on stdout"
+        assert not has_usage_label(cli_streams(result)), f"{origin} carries the usage label"
+    elif kind == "command-not-found":
+        require_exit(result, EXIT_OPERATION_FAILURE, origin=origin)
+        assert not has_usage_label(cli_streams(result)), f"{origin} carries the usage label"
+        assert program is not None
+        assert program in result.stderr_text, (
+            f"{origin} report does not name {program!r}: {result.stderr_text!r}"
+        )
+    else:
+        raise HarnessError(f"unknown report kind {kind!r}")
+    print(f"{origin} report kind {kind}", flush=True)
 
 
 def _require_nonempty_report(result: RunResult, *, origin: str) -> str:
@@ -634,7 +678,7 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
     print(f"baseline touch created {marker_ok}", flush=True)
 
     found_missing_prog = require_cli_unsuccessful(
-        cli_invoke(ws, ["run", PUBLIC_MISSING_PROGRAM]),
+        cli_invoke(ws, ["run", MISSING_PROGRAM]),
         origin="file exists + i_do_not_exist",
     )
     found_missing_report = _require_nonempty_report(
@@ -662,26 +706,20 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
     _require_missing_file(ws, ".env", origin="no .env + touch must not create .env")
 
     missing_prog = require_cli_unsuccessful(
-        cli_invoke(ws, ["run", PUBLIC_MISSING_PROGRAM]),
+        cli_invoke(ws, ["run", MISSING_PROGRAM]),
         origin="no .env + i_do_not_exist",
     )
     missing_prog_report = _require_nonempty_report(
         missing_prog, origin="no .env + i_do_not_exist"
     )
-    paths = [ws.path, ".env"]
-    prog_tokens = (PUBLIC_MISSING_PROGRAM, "run", "touch", marker_missing)
-    missing_vs_found = strip_cli_covariates(
-        missing_prog_report, paths, prog_tokens
+    _require_report_kind(
+        found_missing_prog,
+        "command-not-found",
+        origin="file exists + i_do_not_exist",
+        program=MISSING_PROGRAM,
     )
-    found_stripped = strip_cli_covariates(
-        found_missing_report, paths, prog_tokens
-    )
-    assert missing_vs_found, "missing-file report is only path/argv echo"
-    assert found_stripped, "command-not-found report is only path/argv echo"
-    assert missing_vs_found != found_stripped, (
-        "missing .env + i_do_not_exist is indistinguishable from "
-        f"command-not-found after stripping: {missing_vs_found!r}"
-    )
+    _require_report_kind(found_no_cmd, "no-command", origin="file exists + no command")
+    _require_report_kind(missing_prog, "invalid-file", origin="no .env + i_do_not_exist")
     _require_missing_file(ws, ".env", origin="no .env + missing program must not create")
 
     missing_no_cmd = require_cli_unsuccessful(
@@ -690,27 +728,13 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
     missing_no_cmd_report = _require_nonempty_report(
         missing_no_cmd, origin="no .env + no command"
     )
-    no_cmd_tokens = ("run",)
-    missing_nocmd_stripped = strip_cli_covariates(
-        missing_no_cmd_report, paths, no_cmd_tokens
-    )
-    found_nocmd_stripped = strip_cli_covariates(
-        found_no_cmd_report, paths, no_cmd_tokens
-    )
-    assert missing_nocmd_stripped, "missing-file no-command report is only echo"
-    assert found_nocmd_stripped, "no-command report is only echo"
-    assert missing_nocmd_stripped != found_nocmd_stripped, (
-        "no .env + run is indistinguishable from no-command after stripping: "
-        f"{missing_nocmd_stripped!r}"
-    )
+    _require_report_kind(missing_no_cmd, "invalid-file", origin="no .env + no command")
     _require_missing_file(ws, ".env", origin="no .env + run must not create")
 
-    invalid_remainder = strip_cli_covariates(missing_touch_report, paths, prog_tokens)
-    assert invalid_remainder, "invalid --file remainder is empty after stripping"
+    _require_report_kind(missing_touch, "invalid-file", origin="no .env + touch")
 
     ws.write(".env", "A=x\n")
     missing_rel = f"missing-{unique_token()}.env"
-    missing_path = ws.resolve(missing_rel)
     marker_file = _marker_rel()
     bypass_miss = require_cli_unsuccessful(
         cli_invoke(
@@ -730,19 +754,8 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
     )
     _require_missing_file(ws, marker_file, origin="--file missing must not start child")
     _require_missing_file(ws, missing_rel, origin="--file missing must not create target")
-    bypass_stripped = strip_cli_covariates(
-        bypass_report,
-        [ws.path, ".env", missing_path, missing_rel],
-        ("--file", "-f", "run", "printenv", "A", missing_rel),
-    )
-    assert bypass_stripped, "--file missing report is only path/argv echo"
-    found_vs_bypass = strip_cli_covariates(
-        found_missing_report,
-        [ws.path, ".env", missing_path, missing_rel],
-        ("--file", "-f", "run", PUBLIC_MISSING_PROGRAM, missing_rel),
-    )
-    assert bypass_stripped != found_vs_bypass, (
-        "--file missing report is indistinguishable from command-not-found"
+    _require_report_kind(
+        bypass_miss, "invalid-file", origin="--file missing with cwd .env", path=missing_rel
     )
 
     leaf = f"sub-{unique_token()}"
@@ -766,15 +779,7 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
     )
     _require_missing_file(ws, f"{leaf}/.env", origin="no walk-up must not create .env")
     walk_report = _require_nonempty_report(walk, origin="no walk-up")
-    walk_stripped = strip_cli_covariates(
-        walk_report,
-        [ws.path, ".env", ws.resolve(leaf), leaf],
-        ("run", "printenv", "A"),
-    )
-    assert walk_stripped, "walk-up failure report is only echo"
-    assert walk_stripped != found_stripped, (
-        "subdirectory missing .env is indistinguishable from command-not-found"
-    )
+    _require_report_kind(walk, "invalid-file", origin="no walk-up")
 
     dir_rel = f"dir-{unique_token()}"
     ws.mkdir(dir_rel)
@@ -783,18 +788,9 @@ def test_run_missing_env_is_invalid_file_without_starting_child(isolated_ws):
         cli_invoke(ws, ["--file", dir_rel, "run", "touch", dir_marker]),
         origin="--file directory",
     )
-    _require_nonempty_report(dir_fail, origin="--file directory")
+    dir_report = _require_nonempty_report(dir_fail, origin="--file directory")
     _require_missing_file(ws, dir_marker, origin="--file directory must not start child")
-    dir_stripped = strip_cli_covariates(
-        cli_streams(dir_fail),
-        [ws.path, ".env", ws.resolve(dir_rel), dir_rel],
-        ("--file", "-f", "run", "touch", dir_marker, dir_rel),
-    )
-    assert dir_stripped, "directory --file report is only echo"
-    assert dir_stripped != found_stripped, (
-        "directory --file is indistinguishable from command-not-found"
-    )
-
+    _require_report_kind(dir_fail, "invalid-file", origin="--file directory", path=dir_rel)
 
 def test_run_reports_no_command_or_missing_program_when_file_exists(isolated_ws):
     ws = isolated_ws
@@ -835,29 +831,22 @@ def test_run_reports_no_command_or_missing_program_when_file_exists(isolated_ws)
     _require_missing_file(ws, missing_rel, origin="invalid --file must not create")
 
     not_found = require_cli_unsuccessful(
-        cli_invoke(ws, ["run", PUBLIC_MISSING_PROGRAM]),
+        cli_invoke(ws, ["run", MISSING_PROGRAM]),
         origin="file exists i_do_not_exist",
     )
     not_found_report = _require_nonempty_report(
         not_found, origin="file exists i_do_not_exist"
     )
 
-    paths = [ws.path, ".env", ws.resolve(missing_rel), missing_rel]
-    tokens = (PUBLIC_MISSING_PROGRAM, "run", "--file", "-f", missing_rel)
-    no_cmd_stripped = strip_cli_covariates(no_cmd_report, paths, tokens)
-    invalid_stripped = strip_cli_covariates(invalid_report, paths, tokens)
-    not_found_stripped = strip_cli_covariates(not_found_report, paths, tokens)
-    assert no_cmd_stripped, "no-command report is only echo"
-    assert invalid_stripped, "invalid-file report is only echo"
-    assert not_found_stripped, "command-not-found report is only echo"
-    assert no_cmd_stripped != invalid_stripped, (
-        "no-command report matches invalid --file after stripping"
+    _require_report_kind(no_cmd, "no-command", origin="file exists no command")
+    _require_report_kind(
+        invalid, "invalid-file", origin="invalid --file no command", path=missing_rel
     )
-    assert no_cmd_stripped != not_found_stripped, (
-        "no-command report matches command-not-found after stripping"
-    )
-    assert invalid_stripped != not_found_stripped, (
-        "invalid --file matches command-not-found after stripping"
+    _require_report_kind(
+        not_found,
+        "command-not-found",
+        origin="file exists i_do_not_exist",
+        program=MISSING_PROGRAM,
     )
 
     p1 = f"missing-{unique_token()}"
@@ -870,30 +859,6 @@ def test_run_reports_no_command_or_missing_program_when_file_exists(isolated_ws)
     )
     t1 = _require_nonempty_report(r1, origin="missing program p1")
     t2 = _require_nonempty_report(r2, origin="missing program p2")
-    assert t1 != t2, (
-        "command-not-found reports do not change when the missing program name changes"
-    )
-    rest1 = strip_cli_covariates(t1, [ws.path, ".env"], (p1, p2, "run"))
-    rest2 = strip_cli_covariates(t2, [ws.path, ".env"], (p1, p2, "run"))
-    assert rest1, "command-not-found remainder is empty after stripping names"
-    assert rest1 == rest2, (
-        f"command-not-found remainders differ after stripping names: "
-        f"{rest1!r} vs {rest2!r}"
-    )
-    assert rest1 != invalid_stripped, (
-        "command-not-found remainder matches invalid --file"
-    )
-    assert rest1 != no_cmd_stripped, (
-        "command-not-found remainder matches no-command"
-    )
-
-    assert PUBLIC_MISSING_PROGRAM in not_found_report, (
-        "public missing-program report does not identify i_do_not_exist"
-    )
-    assert p1 in t1, f"missing-program report does not identify {p1!r}: {t1!r}"
-    assert p2 in t2, f"missing-program report does not identify {p2!r}: {t2!r}"
-    print(
-        f"no-command/not-found/invalid remainders "
-        f"{no_cmd_stripped!r} {not_found_stripped!r} {invalid_stripped!r}",
-        flush=True,
-    )
+    _require_report_kind(r1, "command-not-found", origin="missing program p1", program=p1)
+    _require_report_kind(r2, "command-not-found", origin="missing program p2", program=p2)
+    assert p2 not in r1.stderr_text, f"report for {p1!r} names {p2!r}"

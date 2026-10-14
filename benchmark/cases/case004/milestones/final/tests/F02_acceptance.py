@@ -1,9 +1,9 @@
 # feature: F02
 """FP-02: serialize and sign structured objects.
 
-Assertions follow Full_PRD.original.md FP-02 (L120–L153). Exception class
-names, failure message text, and failure-object attribute spellings
-are not pinned.
+Assertions follow Full_PRD.original.md FP-02 (L120–L153). Failure objects are read
+through the exception classes and attributes the Interface Contract
+states.
 """
 
 from __future__ import annotations
@@ -823,8 +823,8 @@ def test_payload_decode_failure_retains_original_decode_error():
 
     L142 retains the original decode error so two attached dump/load
     objects that fail with different decode errors stay distinguishable.
-    The form of that retention is not pinned. Dropping the original
-    error so both markers vanish fails this test.
+    The retained error is read from the stated ``original_error``
+    attribute. Dropping the original error fails this test.
     """
     secret = sampled_secret()
     salt = sampled_secret()

@@ -422,8 +422,8 @@ def complete_empty_http11_cycle(
     return client, server, resp
 
 
-def public_three_get_block(*, host: bytes = b"a") -> bytes:
-    """The public three-GET pipelined block for /1 /2 /3."""
+def fixed_three_get_block(*, host: bytes = b"a") -> bytes:
+    """The fixed three-GET pipelined block for /1 /2 /3."""
     block = (
         b"GET /1 HTTP/1.1\r\nHost: "
         + host
@@ -437,7 +437,7 @@ def public_three_get_block(*, host: bytes = b"a") -> bytes:
         + host
         + b"\r\n\r\n"
     )
-    print(f"public_three_get_block host={host!r} len={len(block)}", flush=True)
+    print(f"fixed_three_get_block host={host!r} len={len(block)}", flush=True)
     return block
 
 
@@ -469,14 +469,14 @@ def runtime_close_substring_token() -> str:
 
 
 def runtime_host() -> str:
-    """A Host that is not the public sample ``a``."""
+    """A Host that is not the fixture ``a``."""
     host = runtime_token() + ".test"
     print(f"runtime_host={host!r}", flush=True)
     return host
 
 
 def runtime_target() -> str:
-    """A request target that is not a public sample path."""
+    """A request target that is not a fixture path."""
     token = runtime_token()
     target = "/" + token[:8]
     if target in {"/", "/foo", "/1", "/2", "/3", "/4"}:
@@ -495,7 +495,7 @@ def runtime_informational_status() -> int:
 
 
 def runtime_final_not_408() -> int:
-    """A final status that is not the public 408 sample."""
+    """A final status that is not the fixture 408."""
     status = 400 + (runtime_int() % 80)
     if status == 408:
         status = 418
@@ -614,8 +614,8 @@ def bodied_get_pair() -> tuple[Any, Any, bytes]:
 
 
 def feed_public_three_gets(server: Any) -> None:
-    """Feed the public /1 /2 /3 block and pull the /1 request, data, EOM."""
-    feed_ok(server, public_three_get_block())
+    """Feed the fixed /1 /2 /3 block and pull the /1 request, data, EOM."""
+    feed_ok(server, fixed_three_get_block())
     first = pull_kind(server, "request")
     if request_target(first) != b"/1":
         raise AssertionError(
@@ -639,7 +639,7 @@ __all__ = (
     "encoded_status_code",
     "feed_public_three_gets",
     "paused_result",
-    "public_three_get_block",
+    "fixed_three_get_block",
     "pull_empty_request",
     "pull_response_then_eom",
     "require_both_done",

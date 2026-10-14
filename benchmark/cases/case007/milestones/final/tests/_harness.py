@@ -25,8 +25,9 @@ Surfaces
   attribute on a value a public constructor returned and drives it
   through the same capture path. The attribute name is supplied by the
   suite.
-* Process clock — :func:`frozen_clock` replaces ``time.time`` and
-  ``datetime.datetime.now`` / ``utcnow`` for the duration of a block so
+* Process clock — :func:`frozen_clock` replaces ``time.time``,
+  ``time.time_ns`` and ``datetime.datetime.now`` / ``utcnow`` / ``today``
+  for the duration of a block so
   a current-clock entry and an explicit-instant entry can be compared
   at the same Unix epoch without sleeping. This module does not
   interpret time-step length or acceptance windows.
@@ -1200,11 +1201,11 @@ def process_timezone(name: str | None) -> Iterator[str | None]:
 
 
 def _patch_datetime_now(clock: FrozenClock) -> tuple[type, list[tuple[Any, str, Any]]]:
-    """Replace ``datetime.datetime.now`` / ``utcnow`` for the current process.
+    """Replace ``datetime.datetime.now`` / ``utcnow`` / ``today`` for the current process.
 
     The C ``datetime.datetime`` type cannot have its methods assigned, so
     the datetime module's ``datetime`` attribute is replaced with a
-    subclass that overrides ``now`` / ``utcnow``. Already-imported
+    subclass that overrides ``now`` / ``utcnow`` / ``today``. Already-imported
     ``from datetime import datetime`` bindings that still point at the
     real class are updated the same way.
 
@@ -1237,6 +1238,10 @@ def _patch_datetime_now(clock: FrozenClock) -> tuple[type, list[tuple[Any, str, 
                 tzinfo=None
             )
 
+        @classmethod
+        def today(cls) -> datetime:
+            return real_cls.fromtimestamp(clock.epoch)
+
     restorations: list[tuple[Any, str, Any]] = []
     datetime_module.datetime = FrozenDateTime
     restorations.append((datetime_module, "datetime", real_cls))
@@ -1254,6 +1259,24 @@ def _patch_datetime_now(clock: FrozenClock) -> tuple[type, list[tuple[Any, str, 
             except Exception:
                 continue
             restorations.append((mod, "datetime", real_cls))
+    # Product modules may bind the class under another name
+    # (``from datetime import datetime as dt``); rebind those too.
+    try:
+        pkg = product_package_name()
+    except Exception:
+        pkg = None
+    if pkg:
+        for mod_name, mod in list(sys.modules.items()):
+            if mod is None or not (mod_name == pkg or mod_name.startswith(pkg + ".")):
+                continue
+            for attr_name, value in list(vars(mod).items()):
+                if attr_name == "datetime" or value is not real_cls:
+                    continue
+                try:
+                    setattr(mod, attr_name, FrozenDateTime)
+                except Exception:
+                    continue
+                restorations.append((mod, attr_name, real_cls))
     return real_cls, restorations
 
 
@@ -1261,8 +1284,10 @@ def _patch_datetime_now(clock: FrozenClock) -> tuple[type, list[tuple[Any, str, 
 def frozen_clock(instant: datetime | int | float) -> Iterator[FrozenClock]:
     """Replace the process clock with a caller-controlled epoch for a block.
 
-    Current-clock public entries read ``datetime.datetime.now`` (and
-    ``time.time``). Both are replaced for the duration. The originals
+    Current-clock public entries read the standard-library wall clock
+    (``time.time``, ``time.time_ns``, ``datetime.datetime.now`` /
+    ``utcnow`` / ``today``). All of them are replaced for the duration,
+    including names a product module bound from ``time`` at import. The originals
     are restored when the block exits, including on exception. Does not
     sleep. Does not interpret time-step length or acceptance windows.
 
@@ -1272,12 +1297,41 @@ def frozen_clock(instant: datetime | int | float) -> Iterator[FrozenClock]:
     """
     clock = FrozenClock(_as_epoch(instant))
     original_time = time_module.time
+    original_time_ns = time_module.time_ns
 
     def _frozen_time() -> float:
         return clock.epoch
 
+    def _frozen_time_ns() -> int:
+        return int(round(clock.epoch * 1_000_000_000))
+
     _real_cls, restorations = _patch_datetime_now(clock)
     time_module.time = _frozen_time  # type: ignore[method-assign]
+    time_module.time_ns = _frozen_time_ns  # type: ignore[method-assign]
+    # Product modules that bound the wall-clock functions by name at
+    # import time (``from time import time``) read the same frozen clock.
+    try:
+        pkg = product_package_name()
+    except Exception:
+        pkg = None
+    if pkg:
+        for mod_name, mod in list(sys.modules.items()):
+            if mod is None or not (
+                mod_name == pkg or mod_name.startswith(pkg + ".")
+            ):
+                continue
+            for attr_name, value in list(vars(mod).items()):
+                if value is original_time:
+                    replacement: Any = _frozen_time
+                elif value is original_time_ns:
+                    replacement = _frozen_time_ns
+                else:
+                    continue
+                try:
+                    setattr(mod, attr_name, replacement)
+                except Exception:
+                    continue
+                restorations.append((mod, attr_name, value))
     try:
         print(
             f"[harness] clock_freeze epoch={clock.epoch!r} "
@@ -1287,6 +1341,7 @@ def frozen_clock(instant: datetime | int | float) -> Iterator[FrozenClock]:
         yield clock
     finally:
         time_module.time = original_time
+        time_module.time_ns = original_time_ns
         for owner, attr_name, previous in reversed(restorations):
             try:
                 setattr(owner, attr_name, previous)

@@ -4,7 +4,7 @@
 Helpers classify constructor, current-clock / at-instant emit, check,
 and matching-step outcomes. They never return ``None`` to mean "the
 observation could not be classified". Named secrets, instants, and
-codes are the strings the PRD publishes. HMAC / TOTP is never
+codes are fixed inputs of this suite. HMAC / TOTP is never
 reimplemented here.
 """
 
@@ -19,19 +19,19 @@ from typing import Any
 import F02_helpers as _f02
 from _harness import CallResult, HarnessError, call_method, require_text
 
-# L157: frozen-clock vector.
+# frozen-clock vector.
 FROZEN_UNIX = 1297553958
 FROZEN_PLUS_STEP = FROZEN_UNIX + 30
 FROZEN_CODE = "102705"
 
-# L158: six-digit RFC times (leading zeros kept).
+# six-digit RFC times (leading zeros kept).
 RFC_SIX_DIGIT = (
     (1111111111, "050471"),
     (1234567890, "005924"),
     (2000000000, "279037"),
 )
 
-# L159–L161: RFC 6238 Appendix B eight-digit tables.
+# RFC 6238 Appendix B eight-digit tables.
 RFC6238_TIMES = (59, 1111111109, 1111111111, 1234567890, 2000000000, 20000000000)
 RFC6238_SHA1_CODES = (
     "94287082",
@@ -61,17 +61,17 @@ RFC6238_SHA1_TABLE = tuple(zip(RFC6238_TIMES, RFC6238_SHA1_CODES))
 RFC6238_SHA256_TABLE = tuple(zip(RFC6238_TIMES, RFC6238_SHA256_CODES))
 RFC6238_SHA512_TABLE = tuple(zip(RFC6238_TIMES, RFC6238_SHA512_CODES))
 
-# L160 / L161: ASCII inputs that the constructor consumes as base32.
+# ASCII inputs that the constructor consumes as base32.
 SHA256_ASCII_KEY = "12345678901234567890123456789012"
 SHA512_ASCII_KEY = (
     "1234567890123456789012345678901234567890123456789012345678901234"
 )
 
-# L162: 60-second step on GEZDGNBV.
+# 60-second step on GEZDGNBV.
 SIXTY_AT_30 = "734055"
 SIXTY_AT_60 = "662488"
 
-# L163–L165: ABCDEFGH at Unix 200, offsets and window.
+# ABCDEFGH at Unix 200, offsets and window.
 ABCDEFGH_SECRET = "ABCDEFGH"
 OFFSET_INSTANT = 200
 OFFSET_0_CODE = "028307"
@@ -82,13 +82,13 @@ MATCHING_STEP_MINUS_1 = 5
 MATCHING_STEP_ON = 6
 MATCHING_STEP_PLUS_1 = 7
 
-# L170: epoch-step success / Unix −30 refusal.
+# epoch-step success / Unix −30 refusal.
 EPOCH_MINUS_1 = -1
 EPOCH_MINUS_29_5 = -29.5
 EPOCH_MINUS_30 = -30
 EPOCH_STEP_CODE = "755224"
 
-# L26 / L59: default time-step length.
+# default time-step length.
 DEFAULT_STEP_SECONDS = 30
 
 # Public current-clock emit and matching-step entries on the time helper.
@@ -140,9 +140,9 @@ def _is_decimal_code_string(value: Any) -> bool:
 
 
 def ascii_key_as_base32(ascii_key: str) -> str:
-    """Encode a PRD-named ASCII key as base32 for construction.
+    """Encode a suite-named ASCII key as base32 for construction.
 
-    L160 / L161: the SHA256 / SHA512 secrets are the base32 form of a
+    The SHA256 / SHA512 secrets are the base32 form of a
     named ASCII string. Encoding failure raises — never a sentinel.
     The base32 spelling is an input form, not a product output golden.
     """
@@ -349,6 +349,10 @@ def require_no_step_number(result: CallResult) -> Any:
             "matching-step check handed back a time-step number: "
             f"{value!r}"
         )
+    assert value is False, (
+        "a rejected matching-step check must return False "
+        f"(Interface Contract form): got={value!r}"
+    )
     print(
         f"no step number; type={type(value).__name__} value={value!r}",
         flush=True,
@@ -359,7 +363,7 @@ def require_no_step_number(result: CallResult) -> Any:
 def require_negative_window_aborted(result: CallResult) -> BaseException:
     """Require a matching-step negative window aborted with no step int.
 
-    L171 / L173: the caller observes a failure (any exception; class
+    The caller observes a failure (any exception; class
     and message are not pinned) and the value is not a non-bool int.
     Returning a negative result without failing is not this arm.
     """
@@ -384,7 +388,7 @@ def require_negative_window_aborted(result: CallResult) -> BaseException:
 def require_negative_instant_refused(result: CallResult) -> None:
     """Require emit at a negative instant did not hand back a code string.
 
-    L170: Unix −30 does not succeed; no code is returned. Either a
+    Unix −30 does not succeed; no code is returned. Either a
     captured exception whose value is not a decimal code string, or a
     return whose value is not a decimal code string, counts. A
     configured-width decimal string does not. Exception class is not
@@ -519,9 +523,9 @@ def unpublished_negative_window(forbidden: Collection[int]) -> int:
 def unpublished_positive_window(forbidden: Collection[int]) -> int:
     """Pick a positive acceptance window greater than the named 1.
 
-    L165 names matching-step 6 for the on-step code at Unix 200. A
+    The matching step is 6 for the on-step code at Unix 200. A
     window larger than 6 at that row includes a negative time-step,
-    which L170 does not emit. The draw stays in (1, 6] so L171's
+    which the PRD does not emit. The draw stays in (1, 6] so the PRD's
     "a positive window is accepted" is observed on the named row
     without crossing that boundary. Skips the first eligible so the
     pick is not "the integer after 1".

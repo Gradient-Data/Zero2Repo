@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "case_id": "case016",
+  "ecosystem": "source",
+  "install_ban": [
+    "github.com/seyedehsanhadi/sloptrim",
+    "seyedehsanhadi/sloptrim",
+    "slop-trim",
+    "slop_trim",
+    "sloptrim",
+    "sloptrim@sloptrim"
+  ],
+  "import_ban": [
+    "sloptrim",
+    "sloptrim/"
+  ],
+  "notes": "Bans the upstream sloptrim source product (GitHub seyedehsanhadi/sloptrim, plugin name sloptrim / sloptrim@sloptrim, hyphen/underscore aliases) and the sloptrim import/require root; allows runner-provided pytest, pyyaml, python3/pip/apt, Node.js, and stdlib, and does not ban author/org-only names or the generic detector script name."
+}

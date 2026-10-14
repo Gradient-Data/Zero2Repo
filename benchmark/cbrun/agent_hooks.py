@@ -8,6 +8,7 @@ explicitly reference a hook (discouraged for external specs).
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 # Mirrors agents._CLAUDE_OAUTH_STRIP_KEYS
@@ -62,6 +63,16 @@ def claude_code_env(*, model: str, environ: dict[str, str], spec: Any) -> dict[s
             out["CLAUDE_CODE_OAUTH_TOKEN"] = token
         for key in _CLAUDE_OAUTH_STRIP_KEYS:
             out.pop(key, None)
+    # Claude Code caps each reply at 32000 output tokens unless this is raised;
+    # a reply that hits the cap ends the session before it can submit.
+    output_max = (environ.get("CLAUDE_CODE_MAX_OUTPUT_TOKENS") or "").strip()
+    if output_max:
+        if not output_max.isdigit() or int(output_max) <= 0:
+            raise RuntimeError(
+                "cbrun: CLAUDE_CODE_MAX_OUTPUT_TOKENS must be a positive integer, "
+                f"got {output_max!r}"
+            )
+        out["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = output_max
     return out
 
 
@@ -72,5 +83,24 @@ def opencode_env(*, model: str, environ: dict[str, str], spec: Any) -> dict[str,
     for key in _OPENCODE_PROVIDER_KEYS.get(provider, []):
         if environ.get(key):
             out[key] = environ[key]
+    # A custom provider (e.g. an OpenAI-compatible gateway) is declared in
+    # OPENCODE_CONFIG_CONTENT; pass it and the {env:NAME} keys it references.
+    config = (environ.get("OPENCODE_CONFIG_CONTENT") or "").strip()
+    if config:
+        out["OPENCODE_CONFIG_CONTENT"] = config
+        for key in re.findall(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}", config):
+            if not environ.get(key):
+                raise RuntimeError(f"cbrun: OPENCODE_CONFIG_CONTENT references unset {key}")
+            out[key] = environ[key]
+    # OpenCode caps each reply at 32000 output tokens unless this is raised;
+    # the per-model limit.output in the config still applies on top of it.
+    output_max = (environ.get("OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX") or "").strip()
+    if output_max:
+        if not output_max.isdigit() or int(output_max) <= 0:
+            raise RuntimeError(
+                "cbrun: OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX must be a positive integer, "
+                f"got {output_max!r}"
+            )
+        out["OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX"] = output_max
     out["OPENCODE_FAKE_VCS"] = "git"
     return out

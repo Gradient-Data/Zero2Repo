@@ -8,6 +8,7 @@ a submitted trial.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -36,10 +37,19 @@ _COUNT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     ("retry_exhausted", re.compile(r"exceeded retry limit", re.I)),
     ("conn_refused", re.compile(r"ECONNREFUSED", re.I)),
+    # The CLI gave up on a server-side API failure (Claude Code stream-json).
+    (
+        "api_error",
+        re.compile(r'"terminal_reason"\s*:\s*"api_error"|"api_error_status"\s*:\s*5\d\d'),
+    ),
 )
 
-_TERMINATING = frozenset({"auth", "retry_exhausted", "conn_refused"})
+_TERMINATING = frozenset({"auth", "retry_exhausted", "conn_refused", "api_error"})
 _TAIL_LINES = 200
+# A final ``result`` with one of these stop reasons means the CLI exited while
+# the model's turn was still open (the response stream was cut off).
+_OPEN_TURN_STOPS = frozenset({None, "tool_use", "pause_turn"})
+_THINKING_BLOCKS = frozenset({"thinking", "redacted_thinking"})
 
 
 def scan_log_text(text: str) -> dict[str, int]:
@@ -70,6 +80,37 @@ def count_infra_signals(*paths: Path | str | None) -> dict[str, int]:
     return totals
 
 
+def _truncated_stream(tail: str) -> bool:
+    """Claude Code stream-json that ends on a cut-off turn.
+
+    The CLI can report ``subtype: success`` after the API stream breaks
+    mid-message: the last assistant event holds only thinking, or the final
+    ``result`` carries an open-turn stop reason. Other log shapes never match.
+    """
+    events = []
+    for line in tail.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            events.append(event)
+    results = [e for e in events if e.get("type") == "result" and "subtype" in e]
+    assistants = [
+        e["message"] for e in events
+        if e.get("type") == "assistant" and isinstance(e.get("message"), dict)
+    ]
+    if not results or not assistants:
+        return False
+    blocks = {
+        b.get("type") for b in assistants[-1].get("content") or [] if isinstance(b, dict)
+    }
+    return blocks <= _THINKING_BLOCKS or results[-1].get("stop_reason") in _OPEN_TURN_STOPS
+
+
 def invalid_reason(*, submitted: bool, log_text: str) -> str | None:
     """Return ``infra:<signal>`` when the trial is not a valid model result."""
     if submitted:
@@ -80,4 +121,6 @@ def invalid_reason(*, submitted: bool, log_text: str) -> str | None:
             continue
         if pattern.search(tail):
             return f"infra:{name}"
+    if _truncated_stream(tail):
+        return "infra:truncated_stream"
     return None

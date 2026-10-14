@@ -6,14 +6,14 @@ keeping other bindings and following blanks, quote modes and export prefix
 as stored lines, read of text / empty string / no-value / missing name /
 missing path, delete of a present name versus missing path / missing name,
 default versus follow-links symlink handling, Unix permission bits, and a
-named encoding. Success/failure booleans, None, exception types, and
-diagnostic wording are not pinned.
+named encoding. Success/failure booleans, None, and exception types are
+not pinned; diagnostics are read as lines that name the key or path
+(Interface Contract).
 """
 
 from __future__ import annotations
 
 import stat
-from collections.abc import Sequence
 from pathlib import Path
 
 from envfile import get_key, set_key, unset_key  # noqa: F401 — public file-editing entries
@@ -32,7 +32,9 @@ from _helpers import (
     require_owner_rw_only,
     require_text_value,
     require_utf8_text,
-    strip_path_covariates,
+    diagnostic_lines,
+    require_line_naming,
+    require_no_line_naming,
     unique_token,
     write_one,
 )
@@ -45,14 +47,6 @@ def _always_line(name: str, value: str) -> str:
 
 def _file_text(ws, relpath: str, *, origin: str) -> str:
     return require_utf8_text(ws.read_bytes(relpath), origin=origin)
-
-
-def _strip_names(text: str, names: Sequence[str]) -> str:
-    stripped = text
-    for name in sorted({item for item in names if item}, key=len, reverse=True):
-        stripped = stripped.replace(name, "")
-    print(f"stripped names={stripped!r}", flush=True)
-    return stripped
 
 
 def _logged_read(path: str | Path, name: str, **kwargs):
@@ -738,9 +732,8 @@ def test_read_missing_name_returns_no_value_and_identifies_key():
             f"missing name returned the present value {value!r}"
         )
         require_text_value(present, value, origin="occupied present baseline")
-        assert diag1 != present_diag, (
-            "missing-name and present-name diagnostics are indistinguishable"
-        )
+        require_line_naming(diag1, missing_one, origin="missing-name read")
+        require_no_line_naming(present_diag, token, origin="present-name read")
 
         public = ws.write("public.env", "foo=bar\n")
         public_miss, _ = _logged_read(public, "absent")
@@ -800,36 +793,14 @@ def test_read_missing_path_returns_no_value_and_identifies_file_and_key():
         require_no_text_value(exist_miss, origin="existing file missing key")
         require_text_value(present, value, origin="present-name baseline")
 
-        paths = [missing_path, occupied]
-        names = [missing_key, token]
-        stripped_miss = _strip_names(strip_path_covariates(diag_file, paths), names)
-        stripped_exist = _strip_names(strip_path_covariates(diag_exist, paths), names)
-        stripped_present = _strip_names(
-            strip_path_covariates(present_diag, paths), names
+        require_line_naming(diag_exist, missing_key, origin="existing file missing key")
+        require_no_line_naming(
+            diag_exist, occupied, without=missing_key, origin="existing file missing key"
         )
-        assert stripped_miss != stripped_exist, (
-            "missing-path and existing-file missing-name diagnostics "
-            "are indistinguishable after stripping path and key"
-        )
-        assert strip_path_covariates(diag_file, paths) != strip_path_covariates(
-            present_diag, paths
-        ), (
-            "missing-path and present-name diagnostics are indistinguishable "
-            "after stripping path"
-        )
-        assert stripped_exist != stripped_present, (
-            "existing-file missing-name and present-name diagnostics are "
-            "indistinguishable after stripping path and key"
-        )
-        assert stripped_exist.strip(), (
-            "existing-file missing-name produced no key-not-found diagnostic "
-            "after stripping path and key"
-        )
-        assert stripped_exist in stripped_miss, (
-            "missing-path read has no key-not-found situation, "
-            "distinguishable from a present-name read, after stripping "
-            "path and key"
-        )
+        require_line_naming(diag_file, missing_path, without=token, origin="missing path")
+        require_line_naming(diag_file, token, origin="missing path")
+        require_no_line_naming(present_diag, token, origin="present name")
+        require_no_line_naming(present_diag, occupied, origin="present name")
 
 
 # ---------------------------------------------------------------------------
@@ -863,7 +834,7 @@ def test_delete_present_name_leaves_other_bindings():
         assert ws.read_bytes("public.env") == snapshot, (
             "second delete of a altered the file"
         )
-        assert second_diag.strip(), (
+        assert diagnostic_lines(second_diag), (
             "second delete of a produced no key-was-not-removed diagnostic"
         )
 
@@ -908,9 +879,7 @@ def test_delete_present_name_leaves_other_bindings():
         assert ws.read_bytes("runtime.env") == rt_snapshot, (
             "runtime second delete altered the file"
         )
-        assert rt_second_diag.strip(), (
-            "runtime second delete produced no key-was-not-removed diagnostic"
-        )
+        require_line_naming(rt_second_diag, gone_name, origin="runtime second delete")
 
 
 def test_delete_no_value_line():
@@ -978,8 +947,8 @@ def test_delete_missing_path_does_not_succeed_or_create():
             created_two = False
             print("missing-two.env still absent", flush=True)
         assert not created_two, "delete of a second missing path created the file"
-        assert diag_one.strip(), "missing-path delete produced no diagnostic"
-        assert diag_two.strip(), "second missing-path delete produced no diagnostic"
+        require_line_naming(diag_one, missing_one, origin="delete missing path one")
+        require_line_naming(diag_two, missing_two, origin="delete missing path two")
 
 
 def test_delete_missing_name_does_not_succeed_or_alter():
@@ -1005,24 +974,16 @@ def test_delete_missing_name_does_not_succeed_or_alter():
         assert ws.read_bytes("occupied.env") == original, (
             "second missing-name delete altered the occupied file"
         )
-        assert diag_one.strip(), "missing-name delete produced no diagnostic"
-        assert diag_two.strip(), "second missing-name delete produced no diagnostic"
+        require_line_naming(diag_one, miss_one, origin="delete missing name one")
+        require_line_naming(diag_two, miss_two, origin="delete missing name two")
 
         missing_path = ws.resolve("not-there.env")
         path_fail, path_diag = _logged_delete(missing_path, miss_one)
         require_edit_did_not_succeed(
             path_fail, success, origin="delete missing path contrast"
         )
-        names = [miss_one, miss_two, keep_name]
-        paths = [occupied, missing_path]
-        assert _strip_names(
-            strip_path_covariates(diag_one, paths), names
-        ) != _strip_names(
-            strip_path_covariates(path_diag, paths), names
-        ), (
-            "missing-name and missing-path delete diagnostics are "
-            "indistinguishable after stripping path and key"
-        )
+        require_line_naming(path_diag, missing_path, origin="delete missing path contrast")
+        require_no_line_naming(path_diag, miss_one, origin="delete missing path contrast")
 
 
 # ---------------------------------------------------------------------------

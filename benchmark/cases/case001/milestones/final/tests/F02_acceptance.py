@@ -1,9 +1,9 @@
 # feature: F02
 """FP-02: map TOML scalar types to native Python values.
 
-Assertions follow Full_PRD.original.md FP-02 (L127–L163). Illegal boolean,
-integer, float, string, and date-time tokens (L150–L155) fail as the
-decode-error carrier in FP-04 (L189, L193, L217): a decode error that is a
+Assertions follow the PRD FP-02. Illegal boolean,
+integer, float, string, and date-time tokens fail as the
+decode-error carrier in FP-04: a decode error that is a
 kind of value error, with no document mapping. Table/array structure is
 FP-01; the binary-file entry is FP-03; float converters are FP-05.
 """
@@ -131,7 +131,7 @@ def _closed_string(form: str, text: str, *, key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# A. Booleans (L133, L159)
+# A. Booleans
 # ---------------------------------------------------------------------------
 
 
@@ -178,7 +178,7 @@ def test_runtime_key_binds_booleans():
 
 
 # ---------------------------------------------------------------------------
-# B. Four string forms (L134–L138, L159)
+# B. Four string forms
 # ---------------------------------------------------------------------------
 
 
@@ -204,7 +204,7 @@ def test_runtime_basic_string():
     other_val = require_path(other_doc, "k")
     require_str(other_val, other)
     assert other_val != value
-    # Same token after a discarded opening line feed is still that token (L137).
+    # Same token after a discarded opening line feed is still that token.
     multi = _scalar_mapping(multiline_basic_document("k", "\n" + token))
     multi_val = require_path(multi, "k")
     require_str(multi_val, token)
@@ -243,7 +243,7 @@ def test_runtime_literal_keeps_interior():
     assert is_str(value)
     assert "\\" in value
     assert value == interior
-    # A sequence that basic would decode must stay characters in a literal (L136).
+    # A sequence that basic would decode must stay characters in a literal.
     x_interior = token + "\\x20" + token
     x_doc = _scalar_mapping(f"k = '{x_interior}'")
     x_val = require_path(x_doc, "k")
@@ -271,7 +271,7 @@ def test_multiline_basic_keeps_first_non_lf_character():
     assert value[:1] == token[:1]
     assert value != token[1:]
     assert len(value) == len(token)
-    # Discarding applies only to an immediate opening line feed (L137).
+    # Discarding applies only to an immediate opening line feed.
     dropped_lf = _scalar_mapping(multiline_basic_document("k", "\n" + token))
     dropped_val = require_path(dropped_lf, "k")
     require_str(dropped_val, token)
@@ -389,7 +389,7 @@ def test_multiline_literal_interior_apostrophe_kept():
     assert value[: len(left)] == left
     assert value[len(left) + 1 :] == right
     assert value != left + "'"
-    # First content character is runtime text, not a discarded line feed (L138).
+    # First content character is runtime text, not a discarded line feed.
     assert value[:1] == left[:1]
     assert value != body[1:]
     assert len(value) == len(body)
@@ -398,7 +398,7 @@ def test_multiline_literal_interior_apostrophe_kept():
     require_str(first_val, left)
     assert first_val[:1] == left[:1]
     assert first_val != left[1:]
-    # Opening line feed is discarded; the interior apostrophe is not a closer (L138).
+    # Opening line feed is discarded; the interior apostrophe is not a closer.
     dropped = _scalar_mapping(f"k = '''\n{body}'''")
     dropped_val = require_path(dropped, "k")
     require_str(dropped_val, body)
@@ -446,7 +446,7 @@ def test_multiline_literal_backslash_lf_is_not_a_join():
 
 
 # ---------------------------------------------------------------------------
-# C. Basic-string escapes and quoted keys (L139, L159)
+# C. Basic-string escapes and quoted keys
 # ---------------------------------------------------------------------------
 
 
@@ -492,7 +492,7 @@ def test_u_and_U_named_scalars():
     require_str(u8_val, "c")
     assert u_val == "a"
     assert u8_val == "c"
-    # Quoted keys use the same basic escapes (L139): these are one-character keys.
+    # Quoted keys use the same basic escapes: these are one-character keys.
     u_key = _scalar_mapping('"\\u0061" = 1\n\'\\u0061\' = 2\n')
     require_int(require_path(u_key, "a"), 1)
     require_int(require_path(u_key, "\\u0061"), 2)
@@ -535,7 +535,7 @@ def test_u_U_hex_letter_case():
     require_str(u8_upper_val, "J")
     require_str(u8_lower_val, "J")
     assert u8_upper_val == u8_lower_val == "J"
-    # Hex letter case on a quoted key is the same one-character key (L139).
+    # Hex letter case on a quoted key is the same one-character key.
     key_upper = _scalar_mapping('"\\u004A" = 1')
     key_lower = _scalar_mapping('"\\u004a" = 1')
     require_int(require_path(key_upper, "J"), 1)
@@ -573,7 +573,7 @@ def test_runtime_U_escape():
     doc = _scalar_mapping(f'k = "\\U{hex8}"')
     require_str(require_path(doc, "k"), chr(n))
     assert require_path(doc, "k") == chr(n)
-    # The same \\U scalar as a quoted basic key, distinct from the literal key (L139).
+    # The same \\U scalar as a quoted basic key, distinct from the literal key.
     keys = _scalar_mapping(f'"\\U{hex8}" = 1\n\'\\U{hex8}\' = 2\n')
     require_int(require_path(keys, chr(n)), 1)
     require_int(require_path(keys, "\\U" + hex8), 2)
@@ -641,7 +641,7 @@ def test_quoted_key_e_or_x_distinct_from_literal():
 
 
 # ---------------------------------------------------------------------------
-# D. Integers (L140, L159)
+# D. Integers
 # ---------------------------------------------------------------------------
 
 
@@ -663,7 +663,7 @@ def test_runtime_decimal_integer():
     require_int(value, signed)
     assert is_int(value)
     assert value == signed
-    # Same magnitude as a hexadecimal integer: four bases, not a decimal-only table (L140).
+    # Same magnitude as a hexadecimal integer: four bases, not a decimal-only table.
     hex_digits = format(abs(signed), "x")
     hex_doc = _scalar_mapping(f"h = 0x{hex_digits}")
     hex_val = require_path(hex_doc, "h")
@@ -746,7 +746,7 @@ def test_runtime_underscored_decimal():
     plain = _scalar_mapping(f"k = {expected}")
     require_int(require_path(plain, "k"), expected)
     assert require_path(plain, "k") == value
-    # Process-local underscored hex is the every-base rule, not the public rows (L140).
+    # Process-local underscored hex is the every-base rule, not the public rows.
     digits, _plain_hex = base_digit_string(16)
     assert digits.lower() not in {"deadbeef", "765", "101"}
     if len(digits) == 1:
@@ -766,7 +766,7 @@ def test_runtime_underscored_decimal():
 
 
 # ---------------------------------------------------------------------------
-# E. Default floats (L141, L159)
+# E. Default floats
 # ---------------------------------------------------------------------------
 
 
@@ -864,7 +864,7 @@ def test_runtime_exponent_and_underscored_float():
     assert "_" not in mantissa
     assert "_" in exponent
     assert us_exp_val == us_exp_expected
-    # L141: a number with a fractional part *and* an exponent, not the public 3.1e2.
+    # a number with a fractional part *and* an exponent, not the public 3.1e2.
     both_mant = 10 + (runtime_int() % 90)
     both_frac = 1 + (runtime_int() % 9)
     both_exp = 1 + (runtime_int() % 4)
@@ -878,7 +878,7 @@ def test_runtime_exponent_and_underscored_float():
     print(f"runtime fraction-and-exponent token={both_token!r} value={both_val!r}", flush=True)
     assert is_float(both_val)
     assert both_val == float(both_token)
-    # L141: a minus in the exponent, not the public 3E-2. Capital-E positive is a different arm.
+    # a minus in the exponent, not the public 3E-2. Capital-E positive is a different arm.
     neg_mant = 11 + (runtime_int() % 89)
     neg_exp = 1 + (runtime_int() % 4)
     neg_token = f"{neg_mant}e-{neg_exp}"
@@ -915,7 +915,7 @@ def test_nan_spellings_are_nan():
 
 
 # ---------------------------------------------------------------------------
-# F. Date-times, dates, times, deepcopy (L142–L147, L159–L160)
+# F. Date-times, dates, times, deepcopy
 # ---------------------------------------------------------------------------
 
 
@@ -993,7 +993,7 @@ def test_fractional_seconds_six_digits_and_truncated():
         minute,
         second,
     )
-    # L142: up to six fractional digits are microseconds. Width in {1,2,4,5}
+    # up to six fractional digits are microseconds. Width in {1,2,4,5}
     # (not the named three-digit .123, not six-or-more) pads those digits on
     # the right to six. int(frac) without padding is a different number.
     pad_widths = (1, 2, 4, 5)
@@ -1103,7 +1103,7 @@ def test_local_datetime_naive():
     assert (dt.year, dt.month, dt.day) == (1988, 10, 27)
     assert (dt.hour, dt.minute, dt.second) == (1, 1, 1)
     assert dt.tzinfo is None
-    # Same wall clock with a Z/z suffix is timezone-aware UTC (L142–L143, L160).
+    # Same wall clock with a Z/z suffix is timezone-aware UTC.
     z_upper = _scalar_mapping("k = 1988-10-27t01:01:01Z")
     z_lower = _scalar_mapping("k = 1988-10-27t01:01:01z")
     upper = require_aware_datetime(require_path(z_upper, "k"))
@@ -1232,7 +1232,7 @@ def test_deepcopy_mapping_with_offset_datetime():
 
 
 # ---------------------------------------------------------------------------
-# G. Illegal scalar spellings (L150–L155, L160)
+# G. Illegal scalar spellings
 # ---------------------------------------------------------------------------
 
 
@@ -1410,7 +1410,7 @@ def test_surrogate_escape_refused():
     assert refused_d800 is not None
     assert refused_dfff is not None
     assert refused_u8 is not None
-    # L153 is the surrogate *class*, not the D800/DFFF spellings. A sibling
+    # The rule is the surrogate *class*, not the D800/DFFF spellings. A sibling
     # inside U+D801..U+DFFE kills a cheat that only blocklists those samples.
     code = 0xD801 + (runtime_int() % (0xDFFE - 0xD801 + 1))
     assert 0xD800 < code < 0xDFFF
@@ -1436,7 +1436,7 @@ def test_incomplete_hex_escapes_refused():
 
 
 def test_non_hex_digits_in_advertised_hex_escape_refused():
-    # L139: \x plus two hex digits. L153: a backslash that is not a listed
+    # \x plus two hex digits. A backslash that is not a listed
     # escape fails. Advertised width filled with non-hex is not a short run.
     hex_alphabet = "0123456789abcdef"
     non_hex_alphabet = "ghijklmnopqrstuvwxyz"
@@ -1466,7 +1466,7 @@ def test_unknown_basic_escape_refused():
     neighbor = _succeeds_neighbor('k = "\\n"')
     require_str(require_path(neighbor, "k"), "\n")
     assert require_path(neighbor, "k") == "\n"
-    # A listed two-character escape is the live baseline (L139 / L153).
+    # A listed two-character escape is the live baseline.
     e_neighbor = _succeeds_neighbor('k = "\\e"')
     require_str(require_path(e_neighbor, "k"), chr(27))
     assert ord(require_path(e_neighbor, "k")) == 27
@@ -1515,13 +1515,13 @@ def test_raw_tab_in_oneline_string_allowed():
     literal_val = require_path(literal, "k")
     require_str(literal_val, "pre\tpost")
     assert literal_val == "pre\tpost"
-    # Opening line feed discarded; the raw tab is still in the value (L137, L154).
+    # Opening line feed discarded; the raw tab is still in the value.
     multi = _scalar_mapping(multiline_basic_document("k", "\npre\tpost"))
     multi_val = require_path(multi, "k")
     require_str(multi_val, "pre\tpost")
     assert multi_val == basic_val
     assert not multi_val.startswith("\n")
-    # Same position with a raw form-feed is refused (L154).
+    # Same position with a raw form-feed is refused.
     refused = _refuse_scalar(f'k = "pre{chr(12)}post"')
     assert refused is not None
 

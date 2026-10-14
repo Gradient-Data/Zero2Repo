@@ -52,3 +52,53 @@ def _restore_process_state():
         os.environ.clear()
         os.environ.update(previous_env)
         sys.argv = previous_argv
+
+
+# Each test body runs in its own fresh interpreter. Product state (a loaded
+# model, a cached corpus) therefore never carries from one test into the
+# next, and no test needs to reach into the product to reset it. The parent
+# pytest process only reports the child's outcome.
+_FRESH_CHILD_FLAG = "CB_FRESH_INTERPRETER_CHILD"
+_FRESH_CHILD_TIMEOUT = 600
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_pyfunc_call(pyfuncitem):
+    if os.environ.get(_FRESH_CHILD_FLAG) == "1":
+        return None
+    import subprocess
+
+    env = dict(os.environ)
+    env[_FRESH_CHILD_FLAG] = "1"
+    target = f"{pyfuncitem.path}::{pyfuncitem.name}"
+    cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--rootdir",
+        str(pyfuncitem.config.rootpath),
+        target,
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=os.getcwd(),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=_FRESH_CHILD_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise AssertionError(f"fresh-interpreter run of {target} timed out") from exc
+    output = (proc.stdout or "") + (proc.stderr or "")
+    print(output[-20000:], flush=True)
+    if proc.returncode != 0:
+        raise AssertionError(
+            f"{target} failed in a fresh interpreter (exit {proc.returncode})"
+        )
+    if " passed" not in proc.stdout or " failed" in proc.stdout or " error" in proc.stdout:
+        raise AssertionError(f"{target}: fresh-interpreter run did not pass cleanly")
+    return True

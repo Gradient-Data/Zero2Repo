@@ -61,7 +61,7 @@ def require_secure_http_scheme_matches(
 ) -> str:
     """Unset Git-protocol derivation uses the same scheme as SSH-style HTTPS.
 
-    The SSH-style indication is the secure-HTTP reference (FP-06/L206).
+    The SSH-style indication is the secure-HTTP reference (FP-06).
     Does not name scheme prefixes.
     """
     git_scheme = dedicated_indication_scheme(git_protocol_indication)
@@ -96,7 +96,7 @@ def require_git_protocol_scheme_changed(
 def require_ssh_style_scheme_unchanged(
     unset_indication: str, set_indication: str
 ) -> None:
-    """SSH-style remotes do not use the Git-protocol setting (L206/L441)."""
+    """SSH-style remotes do not use the Git-protocol setting (FP-06/FP-15)."""
     unset_scheme = dedicated_indication_scheme(unset_indication)
     set_scheme = dedicated_indication_scheme(set_indication)
     assert set_scheme == unset_scheme, (

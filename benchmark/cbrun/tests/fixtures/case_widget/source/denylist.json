@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "case_id": "case_widget",
+  "ecosystem": "pip",
+  "install_ban": [
+    "github.com/acme/widgetlib",
+    "acme/widgetlib",
+    "widgetlib",
+    "python-widgetlib"
+  ],
+  "import_ban": [
+    "widgetlib",
+    "widgetlib/"
+  ],
+  "notes": "fixture"
+}

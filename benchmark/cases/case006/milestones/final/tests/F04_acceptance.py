@@ -35,9 +35,11 @@ from F04_helpers import (
 from _helpers import (
     assert_declaration_refused,
     assert_deprecation_distinct,
+    assert_marker_absent,
     assert_success_marker_present,
     assert_usage_class,
     caller_visible_remainder,
+    marker_occurs,
     unrelated_dispatch_token,
 )
 
@@ -271,10 +273,10 @@ def test_type_inferred_from_integer_default():
     as_str = _arg_run(as_text, [str_provided])
     print(f"int={as_int.stdout_text!r} str={as_str.stdout_text!r}", flush=True)
     assert_success_marker_present(as_int, greeting)
-    assert f"T:{expected}" in as_int.stdout_text
+    assert marker_occurs(as_int.stdout_text, f"T:{expected}")
     assert_success_marker_present(as_str, greeting)
     assert _scalar(as_str) == str_provided
-    assert f"T:{int(str_provided) * 3 + 7}" not in as_str.stdout_text
+    assert_marker_absent(as_str.stdout_text, f"T:{int(str_provided) * 3 + 7}")
 
 
 # ---------------------------------------------------------------------------
@@ -533,9 +535,9 @@ def test_double_dash_protects_option_shaped_tokens():
     assert "--" != _seq_member(mid, 0, "D")
     assert_success_marker_present(after_sep, greeting)
     assert _scalar(after_sep, "P") == flag
-    assert f"F:{False!r}" in after_sep.stdout_text
+    assert marker_occurs(after_sep.stdout_text, f"F:{False!r}")
     assert_success_marker_present(before_sep, greeting)
-    assert f"F:{True!r}" in before_sep.stdout_text
+    assert marker_occurs(before_sep.stdout_text, f"F:{True!r}")
     assert _scalar(before_sep, "P") == flag_on
 
 
@@ -902,7 +904,7 @@ def test_command_line_beats_argument_environment():
     assert _scalar(beaten) == cli_val
     assert env_val not in _arg_stdout(beaten)
     assert_success_marker_present(env_int, greeting)
-    assert f"T:{expected}" in env_int.stdout_text
+    assert marker_occurs(env_int.stdout_text, f"T:{expected}")
 
 
 # ---------------------------------------------------------------------------

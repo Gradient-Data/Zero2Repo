@@ -70,7 +70,7 @@ from F06_helpers import (
     complete_new_get_bytes,
     incomplete_get_then_rest,
     make_connection_closed,
-    public_two_bodied_gets_then_empty,
+    fixed_two_bodied_gets_then_empty,
     pull_connection_closed,
     require_client_server_states,
     runtime_finished_bodied_request,
@@ -80,7 +80,7 @@ from F06_helpers import (
 
 
 # ---------------------------------------------------------------------------
-# S. Present-arm encode and pull (L79: no package-disable negative control)
+# S. Present-arm encode and pull
 # ---------------------------------------------------------------------------
 
 
@@ -112,7 +112,7 @@ def test_shutdown_path_round_trips_when_package_importable():
 
 
 def test_get_encode_fails_when_package_not_importable():
-    # L79: this product has no negative control. Present versus hollow is
+    # The product is exercised by
     # real send/pull on a constructed connection, not an import-stripped
     # child. ENCODE_UNAVAILABLE / ENCODED_REQUEST are not product output.
     # The only accepted present-arm outcome is this companion's
@@ -503,7 +503,7 @@ def test_runtime_http10_must_close_sends_to_closed():
 
 def test_pipelined_get_1_and_2_then_empty_feed_server_answers_both_then_closes():
     server = server_connection()
-    feed_ok(server, public_two_bodied_gets_then_empty())
+    feed_ok(server, fixed_two_bodied_gets_then_empty())
     feed_empty(server)
     first = pull_kind(server, "request")
     assert request_target(first) == b"/1"
@@ -554,7 +554,7 @@ def test_runtime_two_pipelined_gets_then_half_close():
 
 def test_two_pipelined_gets_without_empty_feed_do_not_yield_connection_closed():
     with_close = server_connection()
-    feed_ok(with_close, public_two_bodied_gets_then_empty())
+    feed_ok(with_close, fixed_two_bodied_gets_then_empty())
     feed_empty(with_close)
     first_close = pull_kind(with_close, "request")
     assert request_target(first_close) == b"/1"
@@ -569,7 +569,7 @@ def test_two_pipelined_gets_without_empty_feed_do_not_yield_connection_closed():
     print("with empty feed, pull after /2 EOM is connection-closed", flush=True)
 
     without = server_connection()
-    feed_ok(without, public_two_bodied_gets_then_empty())
+    feed_ok(without, fixed_two_bodied_gets_then_empty())
     first_open = pull_kind(without, "request")
     assert request_target(first_open) == b"/1"
     assert payload_as_bytes(pull_kind(without, "data")) == b"12345"

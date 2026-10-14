@@ -165,123 +165,44 @@ def refuse_compile(expression: str) -> ValueError:
     return assert_compile_is_value_error(expression)
 
 
-def failure_record(exc: BaseException) -> str:
-    """Collect a failure observation: text plus public scalar attributes.
 
-    Does not record ``type(exc)``, ``__name__``, or the MRO. Unreadable
-    attributes raise rather than being skipped as absence.
+def error_position(exc: BaseException, expression: str) -> int:
+    """Stated position carrier of a syntax / incomplete refusal.
+
+    Reads the integer attribute ``lex_position`` (Interface Contract,
+    "Failure carriers"): the zero-based character offset at which the
+    refusal was detected, between 0 and ``len(expression)``. A missing
+    attribute or a value that is not such an integer fails.
     """
-    if not isinstance(exc, BaseException):
-        raise HarnessError(f"failure_record expected an exception; got {type(exc)!r}")
-    pieces = [str(exc)]
-    try:
-        names = dir(exc)
-    except Exception as err:
-        raise HarnessError(f"cannot list attributes of {exc!r}: {err}") from err
-    for name in sorted(names):
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(exc, name)
-        except Exception as err:
-            raise HarnessError(
-                f"cannot read attribute {name!r} from {type(exc).__name__}: {err}"
-            ) from err
-        if callable(value):
-            continue
-        if value is None or isinstance(value, (str, int, float)):
-            pieces.append(repr(value))
-    record = "\n".join(pieces)
-    print(f"failure_record_len={len(record)}", flush=True)
-    return record
-
-
-def leftover_after_strip(record: str, *texts: str) -> str:
-    """Remove each non-empty expression text from *record*.
-
-    Empty strings are not stripped: replacing ``''`` would rewrite every
-    gap between characters and is not a classified observation.
-    """
-    if not isinstance(record, str):
-        raise HarnessError(f"leftover_after_strip requires str record, got {type(record)!r}")
-    leftover = record
-    for text in texts:
-        if not isinstance(text, str):
-            raise HarnessError(
-                f"leftover_after_strip texts must be str, got {type(text)!r}"
-            )
-        if text:
-            leftover = leftover.replace(text, "")
-    return leftover
-
-
-def leftover_kind_stem(record: str, *texts: str) -> str:
-    """Leftover after stripping *texts*, then length and padding covariates.
-
-    Each expression text is removed both as raw input and as ``repr``
-    echo (attributes often store the escaped form). Digits (column or
-    length echoes) and remaining whitespace are then dropped so two
-    reports of the same failure kind can be compared without requiring
-    byte-identical wording around those covariates. The stem is
-    whatever is left; this helper does not name a product token.
-    """
-    leftover = record
-    for text in texts:
-        if not isinstance(text, str):
-            raise HarnessError(
-                f"leftover_kind_stem texts must be str, got {type(text)!r}"
-            )
-        if text:
-            leftover = leftover.replace(repr(text), "")
-    leftover = leftover_after_strip(leftover, *texts)
-    return "".join(ch for ch in leftover if not ch.isdigit() and not ch.isspace())
-
-
-def assert_leftovers_differ(
-    left: BaseException, right: BaseException, *texts: str
-) -> None:
-    """Assert two value-error leftovers differ after stripping *texts*.
-
-    The contrast is the leftover, not exception class identity.
-    """
-    left_rec = leftover_after_strip(failure_record(left), *texts)
-    right_rec = leftover_after_strip(failure_record(right), *texts)
-    print(f"leftover_left={left_rec!r}", flush=True)
-    print(f"leftover_right={right_rec!r}", flush=True)
-    assert left_rec != right_rec, (
-        "failure leftovers are not distinct after stripping "
-        f"expression texts {texts!r}: {left_rec!r}"
+    if not isinstance(exc, ValueError):
+        raise HarnessError(
+            f"error_position requires a kind of value error, got {type(exc)!r}"
+        )
+    assert hasattr(exc, "lex_position"), (
+        "a syntax refusal must carry the stated position attribute "
+        f"lex_position; {type(exc).__name__} has none"
     )
-
-
-def kinds_leftover_differ(left: BaseException, right: BaseException, *texts: str) -> None:
-    """Require two value-error observations to differ after stripping *texts*."""
-    assert_leftovers_differ(left, right, *texts)
-
-
-def assert_kind_stems_match(
-    left: BaseException, right: BaseException, *texts: str
-) -> None:
-    """Assert two value-error observations are the same failure kind.
-
-    Kind is the leftover stem after stripping *texts* and dropping digit
-    and whitespace covariates. Reports need not be byte-identical.
-    Exception class identity is not compared.
-    """
-    left_stem = leftover_kind_stem(failure_record(left), *texts)
-    right_stem = leftover_kind_stem(failure_record(right), *texts)
-    print(f"kind_stem_left={left_stem!r}", flush=True)
-    print(f"kind_stem_right={right_stem!r}", flush=True)
-    assert left_stem == right_stem, (
-        "failure kind stems differ after stripping expression texts "
-        f"{texts!r} and length/padding covariates: "
-        f"{left_stem!r} vs {right_stem!r}"
+    position = getattr(exc, "lex_position")
+    print(f"lex_position={position!r} expression={expression!r}", flush=True)
+    assert isinstance(position, int) and not isinstance(position, bool), (
+        f"lex_position must be an integer, got {position!r}"
     )
+    assert 0 <= position <= len(expression), (
+        f"lex_position {position!r} is outside expression {expression!r}"
+    )
+    return position
 
 
-def kinds_leftover_same(left: BaseException, right: BaseException, *texts: str) -> None:
-    """Require two value-error observations to be the same failure kind."""
-    assert_kind_stems_match(left, right, *texts)
+def assert_positions_differ(
+    left: BaseException, right: BaseException, left_text: str, right_text: str
+) -> None:
+    """Two syntax refusals detected at different places report different positions."""
+    left_pos = error_position(left, left_text)
+    right_pos = error_position(right, right_text)
+    assert left_pos != right_pos, (
+        "refusals detected at different places must report different "
+        f"positions; both report {left_pos!r}"
+    )
 
 
 def kind_marker(exc: BaseException) -> type:

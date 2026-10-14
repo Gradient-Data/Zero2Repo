@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from .assets import load_case
-from .docker_env import Container, docker_available, image_exists
+from .docker_env import Container, _shq, docker_available, image_exists
 from .images import deliverable_tag
 from .isolation import synthesize_task_toml
 from .judge import JudgeOutcome, run_isolated_judge
@@ -50,6 +51,28 @@ def _overlay_tree(container: Container, host_dir: Path) -> None:
         return
     for child in sorted(host_dir.iterdir()):
         container.cp_to(child, f"{CONTAINER_APP}/")
+
+
+class _BuildFailed(RuntimeError):
+    pass
+
+
+def _build_app(container: Container, case_dir: Path, timeout_sec: float) -> None:
+    """Leave build outputs in ``/app`` the way a solving agent must.
+
+    The judge never builds and runs pytest as ``cbagent``, which cannot write
+    ``/app``. A GT tree without outputs would only pass by building as root.
+    """
+    case = load_case(case_dir)
+    command = (case.build_command or "").strip()
+    if not command:
+        return
+    workdir = posixpath.normpath(f"{CONTAINER_APP}/{case.workdir or '.'}")
+    res = container.exec(f"cd {_shq(workdir)} && {command}", timeout_sec=timeout_sec)
+    if res.exit_code != 0:
+        raise _BuildFailed(
+            f"gt build failed (exit {res.exit_code}): {(res.tail or '').strip()[-400:]}"
+        )
 
 
 def _run(
@@ -95,15 +118,19 @@ def canary_gt_overlay(
 
     def prepare(container: Container) -> None:
         _overlay_tree(container, gt_dir)
+        _build_app(container, case_dir, test_timeout_sec)
 
-    outcome = _run(
-        image=image,
-        case_dir=case_dir,
-        tests_final_dir=tests_final_dir,
-        artifacts_dir=artifacts_dir / "gt_overlay",
-        test_timeout_sec=test_timeout_sec,
-        prepare=prepare,
-    )
+    try:
+        outcome = _run(
+            image=image,
+            case_dir=case_dir,
+            tests_final_dir=tests_final_dir,
+            artifacts_dir=artifacts_dir / "gt_overlay",
+            test_timeout_sec=test_timeout_sec,
+            prepare=prepare,
+        )
+    except _BuildFailed as exc:
+        return CanaryResult("gt_overlay", False, 0.0, str(exc), None, str(gt_dir))
     total = _total(outcome)
     ok = (
         outcome.judge_error is None
@@ -117,6 +144,40 @@ def canary_gt_overlay(
         judge_error=outcome.judge_error,
         total=total,
         detail="need reward=1 and parseable total>0",
+    )
+
+
+def canary_workspace(
+    *,
+    image: str,
+    case_dir: Path,
+    tests_final_dir: Path,
+    workspace_dir: Path,
+    artifacts_dir: Path,
+    test_timeout_sec: float,
+) -> CanaryResult:
+    """Judge a delivered ``/app`` exactly as a trial judge would: no build step."""
+    if not workspace_dir.is_dir():
+        return CanaryResult("workspace", False, 0.0, "workspace missing", None, str(workspace_dir))
+
+    def prepare(container: Container) -> None:
+        _overlay_tree(container, workspace_dir)
+
+    outcome = _run(
+        image=image,
+        case_dir=case_dir,
+        tests_final_dir=tests_final_dir,
+        artifacts_dir=artifacts_dir / "workspace",
+        test_timeout_sec=test_timeout_sec,
+        prepare=prepare,
+    )
+    return CanaryResult(
+        name="workspace",
+        ok=outcome.judge_error is None and _total(outcome) is not None,
+        reward=outcome.reward,
+        judge_error=outcome.judge_error,
+        total=_total(outcome),
+        detail="a judged workspace needs a parseable total",
     )
 
 

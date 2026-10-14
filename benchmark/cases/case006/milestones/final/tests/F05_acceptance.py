@@ -57,10 +57,12 @@ from F05_helpers import (
 from _helpers import (
     assert_declaration_refused,
     assert_intentional_help,
+    assert_marker_absent,
     assert_success_marker_present,
     assert_usage_class,
     assert_usage_names_option,
     call_with_fed_stdin,
+    marker_occurs,
     option_help_record,
     unrelated_dispatch_token,
 )
@@ -106,13 +108,13 @@ def test_string_is_default_unicode_text():
         flush=True,
     )
     assert_success_marker_present(uni, greeting)
-    assert f"S:{text}" in _type_stdout(uni)
-    assert f"T:{expected}" not in _type_stdout(uni)
+    assert marker_occurs(_type_stdout(uni), f"S:{text}")
+    assert_marker_absent(_type_stdout(uni), f"T:{expected}")
     assert_success_marker_present(numeric_as_text, greeting)
-    assert f"S:{token}" in _type_stdout(numeric_as_text)
-    assert f"T:{expected}" not in _type_stdout(numeric_as_text)
+    assert marker_occurs(_type_stdout(numeric_as_text), f"S:{token}")
+    assert_marker_absent(_type_stdout(numeric_as_text), f"T:{expected}")
     assert_success_marker_present(numeric_as_int, greeting)
-    assert f"T:{expected}" in _type_stdout(numeric_as_int)
+    assert marker_occurs(_type_stdout(numeric_as_int), f"T:{expected}")
 
 
 def test_integer_type_or_integer_default_delivers_int():
@@ -143,9 +145,9 @@ def test_integer_type_or_integer_default_delivers_int():
         flush=True,
     )
     assert_success_marker_present(typed_ok, greeting)
-    assert f"T:{expected}" in _type_stdout(typed_ok)
+    assert marker_occurs(_type_stdout(typed_ok), f"T:{expected}")
     assert_success_marker_present(inferred_ok, greeting)
-    assert f"T:{expected}" in _type_stdout(inferred_ok)
+    assert marker_occurs(_type_stdout(inferred_ok), f"T:{expected}")
     assert_usage_class(bad_word, greeting)
     assert_usage_class(bad_dot, greeting)
 
@@ -179,12 +181,12 @@ def test_float_type_or_float_default_delivers_float():
         flush=True,
     )
     assert_success_marker_present(typed_ok, greeting)
-    assert f"F:{expected!r}" in _type_stdout(typed_ok)
+    assert marker_occurs(_type_stdout(typed_ok), f"F:{expected!r}")
     assert_success_marker_present(inferred_ok, greeting)
-    assert f"F:{expected!r}" in _type_stdout(inferred_ok)
+    assert marker_occurs(_type_stdout(inferred_ok), f"F:{expected!r}")
     assert_success_marker_present(text_twin, greeting)
-    assert f"F:{expected!r}" not in _type_stdout(text_twin)
-    assert f"S:{token}" in _type_stdout(text_twin)
+    assert_marker_absent(_type_stdout(text_twin), f"F:{expected!r}")
+    assert marker_occurs(_type_stdout(text_twin), f"S:{token}")
     assert_usage_class(bad, greeting)
 
 
@@ -303,7 +305,7 @@ def test_argument_uses_attached_integer_type():
         flush=True,
     )
     assert_success_marker_present(ok, greeting)
-    assert f"T:{expected}" in _type_stdout(ok)
+    assert marker_occurs(_type_stdout(ok), f"T:{expected}")
     assert_usage_class(bad_a, greeting)
     assert_usage_class(bad_b, greeting)
     named_a = _type_stderr(bad_a)
@@ -356,11 +358,11 @@ def test_uuid_type_converts_text_and_is_never_inferred():
         flush=True,
     )
     assert_success_marker_present(converted, greeting)
-    assert f"UID:{expected_hex}" in _type_stdout(converted)
-    assert f"S:{token}" not in _type_stdout(converted)
+    assert marker_occurs(_type_stdout(converted), f"UID:{expected_hex}")
+    assert_marker_absent(_type_stdout(converted), f"S:{token}")
     assert_success_marker_present(as_text, greeting)
-    assert f"UID:{expected_hex}" not in _type_stdout(as_text)
-    assert f"S:{token}" in _type_stdout(as_text)
+    assert_marker_absent(_type_stdout(as_text), f"UID:{expected_hex}")
+    assert marker_occurs(_type_stdout(as_text), f"S:{token}")
     assert_usage_class(bad, greeting)
 
 
@@ -410,7 +412,7 @@ def test_default_datetime_formats_parse_naive_values():
     assert_success_marker_present(text_twin, greeting)
     assert cal not in _type_stdout(text_twin)
     assert clk not in _type_stdout(text_twin)
-    assert f"S:{t_tok}" in _type_stdout(text_twin)
+    assert marker_occurs(_type_stdout(text_twin), f"S:{t_tok}")
 
 
 def test_datetime_rejects_non_matching_token():
@@ -517,8 +519,8 @@ def test_tuple_converts_each_position_with_inner_type():
     bad = _type_run(leaf, [flag, letters, float_tok])
     print(f"ok={ok.stdout_text!r} bad={bad.stderr_text!r}", flush=True)
     assert_success_marker_present(ok, greeting)
-    assert f"T:{expected_int}" in _type_stdout(ok)
-    assert f"F:{expected_float!r}" in _type_stdout(ok)
+    assert marker_occurs(_type_stdout(ok), f"T:{expected_int}")
+    assert marker_occurs(_type_stdout(ok), f"F:{expected_float!r}")
     assert_usage_class(bad, greeting)
 
 
@@ -543,10 +545,10 @@ def test_passthrough_does_not_convert_token():
     converted = _type_run(as_int, [token])
     print(f"raw={passed.stdout_text!r} int={converted.stdout_text!r}", flush=True)
     assert_success_marker_present(passed, greeting)
-    assert f"S:{token}" in _type_stdout(passed)
-    assert f"T:{expected}" not in _type_stdout(passed)
+    assert marker_occurs(_type_stdout(passed), f"S:{token}")
+    assert_marker_absent(_type_stdout(passed), f"T:{expected}")
     assert_success_marker_present(converted, greeting)
-    assert f"T:{expected}" in _type_stdout(converted)
+    assert marker_occurs(_type_stdout(converted), f"T:{expected}")
 
 
 # ---------------------------------------------------------------------------
@@ -576,10 +578,10 @@ def test_choice_returns_original_list_entry_case_insensitive():
     folded_run = _type_run(leaf, [flag, folded])
     print(f"exact={exact.stdout_text!r} fold={folded_run.stdout_text!r}", flush=True)
     assert_success_marker_present(exact, greeting)
-    assert f"ORIG:{first}" in _type_stdout(exact)
+    assert marker_occurs(_type_stdout(exact), f"ORIG:{first}")
     assert_success_marker_present(folded_run, greeting)
-    assert f"ORIG:{first}" in _type_stdout(folded_run)
-    assert f"ORIG:{folded}" not in _type_stdout(folded_run)
+    assert marker_occurs(_type_stdout(folded_run), f"ORIG:{first}")
+    assert_marker_absent(_type_stdout(folded_run), f"ORIG:{folded}")
 
 
 def test_choice_returns_original_enum_member_case_insensitive():
@@ -607,8 +609,8 @@ def test_choice_returns_original_enum_member_case_insensitive():
     print(f"enum={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
     assert f"MEM:{left}|{left_val}" in _type_stdout(result)
-    assert f"S:{folded}" not in _type_stdout(result)
-    assert f"ORIG:{folded}" not in _type_stdout(result)
+    assert_marker_absent(_type_stdout(result), f"S:{folded}")
+    assert_marker_absent(_type_stdout(result), f"ORIG:{folded}")
 
 
 def test_unknown_choice_is_usage_error():
@@ -659,9 +661,9 @@ def test_choice_must_be_unique_after_normalization():
         flush=True,
     )
     assert_success_marker_present(first_run, greeting)
-    assert f"ORIG:{first}" in _type_stdout(first_run)
+    assert marker_occurs(_type_stdout(first_run), f"ORIG:{first}")
     assert_success_marker_present(second_run, greeting)
-    assert f"ORIG:{second}" in _type_stdout(second_run)
+    assert marker_occurs(_type_stdout(second_run), f"ORIG:{second}")
 
     colliding = _type_leaf(
         callback,
@@ -676,11 +678,11 @@ def test_choice_must_be_unique_after_normalization():
         )
         assert_success_marker_present(result, greeting)
         text = _type_stdout(result)
-        assert f"ORIG:{stem}" in text, (
+        assert marker_occurs(text, f"ORIG:{stem}"), (
             "a token that collides after normalization must deliver the "
             f"first registered original {stem!r}; stdout={text!r}"
         )
-        assert f"ORIG:{folded}" not in text, (
+        assert not marker_occurs(text, f"ORIG:{folded}"), (
             "a token that collides after normalization delivered the "
             f"last registered original {folded!r} instead of the first; "
             f"stdout={text!r}"
@@ -802,11 +804,11 @@ def test_integer_range_closed_bounds_without_clamp():
         flush=True,
     )
     assert_success_marker_present(lo_ok, greeting)
-    assert f"T:{lo * 3 + 7}" in _type_stdout(lo_ok)
+    assert marker_occurs(_type_stdout(lo_ok), f"T:{lo * 3 + 7}")
     assert_success_marker_present(hi_ok, greeting)
-    assert f"T:{hi * 3 + 7}" in _type_stdout(hi_ok)
+    assert marker_occurs(_type_stdout(hi_ok), f"T:{hi * 3 + 7}")
     assert_success_marker_present(mid_ok, greeting)
-    assert f"T:{mid * 3 + 7}" in _type_stdout(mid_ok)
+    assert marker_occurs(_type_stdout(mid_ok), f"T:{mid * 3 + 7}")
     assert_usage_class(lo_bad, greeting)
     assert_usage_class(hi_bad, greeting)
 
@@ -840,11 +842,11 @@ def test_integer_range_clamp_replaces_with_nearest_included_bound():
         flush=True,
     )
     assert_success_marker_present(high, greeting)
-    assert f"T:{hi * 3 + 7}" in _type_stdout(high)
+    assert marker_occurs(_type_stdout(high), f"T:{hi * 3 + 7}")
     assert_success_marker_present(low, greeting)
-    assert f"T:{lo * 3 + 7}" in _type_stdout(low)
+    assert marker_occurs(_type_stdout(low), f"T:{lo * 3 + 7}")
     assert_success_marker_present(inner, greeting)
-    assert f"T:{mid * 3 + 7}" in _type_stdout(inner)
+    assert marker_occurs(_type_stdout(inner), f"T:{mid * 3 + 7}")
     assert_usage_class(baseline, greeting)
 
 
@@ -887,15 +889,15 @@ def test_integer_range_open_or_omitted_bounds():
     )
     assert_usage_class(min_edge, greeting)
     assert_success_marker_present(min_in, greeting)
-    assert f"T:{(lo + 1) * 3 + 7}" in _type_stdout(min_in)
+    assert marker_occurs(_type_stdout(min_in), f"T:{(lo + 1) * 3 + 7}")
     assert_usage_class(max_edge, greeting)
     assert_success_marker_present(max_in, greeting)
-    assert f"T:{(hi - 1) * 3 + 7}" in _type_stdout(max_in)
+    assert marker_occurs(_type_stdout(max_in), f"T:{(hi - 1) * 3 + 7}")
     assert_success_marker_present(only_max_ok, greeting)
-    assert f"T:{far_low * 3 + 7}" in _type_stdout(only_max_ok)
+    assert marker_occurs(_type_stdout(only_max_ok), f"T:{far_low * 3 + 7}")
     assert_usage_class(only_max_bad, greeting)
     assert_success_marker_present(only_min_ok, greeting)
-    assert f"T:{far_high * 3 + 7}" in _type_stdout(only_min_ok)
+    assert marker_occurs(_type_stdout(only_min_ok), f"T:{far_high * 3 + 7}")
     assert_usage_class(only_min_bad, greeting)
 
 
@@ -926,7 +928,7 @@ def test_integer_open_bound_clamp_uses_nearest_included():
     result = _type_run(leaf, [flag, str(lo)])
     print(f"open_clamp={result.stdout_text!r}", flush=True)
     assert_success_marker_present(result, greeting)
-    assert f"T:{included * 3 + 7}" in _type_stdout(result)
+    assert marker_occurs(_type_stdout(result), f"T:{included * 3 + 7}")
 
 
 def test_float_range_same_rules_and_closed_clamp():
@@ -998,30 +1000,30 @@ def test_float_range_same_rules_and_closed_clamp():
         flush=True,
     )
     assert_success_marker_present(closed_lo, greeting)
-    assert f"F:{(lo_f * 2)!r}" in _type_stdout(closed_lo)
+    assert marker_occurs(_type_stdout(closed_lo), f"F:{(lo_f * 2)!r}")
     assert_success_marker_present(closed_hi, greeting)
-    assert f"F:{(hi_f * 2)!r}" in _type_stdout(closed_hi)
+    assert marker_occurs(_type_stdout(closed_hi), f"F:{(hi_f * 2)!r}")
     assert_success_marker_present(closed_mid, greeting)
-    assert f"F:{(mid_val * 2)!r}" in _type_stdout(closed_mid)
+    assert marker_occurs(_type_stdout(closed_mid), f"F:{(mid_val * 2)!r}")
     assert_usage_class(closed_below, greeting)
     assert_usage_class(closed_above, greeting)
     assert_success_marker_present(clamp_high, greeting)
-    assert f"F:{(hi_f * 2)!r}" in _type_stdout(clamp_high)
+    assert marker_occurs(_type_stdout(clamp_high), f"F:{(hi_f * 2)!r}")
     assert_success_marker_present(clamp_low, greeting)
-    assert f"F:{(lo_f * 2)!r}" in _type_stdout(clamp_low)
+    assert marker_occurs(_type_stdout(clamp_low), f"F:{(lo_f * 2)!r}")
     assert_success_marker_present(clamp_mid, greeting)
-    assert f"F:{(mid_val * 2)!r}" in _type_stdout(clamp_mid)
+    assert marker_occurs(_type_stdout(clamp_mid), f"F:{(mid_val * 2)!r}")
     assert_usage_class(min_edge, greeting)
     assert_success_marker_present(min_in, greeting)
-    assert f"F:{(inner_open_val * 2)!r}" in _type_stdout(min_in)
+    assert marker_occurs(_type_stdout(min_in), f"F:{(inner_open_val * 2)!r}")
     assert_usage_class(max_edge, greeting)
     assert_success_marker_present(max_in, greeting)
-    assert f"F:{(inner_max_val * 2)!r}" in _type_stdout(max_in)
+    assert marker_occurs(_type_stdout(max_in), f"F:{(inner_max_val * 2)!r}")
     assert_success_marker_present(omax_ok, greeting)
-    assert f"F:{(far_low_val * 2)!r}" in _type_stdout(omax_ok)
+    assert marker_occurs(_type_stdout(omax_ok), f"F:{(far_low_val * 2)!r}")
     assert_usage_class(omax_bad, greeting)
     assert_success_marker_present(omin_ok, greeting)
-    assert f"F:{(far_high_val * 2)!r}" in _type_stdout(omin_ok)
+    assert marker_occurs(_type_stdout(omin_ok), f"F:{(far_high_val * 2)!r}")
     assert_usage_class(omin_bad, greeting)
 
 
@@ -1069,7 +1071,7 @@ def test_float_range_refuses_clamp_when_bound_open():
     above = _type_run(built, [flag, "12.5"])
     print(f"closed_clamp={above.stdout_text!r}", flush=True)
     assert_success_marker_present(above, greeting)
-    assert f"F:{(hi * 2)!r}" in _type_stdout(above)
+    assert marker_occurs(_type_stdout(above), f"F:{(hi * 2)!r}")
 
 
 # ---------------------------------------------------------------------------

@@ -84,7 +84,7 @@ from F04_helpers import (
 
 
 # ---------------------------------------------------------------------------
-# S. Present-arm reuse (L73–L75; L79 forbids a package-disable negative control)
+# S. Present-arm reuse
 # ---------------------------------------------------------------------------
 
 
@@ -116,7 +116,7 @@ def test_reuse_cycle_round_trips_when_package_importable():
 
 
 def test_reuse_cycle_encode_fails_when_package_not_importable():
-    # L79: this product has no negative control. Present versus hollow is
+    # The product is exercised by
     # a real reuse walk on a constructed connection, not an import-stripped child.
     host = runtime_host()
     target = runtime_target()

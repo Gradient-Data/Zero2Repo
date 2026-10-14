@@ -3,7 +3,7 @@
 
 Helpers classify parse success (a usable helper) and parse refusal (no
 helper). They never return ``None`` to mean "the observation could not
-be classified". Named URIs and codes are the strings the PRD publishes.
+be classified". Named URIs and codes are fixed inputs of this suite.
 HMAC / TOTP is never reimplemented here. Expected URI paths are never
 produced with ``quote``.
 """
@@ -18,39 +18,39 @@ import F02_helpers as _f02
 import F04_helpers as _f04
 from _harness import CallResult, HarnessError, call
 
-# L225 / L244: GEZDGNBV totp SHA1 parse input and named rebuilds.
+# GEZDGNBV totp SHA1 parse input and named rebuilds.
 GEZDGNBV_TOTP_SHA1_URI = (
-    "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+    "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
 )
 GEZDGNBV_SECRET_PLACEHOLDER_URI = "otpauth://totp/Secret?secret=GEZDGNBV"
 GEZDGNBV_N_I_REBUILD_URI = "otpauth://totp/i:n?secret=GEZDGNBV&issuer=i"
 
-# L226: same skeleton with period=60.
+# same skeleton with period=60.
 GEZDGNBV_TOTP_PERIOD60_URI = (
-    "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1&period=60"
+    "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1&period=60"
 )
 
-# L227: hotp GEZDGNBV parse inputs.
+# hotp GEZDGNBV parse inputs.
 GEZDGNBV_HOTP_URI = (
-    "otpauth://hotp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
+    "otpauth://hotp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1"
 )
 GEZDGNBV_HOTP_COUNTER1_URI = (
-    "otpauth://hotp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1&counter=1"
+    "otpauth://hotp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA1&counter=1"
 )
 
-# L228: last algorithm SHA256 / SHA512 parse inputs.
+# last algorithm SHA256 / SHA512 parse inputs.
 GEZDGNBV_TOTP_SHA256_URI = (
-    "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA256"
+    "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA256"
 )
 GEZDGNBV_TOTP_SHA512_URI = (
-    "otpauth://totp?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA512"
+    "otpauth://totp/?algorithm=SHA1&secret=GEZDGNBV&algorithm=SHA512"
 )
 
-# L230 / L244: image accepted and ignored.
-GEZDGNBV_IMAGE_FOOBAR_URI = "otpauth://totp?secret=GEZDGNBV&image=foobar"
-GEZDGNBV_NO_IMAGE_URI = "otpauth://totp?secret=GEZDGNBV"
+# image accepted and ignored.
+GEZDGNBV_IMAGE_FOOBAR_URI = "otpauth://totp/?secret=GEZDGNBV&image=foobar"
+GEZDGNBV_NO_IMAGE_URI = "otpauth://totp/?secret=GEZDGNBV"
 
-# L229 / L244: literal-colon vs encoded-colon labels.
+# literal-colon vs encoded-colon labels.
 FFFFF_SECRET = "FFFFFFFAAAAAABBBBBBB"
 TEXT_COLON_URI = (
     "otpauth://totp/Text%3A%20More%20Text:Secret"
@@ -65,17 +65,17 @@ ACCOUNT_A_COLON_B = "a:b"
 ACCOUNT_BOB = "bob"
 ISSUER_BIG_CORP = "Big Corp"
 
-# L234–L239 named refusal examples.
+# Fixed refusal inputs.
 HTTP_HELLO_URI = "http://hello.com"
-OTPAUTH_TOTP_NO_SECRET_URI = "otpauth://totp"
-DERP_SECRET_URI = "otpauth://derp?secret=foo"
-DIGITS_MINUS_ONE_URI = "otpauth://totp?digits=-1"
+OTPAUTH_TOTP_NO_SECRET_URI = "otpauth://totp/"
+DERP_SECRET_URI = "otpauth://derp/?secret=foo"
+DIGITS_MINUS_ONE_URI = "otpauth://totp/?digits=-1"
 SOME_ANOTHER_ISSUER_URI = "otpauth://totp/SomeIssuer:?issuer=AnotherIssuer"
-ALGORITHM_AES_URI = "otpauth://totp?algorithm=aes"
+ALGORITHM_AES_URI = "otpauth://totp/?algorithm=aes"
 NAMED_ISSUER_SOME = "SomeIssuer"
 NAMED_ISSUER_ANOTHER = "AnotherIssuer"
 
-# L225 / L226 / L227 / L228 named codes.
+# Fixed codes.
 CODE_734055 = "734055"
 CODE_662488 = "662488"
 CODE_289363 = "289363"
@@ -122,7 +122,7 @@ def run_parse(parse_fn: object, uri: str) -> CallResult:
 
 
 def require_parse_refused(result: CallResult) -> None:
-    """Require that the parse did not hand back a usable helper (L234–L240).
+    """Require that the parse did not hand back a usable helper.
 
     A captured exception whose value is not a helper, or a return whose
     value is not a helper (including ``None`` / text / a number), both
@@ -160,7 +160,7 @@ def label_from_rebuild(
     expected_issuer: str | None,
     expected_account: str,
 ) -> tuple[str | None, str]:
-    """Read account / issuer from a no-override rebuild URI (L229).
+    """Read account / issuer from a no-override rebuild URI.
 
     Returns ``(observed_issuer_or_none, decoded_path)``. Decoded path
     (leading ``/`` stripped, then unquoted) is compared by concatenating
@@ -216,7 +216,7 @@ def label_from_rebuild(
 def round_trip_built_uri(
     parse_fn: object, helper: object, **build_kwargs: object
 ) -> tuple[str, object]:
-    """Parse an FP-04-built URI and rebuild; require the same string (L221)."""
+    """Parse an FP-04-built URI and rebuild; require the same string."""
     built = _f04.require_uri(_f04.build_uri(helper, **build_kwargs))
     parsed = _f02.require_helper(run_parse(parse_fn, built))
     rebuilt = _f04.require_uri(_f04.build_uri(parsed))

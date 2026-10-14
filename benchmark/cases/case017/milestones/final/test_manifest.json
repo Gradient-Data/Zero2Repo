@@ -1,0 +1,67 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_acceptance.py",
+    "tests/F01_helpers.py",
+    "tests/F02_acceptance.py",
+    "tests/F02_helpers.py",
+    "tests/F03_acceptance.py",
+    "tests/F03_helpers.py",
+    "tests/F04_acceptance.py",
+    "tests/F04_helpers.py",
+    "tests/F05_acceptance.py",
+    "tests/F05_helpers.py",
+    "tests/F06_acceptance.py",
+    "tests/F06_helpers.py",
+    "tests/F07_acceptance.py",
+    "tests/F07_helpers.py",
+    "tests/F08_acceptance.py",
+    "tests/F08_helpers.py",
+    "tests/F09_acceptance.py",
+    "tests/F09_helpers.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "python3 -m pytest tests/F01_acceptance.py tests/F01_helpers.py tests/F02_acceptance.py tests/F02_helpers.py tests/F03_acceptance.py tests/F03_helpers.py tests/F04_acceptance.py tests/F04_helpers.py tests/F05_acceptance.py tests/F05_helpers.py tests/F06_acceptance.py tests/F06_helpers.py tests/F07_acceptance.py tests/F07_helpers.py tests/F08_acceptance.py tests/F08_helpers.py tests/F09_acceptance.py tests/F09_helpers.py tests/_helpers.py",
+  "test_command_template": "python3 -m pytest {test_files}",
+  "execution_groups": {
+    "F00": [],
+    "F01": [
+      "tests/F01_acceptance.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_acceptance.py",
+      "tests/F02_helpers.py"
+    ],
+    "F03": [
+      "tests/F03_acceptance.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_acceptance.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_acceptance.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_acceptance.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_acceptance.py",
+      "tests/F07_helpers.py"
+    ],
+    "F08": [
+      "tests/F08_acceptance.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_acceptance.py",
+      "tests/F09_helpers.py"
+    ]
+  }
+}

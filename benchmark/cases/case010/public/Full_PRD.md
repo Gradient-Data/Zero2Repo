@@ -6,11 +6,9 @@
 
 The product advertises easy-to-use access to many packaged corpora and lexical resources such as WordNet, together with a suite of text processing libraries for **classification**, **tokenization**, **stemming**, **tagging**, **parsing**, and **semantic reasoning**. This document specifies the **core processing path a first-time integrator actually runs**: split text into tokens, reduce words to stems, assign part-of-speech tags, group tagged tokens into shallow chunks, parse a sentence against a caller-supplied grammar and work with constituent trees, train a text classifier, and score outputs with the built-in evaluation metrics.
 
-A common first use, as the public documentation leads with, is the English sentence `At eight o'clock on Thursday morning Arthur didn't feel very good.`: obtain a list of word and punctuation tokens, then assign each token a part-of-speech tag. Leaving that sentence as one undifferentiated string, or returning tags that do not distinguish Arthur as a proper name from morning as a common noun when the recommended English tagger resource is installed, is a failure of that path.
+This document specifies **user- and integrator-observable behavior only**. Exact published symbol names, import paths, call signatures and output forms belong in the Interface Contract, not here. Every feature point below corresponds to behavior that exists in the finished LINGORA library. Feature points are ordered so foundational capabilities come first; a later feature point may depend on an earlier one, never the reverse.
 
-This document specifies **user- and integrator-observable behavior only**. Exact published symbol names, import paths, and call signatures belong in the Interface Contract, not here. Every feature point below corresponds to behavior that exists in the finished LINGORA library. Feature points are ordered so foundational capabilities come first; a later feature point may depend on an earlier one, never the reverse.
-
-Packaged corpora, WordNet, graphical corpus browsers, chat demos, Twitter helpers, wrappers for external industrial taggers and parsers, and first-order semantic inference against external theorem provers are part of the wider suite. They are **not** graded feature points in this medium-tier specification. When a graded path needs a packaged model (the Punkt sentence models, the averaged perceptron tagger), that prerequisite is stated on that path; a missing model is a failure of that path, not a license to substitute a stub.
+Packaged corpora, WordNet, graphical corpus browsers, chat demos, Twitter helpers, wrappers for external industrial taggers and parsers, and first-order semantic inference against external theorem provers are part of the wider suite. They are **not** feature points of this specification. When a specified path needs a packaged model (the Punkt sentence models, the averaged perceptron tagger), that prerequisite is stated on that path; a missing model makes that path fail.
 
 ## Terminology
 
@@ -30,27 +28,24 @@ Packaged corpora, WordNet, graphical corpus browsers, chat demos, Twitter helper
 | **Tag pattern** | A pattern over tags, written with each tag inside angle brackets. Whitespace in a tag pattern is ignored. |
 | **Context-free grammar** | A set of productions the caller supplies as text. A production has a left-hand nonterminal, an arrow, and a right-hand sequence of nonterminals or quoted terminals. |
 | **Parse tree** | A constituent tree whose root is the grammar’s start symbol and whose leaves, in order, are the input tokens. |
-| **Bracketed tree text** | The parenthesized encoding used by the Penn Treebank and by LINGORA: a node is an opening parenthesis, a label, its children, and a closing parenthesis. Example: a sentence whose subject is the pronoun I and whose verb phrase is saw him. |
+| **Bracketed tree text** | The parenthesized encoding used by the Penn Treebank and by LINGORA: a node is an opening parenthesis, a label, its children, and a closing parenthesis. |
 | **Featureset** | A mapping from feature names to feature values that describes one example for a classifier. Values are typically booleans, numbers, or strings. |
-| **Label** | The category a classifier assigns, such as positive or negative. |
+| **Label** | The category a classifier assigns. |
 | **Punkt** | LINGORA’s packaged sentence-boundary models. The recommended sentence tokenizer, and the recommended word tokenizer when it first splits the text into sentences, require Punkt for the requested language. |
-| **Penn Treebank tokenizer** | The word tokenizer that follows Penn Treebank conventions: most punctuation is a token of its own; standard contractions are split; decimal amounts such as 3.88 stay one token. |
-| **Word/punctuation tokenizer** | The simpler regular-expression tokenizer that splits on the boundary between word characters and non-word characters, so a decimal amount is also split at the point. |
+| **Penn Treebank tokenizer** | The word tokenizer that follows the Penn Treebank tokenization conventions (FP-01). |
+| **Word/punctuation tokenizer** | The simpler tokenizer that splits on the boundary between word characters and non-word characters (FP-01). |
 | **Porter stemmer** | The English suffix-stripping stemmer after Porter’s published algorithm, with the three modes listed in FP-02. |
 | **Snowball stemmer** | The family of language-specific stemmers after Martin Porter’s Snowball algorithms. The supported language names are listed in FP-02. |
-| **Lancaster stemmer** | The Paice/Husk English stemmer. It is more aggressive than Porter on the words named in FP-02. |
+| **Lancaster stemmer** | The Paice/Husk English stemmer. |
 | **Naive Bayes classifier** | The built-in classifier that learns label and feature-value frequencies from labeled featuresets and returns the most probable label. |
 | **Decision tree classifier** | The built-in classifier that learns a tree of feature tests and assigns the label at the leaf reached by an example. |
 | **BLEU** | The Bilingual Evaluation Understudy score over token lists: a candidate is scored against one or more reference token lists. |
-| **Core capability** | A user-observable capability that reflects LINGORA’s design goal; acceptance must prove the real library behavior, not a stub. |
-| **Discrimination** | An assertion’s ability to distinguish a faithful implementation from a hollow, skipped, or proxy one. |
-| **Mandatory substrate** | A real host that can import this repository’s LINGORA package and run one word/punctuation tokenization. No GPU or compiled extension is required. |
 
 ## Public surface inventory
 
-LINGORA is imported and used from Python. The public surface, grouped the way later feature points verify it, is:
+LINGORA is imported and used from Python. The public surface, grouped by feature point, is:
 
-- Tokenizing a string into words, punctuation, sentences, or spans, including the word/punctuation tokenizer, the Penn Treebank word tokenizer, LINGORA’s recommended word tokenizer, the recommended sentence tokenizer, whitespace and blank-line tokenizers, a caller-supplied regular-expression tokenizer, and a tweet tokenizer. An s-expression tokenizer also exists; it is not independently graded. A command-line tokenize command applies the recommended word tokenizer to each line of a text stream, including the sentence-splitting step, so it requires the Punkt models for the requested language.
+- Tokenizing a string into words, punctuation, sentences, or spans, including the word/punctuation tokenizer, the Penn Treebank word tokenizer, LINGORA’s recommended word tokenizer, the recommended sentence tokenizer, whitespace and blank-line tokenizers, a caller-supplied regular-expression tokenizer, and a tweet tokenizer. An s-expression tokenizer also exists; it is outside this specification. A command-line tokenize command applies the recommended word tokenizer to each line of a text stream, including the sentence-splitting step, so it requires the Punkt models for the requested language.
 - Stemming a word with Porter, Lancaster, Snowball, a caller-supplied suffix pattern, or the language-specific stemmers listed in FP-02.
 - Tagging a token list: sequential taggers the caller trains (default, unigram, bigram, trigram, affix, regular-expression) with optional backoff, and LINGORA’s recommended English or Russian tagger when the corresponding averaged perceptron tagger resource is installed.
 - Chunking a tagged token list with a chunk grammar. A named-entity chunker exists when its packaged model is installed; it is not the primary way to satisfy chunking.
@@ -58,41 +53,32 @@ LINGORA is imported and used from Python. The public surface, grouped the way la
 - Training and applying a Naive Bayes classifier or a decision tree classifier on labeled featuresets, including a probability distribution over labels for Naive Bayes.
 - Scoring: Levenshtein edit distance (optional transpositions), Jaccard distance, accuracy, precision, recall, f-measure, and BLEU.
 
-Feature points below group these entries by independently verifiable capability. They do not invent additional product surfaces.
+Feature points below group these entries by capability. They do not invent additional product surfaces.
 
 ## Non-functional constraints
 
 - **Form factor:** A pure-Python library with no compiled extensions, native code, or GPU/accelerator requirements. Packaging uses a flat package layout. An editable install from this repository’s source tree is sufficient.
-- **Language:** Python 3.10 or newer, through the latest 3.14. Declared runtime dependencies are XML safety, a command-line helper, joblib, a regular-expression engine at or newer than the 2021.8.3 series, and a progress-bar helper. Optional extra groups add scientific-computing libraries for some classifiers and plot helpers; they are not required for the mandatory CPU profile.
-- **Platforms:** Windows, Mac OS X, and Linux. This case’s acceptance targets Linux with a supported interpreter.
-- **Hardware:** CPU-only. The mandatory execution substrate is a real host that can import the installed package from this repository and run one word/punctuation tokenization with no downloaded corpus or model.
-- **Packaged data:** Many advertised resources (Punkt, the averaged perceptron tagger, WordNet, Treebank, and other corpora) live outside the source tree and are located through LINGORA’s data finder. Full-suite corpus download is documented via the package downloader. It is **not** required for the baseline word/punctuation tokenizer, for trainable sequential taggers, for regular-expression chunking, for grammar-based parsing, for in-memory classification, or for the evaluation metrics. When a feature point names a packaged model as a prerequisite, absence of that model makes that path fail observably.
-- **Unicode:** Input and output are Unicode text. Accented letters in a tweet-style tokenizer remain intact as single tokens.
-- **Threading and process model:** Not a graded concern. The library is used in-process.
+- **Language:** Python 3.10 or newer, through the latest 3.14. Runtime dependencies are limited to pure-Python packages. Optional extra groups add scientific-computing libraries for some classifiers and plot helpers; they are not required for the CPU profile.
+- **Platforms:** Windows, Mac OS X, and Linux. The product must run on Linux with a supported interpreter.
+- **Hardware:** CPU-only. Importing the package from this repository and running a word/punctuation tokenization needs no downloaded corpus or model.
+- **Packaged data:** Many advertised resources (Punkt, the averaged perceptron tagger, WordNet, Treebank, and other corpora) live outside the source tree and are located through LINGORA’s data finder. Full-suite corpus download is documented via the package downloader. It is **not** required for the baseline word/punctuation tokenizer, for trainable sequential taggers, for regular-expression chunking, for grammar-based parsing, for in-memory classification, or for the evaluation metrics. When a feature point names a packaged model as a prerequisite, absence of that model makes that path fail observably. The finder searches a list of directories that the caller may set; a path that needs a packaged model finds it only in those directories.
+- **Unicode:** Input and output are Unicode text. Accented letters in a tweet-style tokenizer remain intact inside their tokens.
+- **Threading and process model:** Not a concern of this specification. The library is used in-process.
 
-## Capability discrimination (global)
+## Core capabilities (global)
 
-Every feature point below is a **core capability**. None is an accelerator-backed mandatory-substrate GPU feature. The mandatory substrate is a real CPU host with LINGORA loaded from this repository’s sources.
-
-For every feature point:
-
-- **Present:** The loaded LINGORA library produces the tokenization, stemming, tagging, chunking, parsing, classification, or scoring outcomes described below on the named inputs.
-- **Absent / hollow:** Tokenization always returns the original string or splits only on spaces; stemming is an identity function for the named Porter and Snowball examples; tagging assigns one constant tag regardless of training; chunking never introduces a chunk node; parsing always yields one dummy tree or always yields none; classification ignores the training labels; metrics always return zero or one.
-
-Cheaper proxies (hard-coded token tables, a single regular expression that cannot tell the word/punctuation tokenizer from the Penn Treebank tokenizer, a stemmer that only lowercases, a tagger that does not learn from training data, a parser that does not consult the caller’s grammar) do **not** satisfy core capabilities. There is no approved degradation scenario that replaces a core capability with a stub.
-
-**Negative control (library substrate):** When the LINGORA package is deliberately not importable in an isolated subprocess (removed from the import path), a word/punctuation tokenization of `Hello, world!` must fail to produce a successful LINGORA token list — a hard assertion, not a skip. When the package is importable, that same tokenization succeeds and yields four tokens: Hello, a comma, world, and an exclamation mark. Output-equality alone is not proof that the real package ran.
+Every feature point below is a core capability of the real library: the outcomes come from the library implementing the stated rules on the caller’s inputs. When the package cannot be imported, none of its entries can be called.
 
 ## Non-goals
 
 - Being a general-purpose regular-expression engine, machine-learning framework, or theorem prover.
-- Shipping WordNet, Treebank, or other corpora inside the source tree. Those are packaged data. The data finder and downloader exist so callers can install them; they are not graded feature points here.
+- Shipping WordNet, Treebank, or other corpora inside the source tree. Those are packaged data. The data finder and downloader exist so callers can install them; they are not feature points here.
 - Graphical applications (chart parser, chunk parser, WordNet browser, concordance, and similar desktop demos) and drawing helpers.
 - Chat bots, Twitter clients, Hugging Face dataset helpers, and Toolbox readers.
 - Wrappers that require an external binary or service (Stanford, Senna, Hunpos, Malt, Bllip, CoreNLP, Weka, MEGAM, TADM).
 - Combinatory categorial grammar, discourse representation, first-order inference against Prover9 or Mace, and other semantic-reasoning tools that are not on the first-time processing path.
-- N-gram language-model training as a separate graded product. Counting and scoring that classifiers and metrics already perform are specified where they are observable.
-- Guaranteeing a particular tokens-per-second throughput (speed is a design note on the regular-expression chunker, not a graded oracle).
+- N-gram language-model training as a separate product. Counting and scoring that classifiers and metrics already perform are specified where they are observable.
+- Guaranteeing a particular tokens-per-second throughput.
 
 ---
 
@@ -100,91 +86,96 @@ Cheaper proxies (hard-coded token tables, a single regular expression that canno
 
 ### FP-01: Word, punctuation, and sentence tokenization
 
-**Public entry:** LINGORA’s tokenizer entries: the word/punctuation tokenizer; the Penn Treebank word tokenizer; LINGORA’s recommended word tokenizer (an improved Penn Treebank word tokenizer); the recommended sentence tokenizer; the whitespace tokenizer; the blank-line tokenizer; a regular-expression tokenizer the caller configures; the tweet tokenizer; and span extraction on a tokenizer that supports spans. An s-expression tokenizer also exists; it is not independently graded.
+**Public entry:** LINGORA’s tokenizer entries: the word/punctuation tokenizer; the Penn Treebank word tokenizer; LINGORA’s recommended word tokenizer (an improved Penn Treebank word tokenizer); the recommended sentence tokenizer; the whitespace tokenizer; the blank-line tokenizer; a regular-expression tokenizer the caller configures; the tweet tokenizer; and span extraction on a tokenizer that supports spans. An s-expression tokenizer also exists; it is outside this specification.
 
-The command-line tokenize command applies the recommended word tokenizer to each line of a text stream, including the sentence-splitting step, and writes the tokens joined by a delimiter (space by default). Because that path splits sentences first, it requires the **Punkt** models for the requested language.
+The command-line tokenize command applies the recommended word tokenizer to each line of a text stream, including the sentence-splitting step, and writes the tokens joined by a delimiter (one space by default). Because that path splits sentences first, it requires the **Punkt** models for the requested language.
 
-The recommended sentence tokenizer, and the recommended word tokenizer when it is asked to split the input into sentences first, require the **Punkt** models for the requested language. The word/punctuation tokenizer, the Penn Treebank word tokenizer, the recommended word tokenizer applied to one already-delimited line (no sentence splitting), the whitespace and blank-line tokenizers, a caller-configured regular-expression tokenizer, and the tweet tokenizer do **not** require a downloaded model. The mortgage, quotation, `cannot`, and homepage-sentence examples below are word-level behavior on a single line (no sentence splitting).
+The recommended sentence tokenizer, and the recommended word tokenizer when it is asked to split the input into sentences first, require the **Punkt** models for the requested language; the default language is English. The word/punctuation tokenizer, the Penn Treebank word tokenizer, the recommended word tokenizer applied to one already-delimited line (no sentence splitting), the whitespace and blank-line tokenizers, a caller-configured regular-expression tokenizer, and the tweet tokenizer do **not** require a downloaded model.
 
 **Normal behavior:**
 
-- The word/punctuation tokenizer applied to `Hello, world!` yields exactly four tokens, in order: Hello, a comma, world, and an exclamation mark.
-- The word/punctuation tokenizer applied to `Good muffins cost $3.88 in New York.` yields exactly eleven tokens, in order: Good, muffins, cost, a dollar sign, 3, a point, 88, in, New, York, and a final point. The currency amount is split so the dollar sign, the digits before the point, the point, and the digits after the point are four separate tokens. The sentence-final point is its own token.
-- The Penn Treebank word tokenizer and the recommended word tokenizer applied to that same muffin sentence keep `3.88` as one token. They still split the dollar sign off as its own token. An observer can tell these two families apart on this sentence: word/punctuation splits the decimal; Penn Treebank / recommended does not.
-- The Penn Treebank word tokenizer applied to `They'll save and invest more.` yields seven tokens: They, a clitic `'ll`, save, and, invest, more, and a final point. The recommended word tokenizer applied to `I cannot cannot work under these conditions!` splits each `cannot` into `can` and `not`.
-- The recommended word tokenizer applied to `On a $50,000 mortgage of 30 years at 8 percent, the monthly payment would be $366.88.` keeps `50,000` and `366.88` as single tokens, splits each dollar sign off, and splits the comma and the final point off as their own tokens.
-- The recommended word tokenizer applied to a sentence that begins with a straight double quote (for example `"We beat some pretty good teams to get here," Slocum said.`) replaces the opening quote with two backticks as a token and the closing quote with two single quotes as a token.
-- The recommended word tokenizer, applied to the advertised homepage sentence `At eight o'clock on Thursday morning Arthur didn't feel very good.` as one already-delimited line (no sentence splitting), yields exactly these thirteen tokens, in order: At, eight, `o'clock` as one token, on, Thursday, morning, Arthur, did, `n't`, feel, very, good, and a final point. An observer can tell this from a space split: `o'clock` stays one token and `didn't` becomes `did` plus `n't`.
-- The whitespace tokenizer applied to the two-line string whose first line is `Good muffins cost $3.88` and whose second line is `in New York. Please buy me two of them.` does **not** split `$3.88` or `York.`; it splits only on whitespace, so `$3.88` is one token and `York.` (point attached) is one token.
-- The blank-line tokenizer applied to a string whose first paragraph is `Good muffins cost $3.88 in New York. Please buy me two of them.` and whose second paragraph is `Thanks.`, the two paragraphs being separated by a blank line, yields exactly two segments: the first paragraph as one string and `Thanks.` as the other.
-- A regular-expression tokenizer configured to match capitalized words, applied to `Good muffins cost $3.88 in New York. Please buy me two of them. Thanks.`, yields exactly the capitalized tokens Good, New, York, Please, and Thanks, and does not yield muffins or cost.
-- A regular-expression tokenizer configured to treat whitespace as the delimiter (gap mode) applied to a string that begins or ends with whitespace does not return empty tokens at the ends.
-- The tweet tokenizer, with handle stripping and length reduction enabled, applied to `@myke: Let's test these words: resumé España München français` omits the `@myke` handle, keeps the colon after it, keeps `Let's` as one token, and keeps each of `resumé`, `España`, `München`, and `français` as one token (accents intact).
-- When a tokenizer reports spans for `Good muffins cost $3.88 in New York.`, each span is a pair of offsets into that same string; slicing the string at that span equals the corresponding token; spans are in left-to-right order and do not overlap.
-- When the Punkt English models are installed, the recommended sentence tokenizer applied to `Good muffins cost $3.88 in New York. Please buy me two of them. Thanks.` yields three sentence strings, in order: the muffin sentence, the please-buy sentence, and `Thanks.`
-- When the Punkt English models are installed, the recommended word tokenizer applied to that same three-sentence string (with sentence splitting enabled) tokenizes each sentence and concatenates the tokens, so the result contains three sentence-final points and does not glue `York.` to `Please`.
+- **Word/punctuation tokenizer.** The tokens are, left to right, the maximal runs of word characters (Unicode letters, digits and the underscore) and the maximal runs of characters that are neither word characters nor whitespace. Whitespace is never part of a token.
+- **Penn Treebank word tokenizer.** It follows the Penn Treebank tokenization conventions:
+  - The text is split at whitespace, and punctuation is then split off as follows.
+  - A straight double quote at the start of the text, or after a space or an opening bracket, becomes the opening-quote token made of two backticks. Every other straight double quote becomes the closing-quote token made of two apostrophes. A straight double quote is never a token of its own.
+  - Each of the characters `;`, `@`, `#`, `$`, `%`, `&`, `?`, `!` and each bracket is a token of its own. So is an ellipsis of three points.
+  - A comma or colon is split off unless a digit follows it.
+  - A point is split off only when it ends the text, optionally followed by closing quotes or brackets.
+  - The clitics `'s`, `'m`, `'d`, `'ll`, `'re`, `'ve` and `n't` (in either letter case), and a bare apostrophe ending a word, are split from the word they follow and become tokens of their own.
+  - The fused forms *cannot*, *d'ye*, *gimme*, *gonna*, *gotta*, *lemme*, *more'n*, *wanna*, *'tis* and *'twas* are split into their two parts (*can* + *not*, *gon* + *na*, and so on).
+  - An apostrophe that does not begin one of those clitics stays inside its word.
+- **Recommended word tokenizer.** It applies the same Penn Treebank conventions, with these improvements:
+  - Typographic quotation marks are split off as tokens of their own.
+  - Dashes in the range U+2012–U+2015 and asterisks are split off.
+  - Any run of two or more points is a token.
+  - A double hyphen is a token.
+
+  Unless the caller says the input is one already-delimited line, it first splits the text into sentences with the recommended sentence tokenizer, then tokenizes each sentence and concatenates the tokens in order.
+- **Whitespace tokenizer.** The tokens are the maximal runs of non-whitespace characters (whitespace is space, tab, newline and the other Unicode white-space characters).
+- **Blank-line tokenizer.** A separator is a newline, then optional whitespace, then another newline, together with any whitespace around them. The segments are the pieces of text between separators, in order, with empty pieces dropped. Single newlines inside a segment are kept.
+- **Regular-expression tokenizer.**
+  - In token mode (the default), the tokens are the successive non-overlapping matches of the caller's pattern, found left to right.
+  - In gap mode, the pattern matches separators, and the tokens are the pieces of text between successive matches and before the first or after the last.
+  - Empty pieces are dropped unless the caller turns empty-discarding off (it is on by default).
+- **Tweet tokenizer.**
+  - Words containing an internal apostrophe (contractions) stay one token.
+  - Letters with diacritics are word characters, so accented words stay whole.
+  - Emoticons, URLs, hashtags and @-handles are single tokens, and other punctuation marks are tokens of their own.
+  - With handle stripping on (off by default), every @-handle is removed before tokenizing, and the text on either side of it is tokenized as if a space stood there. An @-handle is an `@` that does not continue a preceding word, followed by a user name of 1 to 15 ASCII letters, digits or underscores.
+  - With length reduction on (off by default), every run of three or more consecutive occurrences of the same character is shortened to exactly three occurrences before tokenizing.
+  - With case preservation off (it is on by default), tokens are lowercased, except emoticons.
+- **Spans.** A tokenizer that reports spans returns one pair of character offsets per token, in token order. Slicing the input at each pair gives the corresponding token. Each pair starts at or after the end of the previous one.
+- **Sentence tokenizer.** It implements the Punkt unsupervised sentence-boundary detection algorithm (Kiss and Strunk, 2006). It uses the packaged Punkt parameters for the requested language: abbreviation types, collocations, sentence starters and orthographic context. It returns the sentences of the text in their original order. Each sentence is the original text of that sentence, without the whitespace that separates it from the next one. A text that is a single sentence yields that one sentence.
+- **Command line.** The tokenize command reads standard input line by line. For each input line it writes one output line: that line's recommended-word-tokenizer tokens, with sentence splitting, joined by the delimiter.
 
 **Boundary / error behavior:**
 
-- An empty string yields an empty token list on the word/punctuation tokenizer, the Penn Treebank word tokenizer, the whitespace tokenizer, and a regular-expression tokenizer.
-- A string that is only spaces yields an empty token list on the word/punctuation tokenizer and the whitespace tokenizer.
-- When sentence splitting is requested and the Punkt models for the requested language are not installed, the recommended sentence tokenizer and the recommended word tokenizer do **not** succeed. The failure is distinguishable from a successful empty token list. The word/punctuation tokenizer on the same string still succeeds.
-- The command-line tokenize command reads standard input and writes one output line per input line. It does not silently skip a non-empty input line. Because it applies the recommended word tokenizer with sentence splitting, it does **not** succeed when the Punkt models for the requested language are missing. When those models are installed, the input line `Hello, world!` writes the four recommended-word-tokenizer tokens of that line joined by spaces: Hello, a comma, world, and an exclamation mark.
-
-**Verifiable oracle:**
-
-- Success: `Hello, world!` through the word/punctuation tokenizer is Hello / comma / world / exclamation mark; `Good muffins cost $3.88 in New York.` through the word/punctuation tokenizer is eleven tokens and splits `$`, `3`, the point, and `88`, while the Penn Treebank and recommended word tokenizers keep `3.88` and still split `$`; `They'll save and invest more.` splits `They` from `'ll`; `cannot` splits into `can` and `not` on the recommended word tokenizer; a leading straight double quote becomes two backticks; the homepage Arthur sentence keeps `o'clock` and splits `didn't` into `did` plus `n't`; whitespace tokenization of the two-line muffin string keeps `$3.88` intact; blank-line tokenization of the muffin paragraph plus a blank line plus `Thanks.` is two segments; a capitalized-word regular-expression tokenizer returns Good, New, York, Please, Thanks; the tweet tokenizer drops `@myke` and keeps `resumé`; spans slice back to the same tokens; with Punkt installed, the three-sentence muffin string is three sentences and the command-line tokenize of `Hello, world!` writes those four tokens joined by spaces; without Punkt, the sentence-splitting path and the command-line tokenize command fail and the word/punctuation path still works.
-- Failure / absence: every tokenizer is a space split; `$3.88` is never split by the word/punctuation tokenizer or is always split by the Penn Treebank tokenizer; contractions stay one token; `o'clock` is split or `didn't` stays one token on the recommended word tokenizer; sentence splitting or the command-line tokenize command succeeds with no Punkt models; spans do not recover the original substrings; the tweet tokenizer drops accented letters or keeps the handle when handle stripping was requested.
+- An empty string, and a string made only of whitespace, yield an empty token list on every tokenizer that does not need a model.
+- When sentence splitting is requested and the Punkt models for the requested language are not installed, the recommended sentence tokenizer and the recommended word tokenizer do **not** succeed. The failure is distinguishable from a successful empty token list.
+- The command-line tokenize command does **not** succeed when the Punkt models for the requested language are missing: it ends with a failure status and writes no token line.
 
 ---
 
 ### FP-02: Stemming
 
-**Public entry:** LINGORA’s stemmer entries. The built-in stemmer families are exactly: **Porter** (English), **Lancaster** (English, Paice/Husk), **Snowball** (the languages listed below), a **regular-expression** stemmer that strips a caller-supplied suffix pattern, **ISRI** (Arabic), **ARLSTem** and **ARLSTem2** (Arabic), **Cistem** (German), and **RSLP** (Portuguese). A WordNet lemmatizer also lives in this family; it requires the WordNet resource.
+**Public entry:** LINGORA’s stemmer entries. The built-in stemmer families are exactly: **Porter** (English), **Lancaster** (English, Paice/Husk), **Snowball** (the languages listed below), a **regular-expression** stemmer that strips a caller-supplied pattern, **ISRI** (Arabic), **ARLSTem** and **ARLSTem2** (Arabic), **Cistem** (German), and **RSLP** (Portuguese). A WordNet lemmatizer also lives in this family; it requires the WordNet resource.
 
-The **graded** stemmer families of this feature point are Porter in its default mode, Lancaster, Snowball for the languages named below, ARLSTem, ARLSTem2, and a regular-expression stemmer. ISRI, Cistem, RSLP, and the WordNet lemmatizer are **not** independently graded. RSLP and the WordNet lemmatizer require packaged data; their absence is not a substitute for the graded families, which do not require WordNet.
+The stemmer families specified here are Porter in its default mode, Lancaster, Snowball for the languages named below, and the regular-expression stemmer. ISRI, ARLSTem, ARLSTem2, Cistem, RSLP, and the WordNet lemmatizer exist; their stemming results are outside this specification. RSLP and the WordNet lemmatizer require packaged data; the specified families do not require WordNet.
 
 The Snowball language names are exactly: arabic, danish, dutch, english, finnish, french, german, hungarian, italian, norwegian, porter, portuguese, romanian, russian, spanish, and swedish. Enabling Snowball stopword skipping requires the packaged stopwords list for that language.
 
-The Porter stemmer has exactly three modes: the original published algorithm, the Martin Porter extensions, and the LINGORA extensions. The default mode is the LINGORA extensions. The other two modes exist; they are **not** independently graded.
+The Porter stemmer has exactly three modes: the original published algorithm, the Martin Porter extensions, and the LINGORA extensions. The default mode is the LINGORA extensions. The other two modes exist; their results are outside this specification.
+
+Every stemmer treats its whole input string as one token. A string containing spaces is not split into words.
 
 **Normal behavior:**
 
-- The default Porter stemmer (LINGORA extensions) applied to each of the following words, in this order, yields the following stems: caresses → caress; flies → fli; dies → die; mules → mule; denied → deni; died → die; agreed → agre; owned → own; humbled → humbl; sized → size; meeting → meet; stating → state; siezing → siez; itemization → item; sensational → sensat; traditional → tradit; reference → refer; colonizer → colon; plotted → plot.
-- The default Porter stemmer applied to `oed` succeeds and yields `o`. It does not refuse the word.
-- The default Porter stemmer lowercases before stemming: `Running` and `running` yield the same stem. When the caller disables lowercasing, `I` is left as `I`; with lowercasing left on, `I` yields `i`. An observer can tell the two settings apart on that one-letter word.
-- The Lancaster stemmer applied to `maximum` yields `maxim`; applied to `presumably` yields `presum`; applied to `multiply` yields `multiply` unchanged; applied to `owed` yields `ow`; applied to `saying` yields `say`; applied to `crying` yields `cry`; applied to `cement` yields `cem`. An observer can tell Lancaster from Porter on `maximum`: Lancaster yields `maxim`; default Porter does not yield `maxim`.
-- The Snowball stemmer for english applied to `running` yields `run`. Applied to `generously` it yields `generous`.
-- The Snowball stemmer for the language named porter applied to `generously` yields `gener`. An observer can tell the english Snowball language from the porter Snowball language on this one word.
-- The Snowball stemmer for english, when stopword skipping is disabled (the default), applied to `having` yields `have`. When the packaged stopwords list for english is installed, the same stemmer with stopword skipping enabled leaves `having` unchanged.
-- The Snowball stemmer for german applied to `Schränke` yields `schrank`. With stopword skipping disabled, `keinen` is stemmed to `kein`. When the packaged stopwords list for german is installed and stopword skipping is enabled, `keinen` is left unchanged.
-- The Snowball stemmer for arabic applied to `العربية` yields `عرب`; applied to `الطالبات` yields `طالب`; applied to `فقالوا` yields `قال`.
-- The Snowball stemmer for spanish applied to `Visionado` yields `vision`.
-- The Snowball stemmer for russian applied to `авантненькая` yields `авантненьк`.
-- The Snowball stemmer for danish applied to `indflydelse` yields `indflyd`; applied to `løbende` yields `løb`; applied to `børnene` yields `børn`.
-- The Snowball stemmer for dutch applied to `opgravingen` yields `opgrav`; applied to `fietsen` yields `fiets`; applied to `wandeling` yields `wandel`.
-- The Snowball stemmer for finnish applied to `lapset` yields `laps`; applied to `taloissa` yields `talo`; applied to `kirjoittaa` yields `kirjoit`.
-- The Snowball stemmer for french applied to `continuait` yields `continu`; applied to `bicyclettes` yields `bicyclet`; applied to `chanterait` yields `chant`.
-- The Snowball stemmer for hungarian applied to `gyerekek` yields `gyerek`; applied to `házakban` yields `ház`; applied to `írni` yields `írn`.
-- The Snowball stemmer for italian applied to `continuando` yields `continu`; applied to `correndo` yields `corr`; applied to `bambini` yields `bambin`.
-- The Snowball stemmer for norwegian applied to `havnedistriktene` yields `havnedistrikt`; applied to `løpende` yields `løp`; applied to `husene` yields `hus`.
-- The Snowball stemmer for portuguese applied to `continuamente` yields `continu`; applied to `bicicletas` yields `biciclet`; applied to `crianças` yields `crianc`.
-- The Snowball stemmer for romanian applied to `continuare` yields `continu`; applied to `alergând` yields `alerg`; applied to `casele` yields `cas`.
-- The Snowball stemmer for swedish applied to `undergått` yields `undergåt`; applied to `löpande` yields `löp`; applied to `barnen` yields `barn`.
-- ARLSTem and ARLSTem2 applied to `يعمل` each yield `عمل`. On `العربية`, ARLSTem yields `عربي` and ARLSTem2 yields `عرب`; an observer can tell the two stemmers apart on that word.
-- A regular-expression stemmer configured to strip a trailing `ing` applied to `running` yields `runn` (it strips the suffix; it does not apply Porter’s rewriting). Applied to `run` it yields `run`.
+- **Porter, default mode.** The stemmer implements M. F. Porter's algorithm (“An algorithm for suffix stripping”, 1980) with these LINGORA extensions:
+  - The word is lowercased first, unless the caller turns lowercasing off.
+  - The lowercased word is first looked up in a small built-in table of irregular forms, and a hit returns the table's stem. The table's entries are outside this specification.
+  - A word of one or two characters is returned as it stands after the lowercasing step. It is never stemmed and never refused.
+  - In Step 1a, a four-letter word ending in *-ies* becomes *-ie* rather than *-i*.
+  - At the start of Step 1b, a word ending in *-ied* becomes *-ie* if it has four letters and *-i* otherwise. In that case the rest of Step 1b is skipped.
+  - The *\*o* condition (the stem ends consonant–vowel–consonant and the final consonant is not *w*, *x* or *y*) also holds for a two-letter stem made of a vowel followed by a consonant.
+  - In Step 1c, a final *y* becomes *i* only when it follows a consonant that is not the first letter of the stem. This replaces the original "stem contains a vowel" condition.
+  - In Step 2:
+    - *-alli* → *-al* is tried first, when the remaining stem has positive measure. If it applies, the result goes through Step 2 again.
+    - *-bli* → *-ble* replaces the original *-abli* → *-able*.
+    - The rules *-fulli* → *-ful* and *-logi* → *-log* are added. The *-logi* rule applies when the part of the word before *-ogi* has positive measure.
+  - Every other step and condition is the published algorithm's. Every word is stemmed without refusal, including a word whose stem reduces to a single letter.
+- **Lancaster.** The stemmer implements the Paice/Husk algorithm (C. D. Paice, “Another Stemmer”, 1990) with the standard rule table published with it. The word is lowercased first, and no prefix is stripped.
+- **Snowball.** The stemmer for a language implements the Snowball stemming algorithm for that language, as published by the Snowball project in its 2.2 release:
+  - For Dutch, this is the original Dutch algorithm, which later Snowball releases keep as the Porter-style Dutch stemmer.
+  - The language named *english* is the Porter2 (English) algorithm. The language named *porter* is Snowball's rendering of the original Porter algorithm, so the two can give different stems.
+  - The word is lowercased first.
+  - With stopword skipping on (off by default), a lowercased word that appears in that language's packaged stopwords list is returned unchanged (lowercased).
+- **Regular-expression stemmer.** It removes every match of the caller's pattern from the word and changes nothing else; no suffix rewriting is applied. A word the pattern does not match is returned unchanged.
 
 **Boundary / error behavior:**
 
-- Asking Snowball for a language that is not in the list above (for example `klingon`) does not produce a usable stemmer. The failure identifies the unsupported language. Asking for `english` on the same entry succeeds.
-- When Snowball stopword skipping is requested and the packaged stopwords list for that language is not installed, constructing the stemmer does **not** succeed. The same language with skipping left off still succeeds.
-- Stemming is per word. Passing a whole sentence as one string is not split into words by the stemmer; the stemmer treats that string as a single token.
-- The WordNet lemmatizer, when WordNet is not installed, does not succeed. That failure is not a substitute for Porter, Lancaster, or Snowball, which do not require WordNet.
-
-**Verifiable oracle:**
-
-- Success: the nineteen default-Porter pairs above hold; `oed` stems to `o`; `Running` and `running` match under default lowercasing; disabling lowercasing leaves `I` as `I` while the default yields `i`; Lancaster `maximum` is `maxim` and `multiply` is unchanged; Snowball english `running` is `run` and `generously` is `generous`; Snowball porter `generously` is `gener`; Snowball english skip-off stems `having` to `have`, and with the english stopwords list installed skip-on leaves `having` unchanged; Snowball german `Schränke` is `schrank` and skip-off stems `keinen` to `kein`, and with the german stopwords list installed skip-on leaves `keinen` unchanged; Snowball arabic `العربية` is `عرب`; the named danish/dutch/finnish/french/hungarian/italian/norwegian/portuguese/romanian/swedish pairs above hold and each stem differs from the original word; ARLSTem and ARLSTem2 both stem `يعمل` to `عمل` and differ on `العربية`; an unsupported Snowball language fails; without the stopwords list, enabling skip fails and skip-off still works; a suffix-pattern stemmer strips `ing` from `running` without Porter rewriting.
-- Failure / absence: every stemmer returns the input unchanged; Porter and Snowball english disagree with the named pairs; english and porter Snowball languages produce the same stem for `generously`; stopword skipping does not change `having` or `keinen` when the list is installed; enabling skip succeeds with no stopwords list; an unknown Snowball language is silently treated as english.
+- Asking Snowball for a language that is not in the list above does not produce a usable stemmer. The failure names the requested language.
+- When Snowball stopword skipping is requested and the packaged stopwords list for that language is not installed, constructing the stemmer does **not** succeed. A list installed only for another language does not satisfy it.
+- The WordNet lemmatizer does not succeed when WordNet is not installed. Porter, Lancaster and Snowball do not require WordNet.
 
 ---
 
@@ -192,61 +183,51 @@ The Porter stemmer has exactly three modes: the original published algorithm, th
 
 **Public entry:** LINGORA’s tagger entries. The sequential taggers a caller can train without a downloaded model are exactly: a **default** tagger that assigns one tag to every token; a **unigram** tagger; a **bigram** tagger; a **trigram** tagger; an **affix** tagger; and a **regular-expression** tagger. Any of these may name another sequential tagger as backoff.
 
-The **graded** trainable taggers of this feature point are the default tagger, the unigram tagger (with and without backoff), and the regular-expression tagger. Bigram, trigram, and affix taggers exist and follow the same train-then-tag protocol; they are **not** independently graded.
+The trainable taggers specified here are the default tagger, the unigram tagger (with and without backoff), and the regular-expression tagger. Bigram, trigram, and affix taggers exist and follow the same train-then-tag protocol; their results are outside this specification.
 
-LINGORA’s **recommended** tagger for English and for Russian is a separately packaged averaged perceptron tagger. The recommended English tagger uses the Penn Treebank tagset; the recommended Russian tagger uses the Russian National Corpus tagset. The caller may ask the recommended tagger to map tags into the **universal** tagset. Mapping English tags into that tagset also requires the packaged universal tagset tables; mapping Russian tags does not. English mapping success when those tables are present is **not** independently graded.
+LINGORA’s **recommended** tagger for English and for Russian is a separately packaged averaged perceptron tagger. The recommended English tagger uses the Penn Treebank tagset; the recommended Russian tagger uses the Russian National Corpus tagset. The caller may ask the recommended tagger to map tags into the **universal** tagset. Mapping English tags into that tagset also requires the packaged universal tagset tables; mapping Russian tags does not. The English mapping's results when those tables are present are outside this specification.
 
 **Normal behavior:**
 
-- A default tagger constructed to assign `NN` applied to the token list `This`, `is`, `a`, `test` yields four tagged tokens, each tagged `NN`.
-- A unigram tagger trained on two tagged sentences — `the`/`DT` then `dog`/`NN`, and `the`/`DT` then `cat`/`NN` — applied to `the`, `dog` tags `the` as `DT` and `dog` as `NN`. Applied to `the`, `xyz` tags `the` as `DT` and assigns **no tag** to `xyz` (the tag is absent). An observer can tell a trained unigram tagger from a default tagger on `xyz`.
-- The same unigram tagger with a default-`NN` tagger as backoff tags `xyz` as `NN`. The backoff is used only for tokens the unigram tagger does not tag; `the` remains `DT`.
-- A regular-expression tagger whose only rule tags any token matching a number pattern as `CD`, applied to `saw`, `3`, `dogs`, tags `3` as `CD` and assigns no tag to `saw` and `dogs` unless a backoff is set.
-- Tagging an empty token list yields an empty list of tagged tokens.
-- When the English averaged perceptron tagger resource is installed, the recommended English tagger applied to this ten-token list — John, `'s`, big, idea, is, `n't`, all, that, bad, and a point — yields these tags, in order: John is a singular proper noun; `'s` is a possessive ending; big is an adjective; idea is a common singular noun; is is a third-person singular verb; `n't` is an adverb; all is a predeterminer; that is a determiner; bad is an adjective; the point is a punctuation tag.
-- When that same English resource is installed, the recommended English tagger applied to the thirteen homepage tokens of `At eight o'clock on Thursday morning Arthur didn't feel very good.` tags Thursday and Arthur as singular proper nouns and morning as a common singular noun. An observer can tell a proper name from a common noun on that advertised sentence.
-- When the Russian averaged perceptron tagger resource is installed, the recommended tagger with the language set to Russian, applied to the seven-token list Илья, оторопел, и, дважды, перечитал, бумажку, and a point, tags Илья as a noun (S), оторопел as a verb (V), и as a conjunction, дважды as an adverb, перечитал as a verb, бумажку as a noun, and the point as non-lexical. Asking for the universal tagset maps the noun and verb tags to the universal noun and verb labels.
+- A tagger returns one tagged token per input token, in input order, each pairing the input token with its tag or with no tag. Tagging an empty token list yields an empty list.
+- **Default tagger.** It assigns its one configured tag to every token.
+- **Unigram tagger.** Each word seen in training receives the tag it was seen with most often in training. Ties are broken in the implementer's choice of way. A word never seen in training receives no tag.
+- **Regular-expression tagger.** Rules are tried in the caller's order. A token receives the tag of the first rule whose pattern matches the token starting at its first character. A token no rule matches receives no tag.
+- **Backoff.** A backoff tagger is consulted only for tokens the primary tagger leaves without a tag. Tokens the primary tagger tagged keep their tags.
+- **Recommended English tagger.** It is the greedy averaged perceptron part-of-speech tagger published as *textblob-aptagger* (M. Honnibal, 2013), with that tagger's feature templates, word normalisation and sentence-boundary context. It reads its weights, tag dictionary and classes from the packaged English resource and returns the Penn Treebank tags that the packaged model assigns. The whole token list is tagged as one sentence, from left to right, and the tags already assigned to earlier tokens are context for later ones.
+- **Recommended Russian tagger.** It is the same algorithm reading the packaged Russian resource, and returns the model's Russian National Corpus tags.
+- **Universal tagset mapping.**
+  - English tags are mapped with the packaged English Penn Treebank → universal table (the universal tagset of Petrov, Das and McDonald, 2012).
+  - Russian tags are mapped by the part before any `=`: each Russian National Corpus part-of-speech category is mapped to the universal category of the same part of speech, so nouns and verbs map to the universal noun and verb categories. The exact table is the implementer's choice.
 
 **Boundary / error behavior:**
 
-- The recommended tagger accepts a **list of tokens**, not a raw string. Passing the untokenized string `John's big idea isn't all that bad.` does not succeed. The failure is distinguishable from a successful tagging of the tokenized list.
-- The recommended tagger supports only English and Russian. Asking it to tag with a language that is neither (for example Korean) does not succeed. Asking it with English on a token list succeeds when the English resource is installed.
-- When the averaged perceptron tagger resource for the requested language is not installed, the recommended tagger does not succeed. A unigram or default tagger trained or constructed by the caller on the same process still succeeds; the recommended path’s failure is not a license to skip tagging entirely.
-- When the caller asks the recommended English tagger for the universal tagset and the packaged universal tagset tables are not installed, that mapping does **not** succeed. Tagging the same list without asking for the universal tagset still succeeds if the English averaged perceptron tagger resource is installed.
-- Words never seen in unigram training receive no tag unless a backoff tagger assigns one. An implementation that invents a tag for an unseen word without backoff fails this feature point.
-
-**Verifiable oracle:**
-
-- Success: a default `NN` tagger tags every token `NN`; a unigram tagger trained on `the`/`DT` and `dog`/`NN` tags those words that way and leaves `xyz` untagged; the same tagger with default-`NN` backoff tags `xyz` as `NN` and keeps `the` as `DT`; an empty token list tags as empty; a raw string is refused by the recommended tagger; an unsupported language is refused; with the English resource installed, the ten-token John list receives the Penn Treebank tags named above, and the homepage Arthur sentence tags Thursday and Arthur as proper nouns and morning as a common noun; without the perceptron resource, the recommended path fails and a trained unigram tagger still works; without the universal tagset tables, English universal mapping fails and Penn Treebank tagging of the same list still works.
-- Failure / absence: every token gets the same tag regardless of training; unseen words are tagged without backoff; the recommended tagger accepts a raw string; Korean is treated as English; the recommended path succeeds with no tagger resource; English universal mapping succeeds with no universal tagset tables; the John sentence or the homepage Arthur sentence is tagged with tags that do not distinguish a proper noun from a common noun when the English resource is installed.
+- The recommended tagger accepts a **list of tokens**, not a raw string. Passing an untokenized string does not succeed, and the failure is distinguishable from a successful tagging.
+- The recommended tagger supports only English and Russian. Asking it to tag with any other language does not succeed.
+- When the averaged perceptron tagger resource for the requested language is not installed, the recommended tagger does not succeed. The resource of the other language does not satisfy it.
+- When the caller asks the recommended English tagger for the universal tagset and the packaged universal tagset tables are not installed, that mapping does **not** take place: the call either fails or returns tags that are not mapped. Russian mapping does not need those tables.
 
 ---
 
 ### FP-04: Chunking
 
-**Public entry:** LINGORA’s chunk parser that reads a **chunk grammar** and is applied to a list of tagged tokens. The grammar is a text with one or more clauses. Each clause names a chunk label and then lists tag patterns. A pattern enclosed in braces chunks every matching unchunked sequence. A pattern written with a closing brace, then a tag pattern, then an opening brace, strips matching tokens out of an existing chunk (a chink). Clauses run in order and may cascade, so a later clause can chunk over the output of an earlier clause. A chink is a later pattern in the same clause, not a later clause. The root label of the resulting chunk structure defaults to a sentence label.
+**Public entry:** LINGORA’s chunk parser that reads a **chunk grammar** and is applied to a list of tagged tokens. The grammar is a text with one or more clauses. Each clause names a chunk label and then lists tag patterns. A pattern enclosed in braces is a chunk rule. A pattern written with a closing brace, then a tag pattern, then an opening brace, is a chink rule. The root label of the resulting chunk structure defaults to a sentence label that is the same for every parser and differs from clause labels.
 
-A separately packaged named-entity chunker exists. It requires its trained model and tagged input. It is a resource-gated path, not the primary way to satisfy this feature point. Present-resource success of that path is **not** independently graded.
+A separately packaged named-entity chunker exists. It requires its trained model and tagged input. It is a resource-gated path, not the primary way to satisfy this feature point. Its results when the resource is present are outside this specification.
 
 **Normal behavior:**
 
-- A chunk grammar whose only clause is a noun-phrase label with the tag pattern “optional determiner, zero or more adjectives, then a common noun”, applied to the tagged tokens `the`/`DT`, `big`/`JJ`, `dog`/`NN`, `barked`/`VBD`, yields a chunk structure whose root is the sentence, whose first child is one noun-phrase chunk covering `the big dog`, and whose next child is the tagged token `barked`/`VBD` as a leaf (not inside that noun phrase).
-- The same grammar applied to `dog`/`NN`, `barked`/`VBD` yields a noun-phrase chunk covering only `dog`, then `barked` as a leaf.
-- The same grammar applied to `barked`/`VBD` alone yields a sentence whose only child is that tagged token; it does **not** invent a noun-phrase chunk.
-- A chunk grammar whose only clause chunks four or more consecutive tags that begin with `N` (a curly-bracket quantifier inside the tag pattern), applied to a tagged-token list in which these runs appear in this order and are separated by tagged tokens whose tags do not begin with `N` — first the four-token run `Court`/`NN-TL`, `Judge`/`NN-TL`, `Durwood`/`NP`, `Pye`/`NP`; later the two-token run `term`/`NN`, `jury`/`NN`; and later the four-token run `Mayor-nominate`/`NN-TL`, `Ivan`/`NP`, `Allen`/`NP`, `Jr.`/`NP` — yields exactly two chunks of that label, each covering one of those two four-token runs, and does not chunk the two-token `term`/`jury` run. Concatenating the three runs with no such separator yields one chunk over all ten tokens, not two four-token chunks.
-- A grammar whose first pattern chunks every tagged token into one noun-phrase, and whose next pattern in the same clause is a chink of one or more consecutive past-tense-verb or preposition tags, applied to `the`/`DT`, `little`/`JJ`, `cat`/`NN`, `sat`/`VBD`, `on`/`IN`, `the`/`DT`, `mat`/`NN`, yields two noun-phrase chunks (`the little cat` and `the mat`) with `sat`/`VBD` and `on`/`IN` as sentence leaves between them. An observer can tell a chink from a grammar that only chunks: without the chink, the whole list is one noun-phrase. Putting that chink in a later clause instead of in the same clause leaves the whole list as one noun-phrase.
-- The chunk structure’s leaves, in order, are exactly the input tagged tokens. Chunking groups; it does not drop, reorder, or retag tokens.
+- A tag pattern is matched against the sequence of tags of the tokens. Each angle-bracketed element matches one token whose whole tag matches the element read as a regular expression over the tag string (`.` matches any character of a tag, `|` is alternation). Quantifiers after an element (`?`, `*`, `+`, and a brace count such as at least *n*) apply to that element. Whitespace in a pattern is ignored.
+- **Chunk rule.** Every match of the pattern among tokens not yet in a chunk becomes one chunk carrying the clause's label. Matches are found left to right, each as long as possible, without overlap. Two matches that touch are two separate chunks. Tokens no rule chunks stay direct children of the root.
+- **Chink rule.** It removes the matching tokens from the chunks built earlier in the same clause. A chunk whose interior is removed is split into the parts on either side, and chinked tokens become direct children of the root.
+- The rules of a clause apply in their written order. Clauses apply in their written order. A later clause sees every chunk built by an earlier clause as a single unit whose tag is that chunk's label, so it can chunk the remaining tokens but cannot chink inside an earlier clause's chunks.
+- The chunk structure's leaves, in order, are exactly the input tagged tokens. Chunking groups tokens; it never drops, reorders, or retags them.
 
 **Boundary / error behavior:**
 
 - An empty tagged-token list yields a chunk structure with a sentence root and no children.
 - A chunk grammar that is not text and not a list of chunk-parser stages is refused. The operation does not succeed and does not return a chunk structure.
-- When the named-entity chunker resource is not installed, the named-entity path does not succeed. A chunk-grammar parse of a caller-supplied tagged sentence still succeeds.
-
-**Verifiable oracle:**
-
-- Success: `the`/`DT` `big`/`JJ` `dog`/`NN` `barked`/`VBD` with an optional-determiner–adjective–noun grammar has one noun-phrase chunk over the first three tokens and `barked` as a sentence leaf; `barked` alone has no noun-phrase chunk; the four-or-more-noun-tags grammar, on those three runs separated by non-N tags, chunks the two four-token proper-noun runs and not the two-token `term jury` run; the same-clause chunk-then-chink grammar on `the little cat sat on the mat` yields two noun-phrases with `sat` and `on` as leaves; leaves equal the input; a non-grammar value is refused; without the named-entity resource that path fails and the grammar path still works.
-- Failure / absence: the output is a flat list with no chunk nodes; tokens are dropped or reordered; `barked` is placed inside the noun phrase; the four-token quantifier is ignored so `term jury` is also chunked; the chink is ignored so `sat` stays inside one noun-phrase; a missing named-entity resource is treated as success with an empty tree.
+- When the named-entity chunker resource is not installed, the named-entity path does not succeed, even when a tagger resource is installed.
 
 ---
 
@@ -254,31 +235,32 @@ A separately packaged named-entity chunker exists. It requires its trained model
 
 **Public entry:** LINGORA’s context-free grammar reader; the recursive-descent, shift-reduce, and chart parsers that take such a grammar and a token list; the generator that enumerates strings from a grammar; and the constituent-tree entries that build a tree from a label plus children, build a tree from **bracketed tree text**, compare trees, read a node label, read children by position, list leaves, and pretty-print a tree.
 
-The **graded** exhaustive parse counts on the fourteen-production grammar below are those of a **chart** parser. A recursive-descent parser exists; listing every parse of that grammar with it does not complete, so it is **not** independently graded here. A shift-reduce parser is graded on the unambiguous five-token sentence, not on the ambiguous rug sentence.
+The parsers specified here are the chart parser, which is exhaustive, and the shift-reduce parser. A recursive-descent parser exists; its results are outside this specification.
 
 This feature point depends on tokens (FP-01) only as a list of terminals the caller already has. It does not require Punkt, a tagger, or a corpus.
 
 **Normal behavior:**
 
-- A context-free grammar read from the productions `S -> NP VP`, `PP -> P NP`, `NP -> Det N | NP PP`, `VP -> V NP | VP PP`, `Det -> 'a' | 'the'`, `N -> 'dog' | 'cat'`, `V -> 'chased' | 'sat'`, `P -> 'on' | 'in'` reports a start symbol S and fourteen productions. The terminals include `the`, `cat`, `chased`, and `dog`.
-- A chart parser for that grammar, applied to the token list `the`, `cat`, `chased`, `the`, `dog`, yields exactly one parse tree. That tree’s root label is S. Its leaves, in order, are those five tokens. It has an NP covering `the cat` and a VP that contains a V `chased` and an NP covering `the dog`.
-- The same parser applied to `the`, `cat`, `chased`, `the`, `dog`, `on`, `the`, `rug` — after the grammar is extended with `N -> 'rug'` — yields **more than one** parse tree. One tree attaches `on the rug` inside the object noun phrase; another attaches it to the verb phrase. An observer can tell the two trees apart by which constituent immediately dominates the PP. Both trees have the same eight leaves in the same order.
-- The same parser applied to `dog`, `cat`, `the` yields **no** parse tree. The operation succeeds as an empty set of parses; it does not invent a tree.
-- A shift-reduce parser for the unambiguous five-token sentence yields the same single tree shape as the chart parser on that sentence (S over NP `the cat` and VP `chased the dog`).
-- Generating strings from a grammar `S -> A B`, `A -> 'a'`, `B -> 'b' | ''` (B may be the empty string) yields both `a` then `b`, and `a` then an empty token. Generating from the same grammar where B has an empty production (no quoted empty string) yields `a` then `b`, and a one-token string `a`.
-- A tree built from the bracketed text `(S (NP I) (VP (V saw) (NP him)))` equals a tree built by giving label S two children: an NP whose only leaf is I, and a VP whose children are a V `saw` and an NP `him`. The pretty-printed form of either tree shows the S, NP, VP, V, and NP labels and the leaves I, saw, and him in that order. Changing the inner NP’s label to X makes the two trees unequal and makes the pretty-printed form show X in place of that NP.
-- Two trees compare equal when they have the same labels and the same children recursively, and unequal otherwise. A tree’s length is the number of its immediate children. Leaves of the S-I-saw-him tree are I, saw, him in that order.
+- **Grammar reader.**
+  - The start symbol is the left-hand side of the first production.
+  - Each alternative separated by `|` is a production of its own.
+  - A quoted terminal is the text inside its quotes, and an unquoted symbol is a nonterminal.
+  - A quoted empty string is a terminal that is the empty string. A production with nothing after its arrow is an empty production.
+  - Production lines appended to a grammar text add their productions.
+- **Chart parser.** It returns every parse tree the grammar assigns to the token list: none for a token list the grammar does not derive, and several for an ambiguous one. Each tree's root is the start symbol, its leaves in order are the input tokens, and it has one internal node per production used.
+- **Shift-reduce parser.** It parses by a single left-to-right shift-reduce pass without backtracking: whenever the top of the stack matches the right-hand side of a production, it reduces; otherwise it shifts the next token. It returns the parse that pass completes, or none. On an unambiguous sentence that the pass completes, the tree is the same as the chart parser's.
+- **Generator.** It enumerates the sentences the grammar derives from the start symbol, each as a list of terminal tokens, expanding productions in their written order, up to an optional count and an optional depth bound. A quoted empty string contributes an empty-string token. An empty production contributes no token.
+- **Trees.**
+  - A tree has a label and an ordered list of immediate children; a child is a token string (a leaf) or a tree. Its length is the number of immediate children, and its children can be read by position.
+  - Its leaves are the token strings under it in left-to-right order.
+  - Two trees are equal exactly when their labels are equal and their children are equal pairwise, recursively.
+  - A tree read from bracketed tree text equals the tree built from the same labels and children.
+  - The pretty-printed form shows every label and leaf in left-to-right (pre-order) order.
 
 **Boundary / error behavior:**
 
-- Building a tree from a label and a **string** as the child list (instead of a list of children) is refused. Building a tree from a label with no child list is refused. The failure is distinguishable from a successful tree with no children.
-- A parser given a token that the grammar’s productions do not mention — `the`, `unicorn`, `chased`, `the`, `dog` against the grammar above — does **not** succeed. The failure is distinguishable from a successful empty set of parses.
-- A chart parser given an empty token list against a grammar whose start symbol cannot expand to the empty string yields an empty set of parses.
-
-**Verifiable oracle:**
-
-- Success: a chart parser on the fourteen-production grammar parses `the cat chased the dog` as exactly one S tree with those leaves; the eight-token rug sentence has at least two parses that differ in PP attachment; `dog cat the` has zero parses; generation from A=`a` and B=`b` or empty yields both the two-token and the empty-B outcomes; the bracketed S-I-saw-him text equals the constructed tree and pretty-prints those labels and leaves; changing a label breaks equality; a string passed as the child list is refused; an out-of-lexicon token is refused, distinct from a successful empty set of parses.
-- Failure / absence: every token list yields one dummy tree; ambiguity is collapsed to a single tree; ungrammatical input still yields a tree; bracketed text is not read; trees with different labels compare equal; generation ignores empty productions.
+- Building a tree from a label and a **string** as the child list (instead of a list of children) is refused. Building a tree from a label with no child list is refused. A tree with an empty child list is a valid tree with no children, distinguishable from both refusals.
+- A parser given a token list that contains a token no production of the grammar produces does **not** succeed. That failure is distinguishable from a successful empty set of parses, which is the outcome for a list of covered tokens that the grammar does not derive.
 
 ---
 
@@ -286,27 +268,23 @@ This feature point depends on tokens (FP-01) only as a list of terminals the cal
 
 **Public entry:** LINGORA’s Naive Bayes classifier and decision tree classifier. The caller supplies a training list of labeled featuresets. After training, the caller asks for a label, and (for Naive Bayes) for a probability distribution over labels. An accuracy helper compares a classifier’s labels on a test list to the gold labels.
 
-This feature point does not require a downloaded corpus. The caller builds featuresets in memory.
+This feature point does not require a downloaded corpus. The caller builds featuresets in memory, with any feature names and labels.
 
 **Normal behavior:**
 
-- Training a Naive Bayes classifier on two examples — one featureset in which the features named nice and good are present, labeled positive; one featureset in which the features named bad and mean are present, labeled negative — then classifying a featureset in which only nice is present, yields the label positive. The probability assigned to positive is strictly greater than the probability assigned to negative.
-- The same trained classifier, given a featureset in which only bad is present, yields the label negative, and the probability of negative is strictly greater than the probability of positive.
-- A feature name that never occurred in training is ignored: adding a never-seen feature to the nice-only featureset does not flip the label from positive to negative and does not make every label probability zero.
-- Training a decision tree classifier on the same two labeled featuresets, then classifying the featureset in which nice and good are present, yields positive; classifying the featureset in which bad and mean are present yields negative.
-- Accuracy of a classifier that labels three test examples as positive, positive, negative against gold labels positive, negative, negative is two thirds (two of three positions match). Accuracy is a fraction of positions, not of unique labels.
-- The trained Naive Bayes classifier can list its labels; the list contains positive and negative and does not contain a third training label that was never seen.
+- **Naive Bayes.**
+  - Training estimates label prior probabilities and, per label, the probability of each feature value from the training frequencies. The estimates are smoothed so that no feature value seen with some label gets probability zero under another label.
+  - Classifying uses only the features of the queried featureset that occurred in training. A feature name never seen in training is ignored.
+  - The returned label is the label with the highest posterior probability.
+  - The probability distribution assigns each trained label its posterior probability. The probabilities are real numbers summing to one.
+  - The classifier lists exactly the labels seen in training.
+- **Decision tree.** It learns tests on feature values from the labeled featuresets; a feature absent from a featureset counts as having no value. It chooses at each node the feature whose test classifies the training examples reaching that node best. A leaf returns the majority training label of the examples that reach it. When a single feature's values separate the training labels, each training featureset is classified with its own training label.
+- A featureset that shares no feature with the training data still receives one of the trained labels, from either classifier. It is never refused, and it never receives a label that did not occur in training.
+- **Classifier accuracy.** It is the fraction of gold examples, position by position, for which the classifier's label for the example's featureset equals the gold label.
 
 **Boundary / error behavior:**
 
-- Classifying with a featureset that is empty of every training feature still returns one of the trained labels. It does not refuse the call and does not return a label that was not in training.
-- Accuracy on two lists of different lengths does not succeed. Accuracy on two lists of the same length succeeds and is the fraction of matching positions.
-- This feature point is not satisfied by a function that always returns the first training label regardless of the featureset. An observer who swaps the nice-only and bad-only queries on the trained Naive Bayes classifier must see the two labels swap.
-
-**Verifiable oracle:**
-
-- Success: after the two-example training, nice-only is positive with a higher probability than negative; bad-only is negative with a higher probability than positive; a never-seen feature does not zero all probabilities or flip nice-only to negative; a decision tree trained on the same data labels the nice-and-good featureset positive and the bad-and-mean featureset negative; accuracy of positive/positive/negative against positive/negative/negative is two thirds; mismatched-length accuracy fails; swapping the two Naive Bayes queries swaps the labels.
-- Failure / absence: every featureset gets the same label; probabilities are missing or do not rank the two labels as named; unseen features make the classifier fail closed (all probabilities zero) or throw away the example; a decision tree cannot be trained from the same labeled featuresets; accuracy ignores order and only compares bags of labels.
+- Two-list accuracy (FP-07) on lists of different lengths does not succeed.
 
 ---
 
@@ -318,36 +296,36 @@ These metrics are pure functions of the arguments the caller supplies. They do n
 
 **Normal behavior:**
 
-- Edit distance between `rain` and `shine`, with substitution cost 1 and transpositions off, is 3. The same pair with substitution cost 2 is 5.
-- Edit distance between `abc` and `ca` with transpositions **off** is 3; with transpositions **on** it is 2. An observer can tell the two modes apart on this pair.
-- Edit distance between `acbdef` and `abcdef` is 2 with transpositions off and 1 with transpositions on.
-- Edit distance between a string and itself is 0. Edit distance is symmetric on `rain` and `shine`.
-- Jaccard distance between two identical sets is 0. Jaccard distance between two disjoint non-empty sets is 1. Jaccard distance between `{1, 2, 3}` and `{2, 3, 4}` is one half (the symmetric difference has two elements, the union has four).
-- Accuracy of the list 1, 2, 3 against the list 1, 2, 4 is two thirds. Accuracy of a list against itself is 1.
-- Precision of the reference set `{1, 2, 3}` against the test set `{2, 3, 4}` is two thirds (two of the three test elements are in the reference). Recall of that same pair is two thirds (two of the three reference elements are in the test). The f-measure of that pair, with equal weight on precision and recall, is two thirds.
-- BLEU computed with **only unigram** weight, of the candidate `John loves Mary` against a reference that shares no token with it, is 0. BLEU with only unigram weight, of a candidate that is identical to its only reference, is 1.
-- BLEU computed with the default equal weights on unigrams through 4-grams and **without** smoothing, of a two-token candidate that is identical to its only reference, is 0 to four decimal places. An observer can tell that default from unigram-only BLEU on the same pair: unigram-only is 1; default unsmoothed four-weight is 0 to four decimal places.
-- BLEU of the long candidate `It is a guide to action which ensures that the military always obeys the commands of the party` against these three reference token lists — `It is a guide to action that ensures that the military will forever heed Party commands`; `It is the guiding principle which guarantees the military forces always being under the command of the Party`; and `It is the practical guide for the army always to heed the directions of the party` — is a score strictly between 0 and 1, and is strictly greater than BLEU of the poorer candidate `It is to insure the troops forever hearing the activity guidebook that party direct` against the same three references.
+- **Edit distance.**
+  - It is the minimum total cost of edits that turn the first string into the second.
+  - Insertion and deletion of one character cost 1 each. Substitution of one character by a different one costs the caller's substitution cost, which defaults to 1.
+  - With transpositions on (off by default), the distance is the unrestricted Damerau–Levenshtein distance (Lowrance and Wagner, 1975). A transposition of two adjacent characters costs 1, and characters may also be inserted between, or deleted from between, the two transposed characters.
+  - The distance of a string to itself is 0, and the distance is symmetric.
+- **Jaccard distance.** It is the size of the symmetric difference of the two sets divided by the size of their union.
+- **Accuracy.** For two lists of equal length, it is the fraction of positions at which they hold equal values.
+- **Precision, recall and f-measure.**
+  - Precision is |reference ∩ test| / |test|. Recall is |reference ∩ test| / |reference|.
+  - The f-measure is the weighted harmonic mean 1 / (α / precision + (1 − α) / recall), with α = 0.5 by default. It is 0 when precision or recall is 0.
+- **BLEU.** It is the standard sentence-level BLEU score (Papineni et al., 2002):
+  - Each n-gram order has a modified precision: candidate n-gram counts are clipped by the maximum count of that n-gram in any one reference.
+  - The precisions are combined as a geometric mean weighted by the caller's weights, one weight per order starting from unigrams. The default is equal weights on unigrams through 4-grams.
+  - The result is multiplied by the brevity penalty, computed from the reference length closest to the candidate length (the shorter one when two are equally close).
+  - Tokens are compared exactly as given.
+  - Without a smoothing function, the score is 0 when the candidate has no unigram match. When any other weighted order has no match, the score is 0 or negligibly close to 0.
 
 **Boundary / error behavior:**
 
 - Accuracy on two lists of different lengths does not succeed.
-- Precision and recall require sets. Passing lists (or other non-set collections) does not succeed.
-- Precision of a non-empty reference against an **empty** test set is absent (no number is returned). Recall of an **empty** reference against a non-empty test set is absent. F-measure is absent when either side is empty. These absences are distinguishable from the number 0, which is what f-measure returns when both sets are non-empty and their intersection is empty.
+- Precision and recall require sets. Lists, tuples and other non-set collections are refused. Precision with an empty test set, recall with an empty reference set, and f-measure when either set is empty return no number. That absence is distinguishable from the number 0.
 - Edit distance of two empty strings is 0.
-
-**Verifiable oracle:**
-
-- Success: `rain`/`shine` is 3 at substitution cost 1 and 5 at cost 2; `abc`/`ca` is 3 without transpositions and 2 with them; self-distance is 0; Jaccard of identical sets is 0, of disjoint sets is 1, of `{1,2,3}` vs `{2,3,4}` is one half; accuracy of 1,2,3 vs 1,2,4 is two thirds; precision and recall of `{1,2,3}` vs `{2,3,4}` are two thirds; empty-test precision is absent, not 0; empty-vs-disjoint f-measure is 0 when both sets are non-empty and disjoint; unigram BLEU is 0 on no overlap and 1 on identity; default unsmoothed four-weight BLEU is 0 to four decimal places on a two-token identity; the long guide-to-action candidate scores higher than the insure-the-troops candidate against the three fully written references named above; mismatched-length accuracy fails; precision on lists fails.
-- Failure / absence: distances ignore transpositions; Jaccard is reported as a count instead of a distance; accuracy treats bags not sequences; empty-test precision is 0; default BLEU on a two-token identity is 1; the two guide-to-action candidates receive the same score; a list is silently accepted where a set is required.
 
 ---
 
-## Out of graded scope (present in the product, not a feature point)
+## Outside this specification (present in the product, not a feature point)
 
-The following surfaces exist in LINGORA and are intentionally **not** independent feature points in this medium-tier PRD. Later stages must not treat them as missing core capabilities, and must not treat a stub of them as satisfying FP-01 through FP-07.
+The following surfaces exist in LINGORA and are not feature points of this PRD. They are outside this specification.
 
-- Packaged corpora, WordNet, the data finder, and the downloader (including the downloader graphical interface).
+- Packaged corpora, WordNet, the data finder, and the downloader (including the downloader graphical interface), beyond what the feature points state about locating packaged models.
 - Graphical applications and tree/table drawing.
 - Chat, Twitter, Hugging Face, and Toolbox helpers.
 - External-binary wrappers (Stanford, Senna, Hunpos, Malt, Bllip, CoreNLP, Weka, MEGAM, TADM).

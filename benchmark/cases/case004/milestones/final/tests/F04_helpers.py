@@ -17,7 +17,7 @@ from _harness import (
     call,
     require_value,
 )
-from F01_helpers import _bytes_on_failure, runtime_ascii_letter
+from F01_helpers import runtime_ascii_letter
 from F02_helpers import (
     matching_signer,
     payload_section,
@@ -405,20 +405,10 @@ def arrange_runtime_invalid_compressed_token(
 def assert_urlsafe_missing_not_malformed_timestamp(
     missing: BaseException,
     malformed: BaseException,
-    *,
-    covariates: tuple[Any, ...] = (),
 ) -> None:
-    """L201: same-secret uncompressed missing is not the compressed malformed kind.
-
-    Does not pin exception class names or message wording. After stripping
-    both tokens, both objects, payload sections, and any bytes carried on
-    the failures (payload echo of those tokens), a stable kind difference
-    must remain. A helper that uses one no-datetime rejection for both
-    fixtures fails this contrast.
-    """
-    echoes = tuple(_bytes_on_failure(missing) + _bytes_on_failure(malformed))
+    """L201: same-secret uncompressed missing is not the compressed malformed kind."""
     require_distinct_failure_kinds(
-        missing, malformed, covariates=covariates + echoes
+        missing, malformed, expect=("missing-timestamp", "malformed-timestamp")
     )
     print(
         "URL-safe missing-timestamp refusal is a distinct kind "

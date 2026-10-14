@@ -1,10 +1,10 @@
 # feature: F03
 """FP-03: parse TOML from a binary file object.
 
-Assertions follow Full_PRD.original.md FP-03 (L164–L183). Structural and
+Assertions follow the PRD FP-03. Structural and
 scalar fine rules are FP-01 / FP-02; this feature proves those rules apply
 to the UTF-8 text of a binary file, that text-mode is a type error (not a
-decode error; FP-04 L215), and that non-UTF-8 bytes do not succeed.
+decode error; FP-04), and that non-UTF-8 bytes do not succeed.
 """
 
 from __future__ import annotations
@@ -91,7 +91,7 @@ def _assert_named_root(mapping) -> None:
 
 
 def _assert_text_mode_type_error(result) -> None:
-    """L176: type error, not decode error, and no document mapping."""
+    """type error, not decode error, and no document mapping."""
     exc = require_type_error(result)
     assert isinstance(exc, TypeError), (
         f"text-mode file must be a type error, got {type(exc).__name__}: {exc!r}"
@@ -106,7 +106,7 @@ def _assert_text_mode_type_error(result) -> None:
 
 
 def _assert_non_utf8_unsuccessful(result) -> None:
-    """L177: no document mapping; the call does not succeed."""
+    """no document mapping; the call does not succeed."""
     require_unsuccessful(result)
     has_mapping = False
     if result.value is not None:
@@ -166,7 +166,7 @@ def _valid_utf8_baseline_buffer():
 
 
 # ---------------------------------------------------------------------------
-# A. Named root document: binary matches string (L170, L182)
+# A. Named root document: binary matches string
 # ---------------------------------------------------------------------------
 
 
@@ -189,7 +189,7 @@ def test_runtime_root_pair_binary_matches_string():
 
 
 # ---------------------------------------------------------------------------
-# B. Empty file is an empty mapping (L171, L182)
+# B. Empty file is an empty mapping
 # ---------------------------------------------------------------------------
 
 
@@ -211,7 +211,7 @@ def test_empty_binary_file_is_empty_mapping(isolated_ws):
 
 
 # ---------------------------------------------------------------------------
-# C. Bytes as UTF-8; CRLF is one line feed (L171, L182)
+# C. Bytes as UTF-8; CRLF is one line feed
 # ---------------------------------------------------------------------------
 
 
@@ -254,7 +254,7 @@ def test_non_ascii_utf8_via_binary_buffer():
 
 
 # ---------------------------------------------------------------------------
-# D. FP-01 / FP-02 representative documents (L172, L182)
+# D. FP-01 / FP-02 representative documents
 # ---------------------------------------------------------------------------
 
 
@@ -334,7 +334,7 @@ def test_runtime_v11_inline_table_binary_matches_string(isolated_ws):
 
 
 # ---------------------------------------------------------------------------
-# E. Text-mode file object: type error, not decode error (L176, L183)
+# E. Text-mode file object: type error, not decode error
 # ---------------------------------------------------------------------------
 
 
@@ -399,7 +399,7 @@ def test_runtime_text_buffer_refused_as_type_error():
 
 
 # ---------------------------------------------------------------------------
-# F. Non-UTF-8 bytes: call does not succeed, no mapping (L177, L183)
+# F. Non-UTF-8 bytes: call does not succeed, no mapping
 # ---------------------------------------------------------------------------
 
 

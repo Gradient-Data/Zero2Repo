@@ -19,7 +19,14 @@ __all__ = [
     "CONTAINER_DENYLIST_HASHES_PATH",
     "DEFAULT_FIX_RETRIES",
     "GITHUB_BLOCK_HOSTS",
+    "OTHER_CODE_HOSTS",
+    "GITHUB_MIRROR_HOSTS",
+    "CODE_HOST_BLOCK_HOSTS",
     "build_fix_instruction",
+    "build_access_fix_instruction",
+    "CONTAINER_ACCESS_MONITOR_PATH",
+    "render_access_monitor",
+    "render_access_hook",
     "install_ban_hashes",
     "FORBIDDEN_IMPORT_BAN",
     "MissingDenylist",
@@ -54,6 +61,8 @@ ALLOWED_JUDGE_BANS = frozenset(
 CONTAINER_DENYLIST_HASHES_PATH = "/opt/cbrun/denylist.hashes"
 CONTAINER_STRIP_SCRIPT_PATH = "/opt/cbrun/strip_banned.py"
 CONTAINER_PIP_HOOK_PATH = "/opt/cbrun/cbrun_denylist_hook.py"
+CONTAINER_ACCESS_MONITOR_PATH = "/opt/cbrun/access_monitor.py"
+CONTAINER_ACCESS_HOOK_PATH = "/opt/cbrun/cbrun_access_hook.py"
 SHIM_BIN_DIR = "/opt/cbrun/bin"
 PIP_BLOCK_CMDS = frozenset({"install", "i", "add", "download", "wheel"})
 _PROBEABLE_ROOT = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
@@ -62,6 +71,12 @@ _COMMAND_LIKE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _HEADER_SUFFIXES = (".h", ".hh", ".hpp", ".hxx", ".cpp", ".cc", ".cxx")
 DEFAULT_FIX_RETRIES = 1
 
+# Hostnames pointed at 0.0.0.0 in the solve container's /etc/hosts, so a clone
+# or download of the upstream repository fails at run time. Only code hosts and
+# their mirrors are listed: package registries (PyPI, npm, Go proxy, crates.io,
+# ...) stay reachable because ordinary dependency installs need them; the
+# post-trial transcript scan (``transcript_scan``) reports source archives
+# fetched from them.
 GITHUB_BLOCK_HOSTS = (
     "github.com",
     "www.github.com",
@@ -70,7 +85,49 @@ GITHUB_BLOCK_HOSTS = (
     "gist.github.com",
     "raw.githubusercontent.com",
     "objects.githubusercontent.com",
+    "gist.githubusercontent.com",
+    "media.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+    "github-releases.githubusercontent.com",
+    "objects-origin.githubusercontent.com",
+    "uploads.github.com",
 )
+
+# Other public code hosts.
+OTHER_CODE_HOSTS = (
+    "gitlab.com",
+    "www.gitlab.com",
+    "gitee.com",
+    "www.gitee.com",
+    "bitbucket.org",
+    "www.bitbucket.org",
+    "api.bitbucket.org",
+    "sourcegraph.com",
+    "www.sourcegraph.com",
+    "codeberg.org",
+    "git.sr.ht",
+)
+
+# Well-known GitHub mirrors and download proxies.
+GITHUB_MIRROR_HOSTS = (
+    "ghproxy.com",
+    "mirror.ghproxy.com",
+    "ghproxy.net",
+    "gh-proxy.com",
+    "ghfast.top",
+    "hub.fastgit.org",
+    "hub.fastgit.xyz",
+    "download.fastgit.org",
+    "raw.fastgit.org",
+    "kkgithub.com",
+    "raw.kkgithub.com",
+    "bgithub.xyz",
+    "gitclone.com",
+    "githubfast.com",
+)
+
+# Everything ``--block-github`` (alias ``--block-code-hosts``) blocks.
+CODE_HOST_BLOCK_HOSTS = GITHUB_BLOCK_HOSTS + OTHER_CODE_HOSTS + GITHUB_MIRROR_HOSTS
 
 # Scan only source-like files under /app.
 _SOURCE_SUFFIXES = {
@@ -100,6 +157,7 @@ _SOURCE_SUFFIXES = {
     ".swift",
     ".kt",
     ".scala",
+    ".zig",
     ".sh",
     ".bash",
     ".zsh",
@@ -280,7 +338,7 @@ _JS_SUFFIXES = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
 _C_SUFFIXES = {".c", ".h", ".hpp", ".hh", ".cc", ".cxx", ".cpp", ".cu", ".cuh"}
 _HASH_COMMENT_SUFFIXES = _PY_SUFFIXES | {".rb", ".sh", ".bash", ".zsh", ".yaml", ".yml", ".toml"}
 _SLASH_COMMENT_SUFFIXES = (
-    _JS_SUFFIXES | _C_SUFFIXES | {".java", ".kt", ".scala", ".cs", ".go", ".rs", ".swift", ".dart"}
+    _JS_SUFFIXES | _C_SUFFIXES | {".java", ".kt", ".scala", ".cs", ".go", ".rs", ".swift", ".dart", ".zig"}
 )
 
 
@@ -439,6 +497,8 @@ def line_imports_token(line: str, token: str, suffix: str = ".py") -> bool:
         return _jvm_imports_token(code, token)
     if ext in _C_SUFFIXES:
         return _c_includes_token(code, token)
+    if ext == ".zig":
+        return _js_imports_token(code, token)
     if ext == ".rb":
         return _ruby_imports_token(code, token)
     if ext == ".php":
@@ -718,6 +778,43 @@ def build_fix_instruction(base_instruction: str, hits: list[ImportHit]) -> str:
     return "\n".join(lines)
 
 
+def build_access_fix_instruction(base_instruction: str, events: list[dict]) -> str:
+    """Instruction for the round after a monitored access stopped the agent."""
+    lines = [
+        base_instruction.rstrip(),
+        "",
+        "---",
+        "",
+        "## Stopped: access to a banned implementation",
+        "",
+        "Your previous session was stopped because the access monitor observed",
+        "the following. This is your first and only warning.",
+        "",
+    ]
+    for event in events[:10]:
+        lines.append(f"- {event.get('message') or event.get('kind')}")
+    if len(events) > 10:
+        lines.append(f"- ... and {len(events) - 10} more")
+    lines.extend(
+        [
+            "",
+            "Why this is forbidden: the files above belong to an existing implementation",
+            "of the product you must build. Reading, copying, disassembling, decompiling,",
+            "or using such an implementation as a dependency or an oracle (for example",
+            "running it to compare outputs) is not allowed, whatever tool or language does",
+            "it. Stopping, altering, or evading the access monitor is also forbidden.",
+            "",
+            "Continue from the current state of the workspace. Build the behavior yourself",
+            "from the PRD and the Interface Contract. Another violation fails this attempt.",
+            f"When you are done, write the submit file again at `{CONTAINER_SUBMIT_PATH}` "
+            f"with exactly the one-line contents `{SUBMIT_TOKEN}`. Ending the session is not a "
+            "submission.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 _PIP_SHIM = r"""#!/bin/bash
 set -eu
 HASHES="/opt/cbrun/denylist.hashes"
@@ -863,20 +960,26 @@ REAL="$(type -ap "$SELF" 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
 exec "${REAL:-$SELF}" "$@"
 """
 
-_STRIP_SCRIPT = r'''#!/usr/bin/env python3
-"""Remove image artefacts whose names hash to the denylist set."""
-from __future__ import annotations
-
-import hashlib
-import json
-import os
-import re
-import shutil
-import subprocess
-import sys
-from pathlib import Path
-
+# Shared by the strip script and the access monitor: find image artefacts whose
+# names hash to the denylist set. Never contains plaintext product names.
+_DISCOVERY_LIB = r'''
 HASHES = Path(os.environ.get("CBRUN_DENYLIST_HASHES", "/opt/cbrun/denylist.hashes"))
+# Directories where packages ship private copies of their dependencies.
+VENDOR_DIRS = {"_vendor", "vendor", "_vendored", "_vendored_packages", "extern"}
+# Interpreters whose packages cannot be uninstalled (agent CLIs, extra envs).
+EXTRA_PYTHON_GLOBS = (
+    "/opt/conda/envs/*/bin/python3",
+    "/root/.local/share/uv/python/*/bin/python3",
+    "/root/.local/share/uv/tools/*/bin/python3",
+)
+# Global Node trees; nested node_modules below them are searched too.
+NODE_ROOTS = (
+    "/usr/local/lib/node_modules",
+    "/usr/lib/node_modules",
+    "/opt/nodejs/lib/node_modules",
+    "/opt/cbrun/runtime/node/lib/node_modules",
+)
+WORKSPACE = "/app"
 
 
 def _norm(name: str) -> str:
@@ -922,6 +1025,107 @@ def _run_json(argv: list[str]) -> object | None:
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
         return None
 
+
+def _all_pythons() -> list[str]:
+    found = _pythons()
+    seen = {os.path.realpath(os.path.dirname(p)) for p in found}
+    for pattern in EXTRA_PYTHON_GLOBS:
+        for cand in sorted(glob.glob(pattern)):
+            # uv tool venvs symlink python3 to a shared base; keep both, they
+            # report different site-packages.
+            key = os.path.realpath(os.path.dirname(cand))
+            if os.path.isfile(cand) and key not in seen:
+                seen.add(key)
+                found.append(cand)
+    return found
+
+
+def _python_layout(py: str) -> dict | None:
+    info = _run_json(
+        [
+            py,
+            "-c",
+            "import json, site, sysconfig; "
+            "print(json.dumps({'stdlib': sysconfig.get_path('stdlib'), "
+            "'sites': list(site.getsitepackages())}))",
+        ]
+    )
+    return info if isinstance(info, dict) else None
+
+
+def _module_name(path: Path) -> str | None:
+    if path.is_symlink():
+        return None
+    if path.is_dir():
+        return path.name
+    if path.suffix == ".py":
+        return path.stem
+    return None
+
+
+def _banned_children(parent: Path, name_of):
+    if not parent.is_dir():
+        return
+    try:
+        children = sorted(parent.iterdir())
+    except OSError:
+        return
+    for child in children:
+        name = name_of(child)
+        if name and _banned(name):
+            yield child
+
+
+def banned_python_artefacts(name_of=_module_name):
+    """Yield ``(python, path)`` for banned modules in every interpreter's
+    stdlib, site-packages, and vendor directories below site-packages."""
+    for py in _all_pythons():
+        info = _python_layout(py)
+        if info is None:
+            continue
+        if info.get("stdlib"):
+            for child in _banned_children(Path(str(info["stdlib"])), name_of):
+                yield py, child
+        for site_dir in info.get("sites") or []:
+            root = Path(str(site_dir))
+            # Anything still here after uninstall is needed by an agent CLI.
+            for child in _banned_children(root, name_of):
+                yield py, child
+            for dirpath, dirnames, _files in os.walk(root):
+                dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+                if os.path.basename(dirpath) in VENDOR_DIRS:
+                    for child in _banned_children(Path(dirpath), name_of):
+                        yield py, child
+
+
+def banned_node_artefacts():
+    """Yield banned package directories in global and nested node_modules."""
+    for base in NODE_ROOTS:
+        for dirpath, dirnames, _files in os.walk(base):
+            if os.path.basename(dirpath) != "node_modules":
+                continue
+            keep: list[str] = []
+            for name in sorted(dirnames):
+                path = Path(dirpath) / name
+                if path.is_symlink():
+                    continue
+                if name.startswith("@"):
+                    try:
+                        scoped = sorted(p.name for p in path.iterdir() if p.is_dir())
+                    except OSError:
+                        scoped = []
+                    for sub in scoped:
+                        if _banned(f"{name}/{sub}") or _banned(sub):
+                            yield path / sub
+                    keep.append(name)
+                elif _banned(name):
+                    yield path
+                else:
+                    keep.append(name)
+            dirnames[:] = keep
+'''
+
+_STRIP_MAIN = r'''
 
 def _uninstall(py: str, dists: list[str]) -> None:
     if not dists:
@@ -972,6 +1176,51 @@ def _scan_dir(path: Path) -> None:
         return
     for child in children:
         _maybe_rm(child)
+
+
+_SOURCELESS_DONE: set[str] = set()
+
+
+def _sourceless(py: str, path: Path) -> None:
+    """Keep *path* importable by *py* but drop its readable source.
+
+    Stdlib modules, vendored copies and agent-runtime dependencies are still
+    imported by the toolchain, so they are compiled to legacy ``.pyc`` files
+    next to the source and the ``.py`` files are removed.
+    """
+    key = os.path.realpath(path)
+    if key in _SOURCELESS_DONE:
+        return
+    _SOURCELESS_DONE.add(key)
+    sources = [path] if path.is_file() else sorted(path.rglob("*.py"))
+    if not sources:
+        return
+    subprocess.run(
+        [py, "-m", "compileall", "-q", "-b", "-f", str(path)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    kept = 0
+    for src in sources:
+        if src.with_suffix(".pyc").is_file():
+            src.unlink(missing_ok=True)
+        else:
+            kept += 1
+    if path.is_file():
+        for cached in path.parent.glob(f"__pycache__/{path.stem}.*.pyc"):
+            cached.unlink(missing_ok=True)
+    else:
+        for cache in sorted(path.rglob("__pycache__"), reverse=True):
+            shutil.rmtree(cache, ignore_errors=True)
+    note = f" ({kept} kept: compile failed)" if kept else ""
+    print(f"[cbrun] sourceless {_digest(path.name)[:8]}{note}", flush=True)
+
+
+def _sourceless_pass() -> None:
+    """Strip source from banned modules that must stay importable."""
+    for py, path in banned_python_artefacts():
+        _sourceless(py, path)
 
 
 def main() -> int:
@@ -1041,6 +1290,8 @@ def main() -> int:
     for root in scan_roots:
         _scan_dir(root)
 
+    _sourceless_pass()
+
     npm = shutil.which("npm")
     if npm:
         data = _run_json([npm, "ls", "-g", "--depth=0", "--json"])
@@ -1060,6 +1311,621 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 '''
+
+_SCRIPT_IMPORTS = """\
+from __future__ import annotations
+
+import glob
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+"""
+
+_STRIP_SCRIPT = (
+    '#!/usr/bin/env python3\n'
+    '"""Remove image artefacts whose names hash to the denylist set."""\n'
+    + _SCRIPT_IMPORTS
+    + _DISCOVERY_LIB
+    + _STRIP_MAIN
+)
+
+# Loaded by every interpreter in the agent image (imported at the end of the
+# stdlib ``encodings`` package, which even ``python -S -I`` reads from disk).
+# While the access monitor's socket exists, it reports each open of a path with
+# a component that hashes into the ban set, with the opener's pid and argv.
+_ACCESS_HOOK = r'''"""cbrun: report opens of denylisted files to the access monitor."""
+import sys
+
+_SOCK = "/run/cbrun-access/hook.sock"
+_HASHES = "/opt/cbrun/denylist.hashes"
+_OK = frozenset("abcdefghijklmnopqrstuvwxyz0123456789._-")
+
+
+def _install():
+    import os
+
+    if getattr(sys, "_cbrun_access_hook", False) or not os.path.exists(_SOCK):
+        return
+    try:
+        # builtins.open and codecs are not set up this early in startup.
+        fd = os.open(_HASHES, os.O_RDONLY)
+        try:
+            ban = frozenset(os.read(fd, 1 << 20).decode("ascii").split())
+        finally:
+            os.close(fd)
+    except OSError:
+        return
+    if not ban:
+        return
+    import _thread
+
+    def norm(text):
+        text = text.split("[", 1)[0].split("@", 1)[0]
+        out = []
+        dash = False
+        for ch in text:
+            if ch in _OK:
+                out.append(ch)
+                dash = False
+            elif not dash:
+                out.append("-")
+                dash = True
+        return "".join(out).replace("_", "-").replace(".", "-")
+
+    sha = []
+
+    def hashed(text):
+        # Extension modules cannot load this early in startup; import on first use.
+        if not sha:
+            try:
+                from _sha2 import sha256
+            except ImportError:
+                from hashlib import sha256
+            sha.append(sha256)
+        return sha[0](text.encode("utf-8", "surrogateescape")).hexdigest() in ban
+
+    cache = {}
+
+    def banned(part):
+        hit = cache.get(part)
+        if hit is None:
+            low = part.strip().lower()
+            hit = False
+            for cand in {low, low.split(".", 1)[0]}:
+                if cand and (hashed(cand) or hashed(norm(cand))):
+                    hit = True
+                    break
+            if len(cache) < 100000:
+                cache[part] = hit
+        return hit
+
+    here = __file__
+
+    def importer():
+        # The code that caused the open, above the import machinery and this hook.
+        frame = sys._getframe(1)
+        while frame is not None:
+            name = frame.f_code.co_filename
+            if not (
+                name == here
+                or name.startswith("<frozen ")
+                or name.endswith(("/importlib/__init__.py", "/importlib/util.py"))
+            ):
+                return name
+            frame = frame.f_back
+        return None
+
+    def report(path):
+        import json
+        import socket
+
+        main = sys.modules.get("__main__")
+        spec = getattr(main, "__spec__", None)
+        origin = getattr(spec, "origin", None) or getattr(main, "__file__", None)
+        argv = list(getattr(sys, "orig_argv", None) or sys.argv)
+        msg = json.dumps(
+            {
+                "pid": os.getpid(),
+                "path": path,
+                "argv": [str(a)[:2048] for a in argv[:64]],
+                "main": origin if isinstance(origin, str) else None,
+                "importer": importer(),
+            }
+        ).encode("utf-8", "surrogateescape")
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        try:
+            sock.settimeout(5.0)
+            sock.sendto(msg, _SOCK)
+        finally:
+            sock.close()
+
+    busy = set()
+
+    def hook(event, args):
+        if event != "open" or not args:
+            return
+        tid = _thread.get_ident()
+        if tid in busy:
+            return
+        busy.add(tid)
+        try:
+            raw = args[0]
+            if isinstance(raw, int):
+                return
+            path = os.fsdecode(os.fspath(raw))
+            if not any(banned(p) for p in path.split("/") if p):
+                return
+            path = os.path.abspath(path)
+            if path == "/app" or path.startswith("/app/"):
+                return
+            report(path)
+        except Exception:
+            pass
+        finally:
+            busy.discard(tid)
+
+    sys.addaudithook(hook)
+    sys._cbrun_access_hook = True
+
+
+try:
+    _install()
+except Exception:
+    pass
+'''
+
+_ACCESS_MONITOR_MAIN = r'''
+import ctypes
+import errno
+import select
+import signal
+import socket
+import struct
+import time
+
+SOCK_DIR = "/run/cbrun-access"
+SOCK_PATH = SOCK_DIR + "/hook.sock"
+HOOK_SRC = "/opt/cbrun/cbrun_access_hook.py"
+HOOK_MODULE = "cbrun_access_hook.py"
+MONITOR_SELF = "/opt/cbrun/access_monitor.py"
+IMAGE_DISTS = "/opt/cbrun/image_dists.json"
+LOADER = os.path.join("encodings", "__init__.py")
+LOADER_MARKER = "# cbrun access hook"
+LOADER_LINES = (
+    "\n" + LOADER_MARKER + "\n"
+    "try:\n"
+    "    import cbrun_access_hook\n"
+    "except Exception:\n"
+    "    pass\n"
+)
+HEARTBEAT_SEC = 1.0
+
+IN_OPEN = 0x00000020
+IN_MODIFY = 0x00000002
+IN_ATTRIB = 0x00000004
+IN_CLOSE_WRITE = 0x00000008
+IN_MOVE_SELF = 0x00000800
+IN_DELETE_SELF = 0x00000400
+IN_Q_OVERFLOW = 0x00004000
+IN_IGNORED = 0x00008000
+IN_DONT_FOLLOW = 0x02000000
+IN_NONBLOCK = 0o4000
+IN_CLOEXEC = 0o2000000
+GUARD_MASK = IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_MOVE_SELF | IN_DELETE_SELF
+
+
+def _artefact_name(path: Path) -> str | None:
+    """Module name of a banned artefact, source or not."""
+    if path.is_symlink():
+        return None
+    if path.is_dir():
+        return path.name
+    if path.suffix in (".py", ".pyc", ".so"):
+        return path.name.split(".", 1)[0]
+    return None
+
+
+def _in_workspace(path: str) -> bool:
+    return path == WORKSPACE or path.startswith(WORKSPACE + "/")
+
+
+_SITE_NAMES = ("site-packages", "dist-packages")
+_LOCAL_DISTS: dict[str, tuple[int, set[str]]] = {}
+
+
+def _dist_identity(info: str) -> str | None:
+    """A distribution's install identity: its RECORD, so a reinstall changes it."""
+    try:
+        st = os.stat(os.path.join(info, "RECORD"))
+    except OSError:
+        return None
+    return f"{os.path.realpath(info)}:{st.st_ino}:{st.st_size}:{st.st_mtime_ns}"
+
+
+def _local_url_dists() -> list[str]:
+    """Every installed distribution whose recorded origin is a local path."""
+    found: list[str] = []
+    for site_root in _site_roots():
+        for info in sorted(glob.glob(os.path.join(site_root, "*.dist-info"))):
+            try:
+                with open(os.path.join(info, "direct_url.json"), encoding="utf-8") as fh:
+                    url = str(json.load(fh).get("url") or "")
+            except (OSError, ValueError, AttributeError):
+                continue
+            ident = _dist_identity(info) if url.startswith("file:") else None
+            if ident:
+                found.append(ident)
+    return found
+
+
+def _site_roots() -> list[str]:
+    roots: dict[str, None] = {}
+    for py in _all_pythons():
+        info = _python_layout(py) or {}
+        for site_root in info.get("sites") or []:
+            if os.path.isdir(str(site_root)):
+                roots[os.path.realpath(str(site_root))] = None
+    return list(roots)
+
+
+def _image_dists() -> frozenset[str]:
+    """Local-path distributions the image already had before any solve started.
+
+    Package builders (conda among them) record their own build directory as a
+    ``file:`` origin, so that origin alone does not mark the agent's code. What
+    the agent installs from a local path appears only after this snapshot.
+    """
+    with open(IMAGE_DISTS, encoding="utf-8") as fh:
+        return frozenset(json.load(fh))
+
+
+def _locally_installed(site_root: str) -> set[str]:
+    """Top-level names of distributions the agent installed from a local path (e.g. ``pip install .``)."""
+    try:
+        stamp = os.stat(site_root).st_mtime_ns
+    except OSError:
+        return set()
+    cached = _LOCAL_DISTS.get(site_root)
+    if cached and cached[0] == stamp:
+        return cached[1]
+    baseline = _image_dists()
+    names: set[str] = set()
+    for info in glob.glob(os.path.join(site_root, "*.dist-info")):
+        try:
+            with open(os.path.join(info, "direct_url.json"), encoding="utf-8") as fh:
+                url = str(json.load(fh).get("url") or "")
+        except (OSError, ValueError, AttributeError):
+            continue
+        if not url.startswith("file:") or _dist_identity(info) in baseline:
+            continue
+        try:
+            with open(os.path.join(info, "RECORD"), encoding="utf-8") as fh:
+                for line in fh:
+                    top = line.split(",", 1)[0].split("/", 1)[0]
+                    if top and not top.startswith(".."):
+                        names.add(top.split(".", 1)[0] if top.endswith((".py", ".pth")) else top)
+        except OSError:
+            continue
+    _LOCAL_DISTS[site_root] = (stamp, names)
+    return names
+
+
+def toolchain_code(path: str | None, stdlibs: list[str]) -> bool:
+    """True for stdlib or installed-package code, not the agent's own."""
+    if not path or not path.startswith("/"):
+        return False
+    real = os.path.realpath(path)
+    if _in_workspace(real) or _in_workspace(path):
+        return False
+    if any(real.startswith(root + "/") for root in stdlibs):
+        parts = Path(real).parts
+        if not any(p in _SITE_NAMES for p in parts):
+            return True
+    parts = Path(real).parts
+    for i, part in enumerate(parts):
+        if part in _SITE_NAMES and i + 1 < len(parts):
+            top = parts[i + 1]
+            top = top.split(".", 1)[0] if top.endswith(".py") else top
+            return top not in _locally_installed(str(Path(*parts[: i + 1])))
+    return False
+
+
+def toolchain_entry(main: str | None, stdlibs: list[str]) -> bool:
+    """True when the process runs a tool: a bin-dir script or installed package code."""
+    if not main or not main.startswith("/"):
+        return False
+    if os.path.basename(os.path.dirname(main)) == "bin" and not _in_workspace(main):
+        return True
+    return toolchain_code(main, stdlibs)
+
+
+def protected_files() -> list[str]:
+    """Regular files under every banned artefact, outside the workspace."""
+    roots: list[Path] = [p for _py, p in banned_python_artefacts(_artefact_name)]
+    roots.extend(banned_node_artefacts())
+    found: dict[str, None] = {}
+    for root in roots:
+        real = os.path.realpath(root)
+        # License copies in dist metadata are not the implementation.
+        if _in_workspace(real) or any(p.endswith(".dist-info") for p in Path(real).parts):
+            continue
+        if os.path.isfile(real):
+            found[real] = None
+            continue
+        for dirpath, dirnames, files in os.walk(real):
+            dirnames[:] = [d for d in dirnames if not d.endswith(".dist-info")]
+            for name in files:
+                path = os.path.join(dirpath, name)
+                if os.path.isfile(path) and not os.path.islink(path):
+                    found[path] = None
+    return sorted(found)
+
+
+def _stdlib_dirs() -> list[str]:
+    dirs: dict[str, None] = {}
+    for py in _all_pythons():
+        info = _python_layout(py)
+        if info and info.get("stdlib"):
+            dirs[os.path.realpath(str(info["stdlib"]))] = None
+    return list(dirs)
+
+
+def install_hooks() -> int:
+    """Make every interpreter load the attribution hook, venvs included.
+
+    ``.pth`` files and ``sitecustomize`` do not reach venvs or pip's isolated
+    build environments, and ``site`` is frozen since 3.11. The stdlib
+    ``encodings`` package is read from disk by every interpreter, even under
+    ``-S`` and ``-I``, so the hook is imported from the end of it.
+    """
+    os.chmod(HOOK_SRC, 0o644)
+    count = 0
+    for stdlib in _stdlib_dirs():
+        link = os.path.join(stdlib, HOOK_MODULE)
+        if os.path.lexists(link):
+            os.unlink(link)
+        os.symlink(HOOK_SRC, link)
+        loader = os.path.join(stdlib, LOADER)
+        text = Path(loader).read_text(encoding="utf-8")
+        if LOADER_MARKER not in text:
+            with open(loader, "a", encoding="utf-8") as fh:
+                fh.write(LOADER_LINES)
+        count += 1
+    with open(IMAGE_DISTS, "w", encoding="utf-8") as fh:
+        json.dump(_local_url_dists(), fh)
+    os.chmod(IMAGE_DISTS, 0o644)
+    print(f"[cbrun] access hook installed for {count} stdlib dir(s)", flush=True)
+    return 0 if count else 1
+
+
+def guarded_files() -> list[str]:
+    """Files whose change would disable attribution or monitoring."""
+    paths = [HOOK_SRC, MONITOR_SELF, str(HASHES), IMAGE_DISTS]
+    for stdlib in _stdlib_dirs():
+        link = os.path.join(stdlib, HOOK_MODULE)
+        loader = os.path.join(stdlib, LOADER)
+        if os.path.realpath(link) != HOOK_SRC:
+            raise RuntimeError(f"access hook link missing in {stdlib}")
+        if LOADER_MARKER not in Path(loader).read_text(encoding="utf-8"):
+            raise RuntimeError(f"access hook not loaded by {loader}")
+        paths += [link, loader]
+    return paths
+
+
+def _fingerprint(path: str):
+    try:
+        st = os.lstat(path)
+    except OSError:
+        return None
+    target = os.readlink(path) if os.path.islink(path) else None
+    return (st.st_ino, st.st_size, st.st_mtime_ns, st.st_mode, target)
+
+
+def _emit(**event) -> None:
+    sys.stdout.write(json.dumps(event, separators=(",", ":")) + "\n")
+    sys.stdout.flush()
+
+
+def _cmdline(pid: int) -> list[str] | None:
+    try:
+        with open(f"/proc/{pid}/cmdline", "rb") as fh:
+            raw = fh.read()
+    except OSError:
+        return None
+    if not raw:
+        return None
+    return [a.decode("utf-8", "replace") for a in raw.rstrip(b"\0").split(b"\0")]
+
+
+def _parent_exe(pid: int) -> str | None:
+    try:
+        with open(f"/proc/{pid}/stat", "rb") as fh:
+            stat = fh.read().decode("utf-8", "replace")
+        ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        return os.readlink(f"/proc/{ppid}/exe")
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+class Inotify:
+    def __init__(self) -> None:
+        self.libc = ctypes.CDLL(None, use_errno=True)
+        self.fd = self.libc.inotify_init1(IN_NONBLOCK | IN_CLOEXEC)
+        if self.fd < 0:
+            raise OSError(ctypes.get_errno(), "inotify_init1 failed")
+
+    def watch(self, path: str, mask: int) -> int:
+        wd = self.libc.inotify_add_watch(self.fd, os.fsencode(path), mask)
+        if wd < 0:
+            err = ctypes.get_errno()
+            raise OSError(err, f"inotify_add_watch {path}: {os.strerror(err)}")
+        return wd
+
+    def read(self):
+        try:
+            buf = os.read(self.fd, 1 << 16)
+        except BlockingIOError:
+            return
+        i = 0
+        while i + 16 <= len(buf):
+            wd, mask, _cookie, length = struct.unpack_from("iIII", buf, i)
+            i += 16 + length
+            yield wd, mask
+
+
+def _recv_reports(sock: socket.socket):
+    while True:
+        try:
+            data, anc, _flags, _addr = sock.recvmsg(1 << 17, socket.CMSG_SPACE(12))
+        except (BlockingIOError, InterruptedError):
+            return
+        cred_pid = None
+        for level, kind, payload in anc:
+            if level == socket.SOL_SOCKET and kind == socket.SCM_CREDENTIALS:
+                cred_pid = struct.unpack("iII", payload[:12])[0]
+        yield data, cred_pid
+
+
+def monitor() -> int:
+    if not BAN:
+        _emit(t="error", detail=f"no denylist hashes at {HASHES}")
+        return 2
+    try:
+        guarded = guarded_files()
+        stdlibs = _stdlib_dirs()
+        protected = protected_files()
+        inotify = Inotify()
+        by_wd: dict[int, int] = {}
+        for index, path in enumerate(protected):
+            by_wd.setdefault(inotify.watch(path, IN_OPEN | IN_DELETE_SELF | IN_MOVE_SELF), index)
+        index_of = {path: i for i, path in enumerate(protected)}
+        inode_of = {}
+        for i, path in enumerate(protected):
+            st = os.stat(path)
+            inode_of.setdefault((st.st_dev, st.st_ino), i)
+        os.makedirs(SOCK_DIR, exist_ok=True)
+        os.chmod(SOCK_DIR, 0o755)
+        if os.path.lexists(SOCK_PATH):
+            os.unlink(SOCK_PATH)
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        sock.bind(SOCK_PATH)
+        os.chmod(SOCK_PATH, 0o666)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_PASSCRED, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1 << 22)
+        sock.setblocking(False)
+        guarded.append(SOCK_PATH)
+        guard_wd: dict[int, str] = {}
+        for path in guarded:
+            flags = GUARD_MASK | (IN_DONT_FOLLOW if os.path.islink(path) else 0)
+            guard_wd[inotify.watch(path, flags)] = path
+        prints = {path: _fingerprint(path) for path in guarded}
+    except Exception as exc:  # noqa: BLE001
+        _emit(t="error", detail=f"{type(exc).__name__}: {exc}")
+        return 2
+
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    start = time.monotonic()
+    _emit(t="ready", pid=os.getpid(), protected=protected, guarded=guarded)
+
+    def resolve(path: str) -> int | None:
+        hit = index_of.get(os.path.realpath(path))
+        if hit is not None:
+            return hit
+        try:
+            st = os.stat(path)
+        except OSError:
+            return None
+        return inode_of.get((st.st_dev, st.st_ino))
+
+    def drain_reports() -> None:
+        for data, cred_pid in _recv_reports(sock):
+            ts = round(time.monotonic() - start, 3)
+            try:
+                report = json.loads(data.decode("utf-8", "surrogateescape"))
+                claimed = int(report.get("pid"))
+            except (ValueError, TypeError, AttributeError):
+                _emit(t="forged", ts=ts, pid=cred_pid, detail="malformed hook report")
+                continue
+            if cred_pid is None or claimed != cred_pid:
+                _emit(t="forged", ts=ts, pid=cred_pid,
+                      detail=f"hook report claims pid {claimed}, sender is pid {cred_pid}")
+                continue
+            index = resolve(str(report.get("path") or ""))
+            if index is None:
+                continue
+            argv = _cmdline(cred_pid)
+            source = "proc"
+            if argv is None:
+                argv = [str(a) for a in (report.get("argv") or [])]
+                source = "hook"
+            main = report.get("main") if isinstance(report.get("main"), str) else None
+            importer = report.get("importer") if isinstance(report.get("importer"), str) else None
+            _emit(t="attr", ts=ts, f=index, pid=cred_pid, argv=argv, argv_source=source,
+                  main=main, importer=importer, parent_exe=_parent_exe(cred_pid),
+                  tool_entry=toolchain_entry(main, stdlibs),
+                  tool_importer=toolchain_code(importer, stdlibs))
+
+    last_beat = 0.0
+    while True:
+        try:
+            ready, _, _ = select.select([sock, inotify.fd, sys.stdin], [], [], HEARTBEAT_SEC / 2)
+        except InterruptedError:
+            continue
+        # Hook reports are sent before the open, so read them first.
+        drain_reports()
+        for wd, mask in inotify.read():
+            ts = round(time.monotonic() - start, 3)
+            if mask & IN_Q_OVERFLOW:
+                _emit(t="overflow", ts=ts)
+            elif wd in guard_wd:
+                if not mask & IN_IGNORED:
+                    _emit(t="tamper", ts=ts, path=guard_wd[wd], detail=f"changed (mask {mask:#x})")
+            elif wd in by_wd:
+                if mask & IN_OPEN:
+                    _emit(t="open", ts=ts, f=by_wd[wd])
+                if mask & (IN_DELETE_SELF | IN_MOVE_SELF):
+                    _emit(t="tamper", ts=ts, path=protected[by_wd[wd]], detail="protected file removed or moved")
+        drain_reports()
+        if sys.stdin in ready and not os.read(sys.stdin.fileno(), 4096):
+            _emit(t="bye", ts=round(time.monotonic() - start, 3))
+            return 0
+        now = time.monotonic()
+        if now - last_beat >= HEARTBEAT_SEC:
+            last_beat = now
+            ts = round(now - start, 3)
+            for path, before in prints.items():
+                after = _fingerprint(path)
+                if after != before:
+                    prints[path] = after
+                    _emit(t="tamper", ts=ts, path=path,
+                          detail="removed" if after is None else "changed")
+            _emit(t="hb", ts=ts)
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--install-hooks"]:
+        sys.exit(install_hooks())
+    if sys.argv[1:] == ["--list"]:
+        print(json.dumps({"protected": protected_files(), "guarded": guarded_files()}))
+        sys.exit(0)
+    try:
+        sys.exit(monitor())
+    except BrokenPipeError:
+        sys.exit(0)
+'''
+
+_ACCESS_MONITOR = (
+    '#!/usr/bin/env python3\n'
+    '"""cbrun access monitor: report every open of a denylisted file."""\n'
+    + _SCRIPT_IMPORTS
+    + _DISCOVERY_LIB
+    + _ACCESS_MONITOR_MAIN
+)
 
 _PIP_MODULE_HOOK = r'''"""Block ``python -m pip`` installs that hash to the denylist set."""
 from __future__ import annotations
@@ -1158,6 +2024,14 @@ def render_pip_module_hook() -> str:
     return _PIP_MODULE_HOOK
 
 
+def render_access_monitor() -> str:
+    return _ACCESS_MONITOR
+
+
+def render_access_hook() -> str:
+    return _ACCESS_HOOK
+
+
 def write_shim_assets(
     build_ctx: Path,
     denylist_path: Path,
@@ -1182,6 +2056,8 @@ def write_shim_assets(
         ("denylist.hashes", "\n".join(hashes) + "\n"),
         ("strip_banned.py", render_strip_script()),
         ("cbrun_denylist_hook.py", render_pip_module_hook()),
+        ("access_monitor.py", render_access_monitor()),
+        ("cbrun_access_hook.py", render_access_hook()),
     ):
         path = build_ctx / name
         path.write_text(text, encoding="utf-8")
@@ -1213,10 +2089,14 @@ def write_shim_assets(
         f"COPY denylist.hashes {CONTAINER_DENYLIST_HASHES_PATH}\n"
         f"COPY strip_banned.py {CONTAINER_STRIP_SCRIPT_PATH}\n"
         f"COPY cbrun_denylist_hook.py {CONTAINER_PIP_HOOK_PATH}\n"
+        f"COPY access_monitor.py {CONTAINER_ACCESS_MONITOR_PATH}\n"
+        f"COPY cbrun_access_hook.py {CONTAINER_ACCESS_HOOK_PATH}\n"
         f"COPY shims/ {SHIM_BIN_DIR}/\n"
         f"RUN chmod +x {bins} && "
-        f"chmod 644 {CONTAINER_DENYLIST_HASHES_PATH} {CONTAINER_STRIP_SCRIPT_PATH} {CONTAINER_PIP_HOOK_PATH} && "
+        f"chmod 644 {CONTAINER_DENYLIST_HASHES_PATH} {CONTAINER_STRIP_SCRIPT_PATH} {CONTAINER_PIP_HOOK_PATH} "
+        f"{CONTAINER_ACCESS_MONITOR_PATH} {CONTAINER_ACCESS_HOOK_PATH} && "
         f"python3 {CONTAINER_STRIP_SCRIPT_PATH} && "
+        f"python3 {CONTAINER_ACCESS_MONITOR_PATH} --install-hooks && "
         "for py in /opt/conda/bin/python3 /usr/bin/python3; do "
         '  if [ -x "$py" ]; then '
         '    dest="$($py -c \'import site; print(site.getsitepackages()[0])\')" && '

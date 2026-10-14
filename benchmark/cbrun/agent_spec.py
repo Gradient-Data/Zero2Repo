@@ -2,7 +2,7 @@
 
 Users bring their own credentials and may supply a local AgentSpec file
 (``.json`` or ``.yaml`` when PyYAML is installed). Built-in backends
-(``codex``, ``opencode``, ``claude-code``, ``cursor``) are predefined specs.
+(``codex``, ``opencode``, ``claude-code``, ``cursor``, ``openhands``) are predefined specs.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ __all__ = [
     "resolve_agent",
 ]
 
-BACKENDS = ("codex", "opencode", "claude-code", "cursor")
+BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands")
 CODEX_REASONING_EFFORT_ENV = "CBRUN_CODEX_REASONING_EFFORT"
 CODEX_REASONING_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh"})
 
@@ -74,13 +74,17 @@ class AgentSpec:
     setup_timeout_sec: float = 120.0
     python_hook: str | None = None
     runtime: str | None = None
+    # Container directories where the CLI writes session files with token
+    # usage. Shell-expanded in the solve env; archived after every trial so
+    # usage survives a killed process.
+    usage_paths: tuple[str, ...] = ()
 
     def spec_hash(self) -> str:
         payload = json.dumps(self.to_dict(), sort_keys=True)
         return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "name": self.name,
             "command": self.command,
             "env_passthrough": list(self.env_passthrough),
@@ -93,6 +97,9 @@ class AgentSpec:
             "python_hook": self.python_hook,
             "runtime": self.runtime,
         }
+        if self.usage_paths:
+            out["usage_paths"] = list(self.usage_paths)
+        return out
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AgentSpec:
@@ -111,6 +118,9 @@ class AgentSpec:
         passthrough = data.get("env_passthrough") or []
         if not isinstance(passthrough, list):
             raise ValueError(f"AgentSpec {name!r}: env_passthrough must be a list")
+        usage_paths = data.get("usage_paths") or []
+        if not isinstance(usage_paths, list):
+            raise ValueError(f"AgentSpec {name!r}: usage_paths must be a list")
         return cls(
             name=name,
             command=command,
@@ -123,6 +133,7 @@ class AgentSpec:
             setup_timeout_sec=float(data.get("setup_timeout_sec") or 120.0),
             python_hook=_optional_str(data.get("python_hook")),
             runtime=_optional_str(data.get("runtime")),
+            usage_paths=tuple(str(p) for p in usage_paths if str(p).strip()),
         )
 
 
@@ -314,6 +325,29 @@ def _resolve_env(
         out["IS_SANDBOX"] = "1"
         if "IS_SANDBOX" not in keys:
             keys.append("IS_SANDBOX")
+    if spec.name == "openhands":
+        if not (environ.get("LLM_API_KEY") or "").strip() or not (environ.get("LLM_BASE_URL") or "").strip():
+            raise RuntimeError(
+                "cbrun: OpenHands needs LLM_API_KEY and LLM_BASE_URL "
+                "(OpenAI-compatible endpoint) in the environment"
+            )
+        out["LLM_MODEL"] = model
+        out["OPENHANDS_SUPPRESS_BANNER"] = "1"
+        # Library default is 300s. DeepSeek thinking turns stay silent well past
+        # that, so one request may run for 30 minutes before it is abandoned.
+        raw_timeout = (environ.get("LLM_TIMEOUT") or "").strip() or "1800"
+        if not raw_timeout.isdigit() or int(raw_timeout) <= 0:
+            raise RuntimeError(
+                "cbrun: LLM_TIMEOUT must be a positive integer number of seconds, "
+                f"got {raw_timeout!r}"
+            )
+        out["LLM_TIMEOUT"] = raw_timeout
+        effort = (environ.get("LLM_REASONING_EFFORT") or "").strip()
+        if effort:
+            out["LLM_REASONING_EFFORT"] = effort
+        for key in ("LLM_MODEL", "OPENHANDS_SUPPRESS_BANNER", "LLM_TIMEOUT", "LLM_REASONING_EFFORT"):
+            if key not in keys and key in out:
+                keys.append(key)
     if spec.run_as == "nonroot":
         home = _home_for(spec)
         out.setdefault("HOME", home)
@@ -403,6 +437,116 @@ if [ -f "$CODEX_HOME/config.toml" ]; then
 fi
 """
 
+# Cursor's headless CLI reports the billed total on one turnEnded message and
+# prints it on the result line only if the process then exits. This patches
+# that handler so the total is appended under /logs/agent the moment it
+# arrives. The patch is inside the CLI bundle, not under /app.
+_CURSOR_USAGE_HOOK_SETUP = r"""set -eu
+mkdir -p /logs/agent
+python3 - << 'PY'
+import os
+from pathlib import Path
+marker = 'case"turnEnded":{const e=n.message.value;'
+needle = "/logs/agent/cursor_usage.jsonl"
+inject = (
+    marker
+    + 'try{var _cbv=e;if(_cbv.inputTokens!=null||_cbv.outputTokens!=null||_cbv.cacheReadTokens!=null||_cbv.cacheWriteTokens!=null){'
+    + 'require("fs").appendFileSync("/logs/agent/cursor_usage.jsonl",JSON.stringify({'
+    + 'input_tokens:Math.max(Number(_cbv.inputTokens??0)-Number(_cbv.cacheReadTokens??0)-Number(_cbv.cacheWriteTokens??0),0),'
+    + 'output_tokens:Number(_cbv.outputTokens??0),'
+    + 'cache_read_tokens:Number(_cbv.cacheReadTokens??0),'
+    + 'cache_write_tokens:Number(_cbv.cacheWriteTokens??0)})+"\\n")}}catch(_cb){}'
+)
+roots = [Path("/root/.local/share/cursor-agent/versions"), Path("/usr/local/share/cursor-agent/versions")]
+found = []
+for root in roots:
+    if not root.is_dir():
+        continue
+    for dirpath, _dirs, names in os.walk(root):
+        for name in names:
+            if not name.endswith(".js"):
+                continue
+            path = Path(dirpath) / name
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                continue
+            if marker in text:
+                found.append(path)
+if len(found) != 1:
+    raise SystemExit("cbrun: cursor usage patch matched %d files" % len(found))
+path = found[0]
+text = path.read_text(encoding="utf-8")
+if needle in text:
+    raise SystemExit(0)
+if text.count(marker) != 1:
+    raise SystemExit("cbrun: cursor usage marker count %d" % text.count(marker))
+path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
+PY
+"""
+
+# OpenHands adds each completion to an in-memory Metrics object and only
+# rewrites base_state.json when some other conversation field changes. A kill
+# therefore leaves the startup snapshot, whose counters are still zero. This
+# appends the completion inside add_token_usage, before the process can exit.
+_OPENHANDS_USAGE_SETUP = r"""set -eu
+mkdir -p /logs/agent
+python3 - << 'PY'
+import os
+from pathlib import Path
+marker = "        self.token_usages.append(usage)\n"
+needle = "/logs/agent/openhands_usage.jsonl"
+inject = marker + (
+    "        try:\n"
+    "            import json as _cb_json\n"
+    "            import os as _cb_os\n"
+    "            _cb_os.makedirs(\"/logs/agent\", exist_ok=True)\n"
+    "            with open(\"/logs/agent/openhands_usage.jsonl\", \"a\", encoding=\"utf-8\") as _cb_fh:\n"
+    "                _cb_fh.write(_cb_json.dumps({\n"
+    "                    \"model\": usage.model,\n"
+    "                    \"prompt_tokens\": int(usage.prompt_tokens),\n"
+    "                    \"completion_tokens\": int(usage.completion_tokens),\n"
+    "                    \"cache_read_tokens\": int(usage.cache_read_tokens),\n"
+    "                    \"cache_write_tokens\": int(usage.cache_write_tokens),\n"
+    "                    \"reasoning_tokens\": int(usage.reasoning_tokens),\n"
+    "                    \"response_id\": usage.response_id,\n"
+    "                }) + \"\\n\")\n"
+    "                _cb_fh.flush()\n"
+    "                _cb_os.fsync(_cb_fh.fileno())\n"
+    "        except Exception:\n"
+    "            pass\n"
+)
+roots = [
+    Path("/root/.local/share/uv/tools/openhands/lib"),
+    Path("/usr/local/lib"),
+]
+found = []
+for root in roots:
+    if not root.is_dir():
+        continue
+    for dirpath, _dirs, names in os.walk(root):
+        for name in names:
+            if name != "metrics.py":
+                continue
+            path = Path(dirpath) / name
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                continue
+            if marker in text:
+                found.append(path)
+if len(found) != 1:
+    raise SystemExit("cbrun: openhands usage patch matched %d files" % len(found))
+path = found[0]
+text = path.read_text(encoding="utf-8")
+if needle in text:
+    raise SystemExit(0)
+if text.count(marker) != 1:
+    raise SystemExit("cbrun: openhands usage marker count %d" % text.count(marker))
+path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
+PY
+"""
+
 _BUILTIN_SPECS: dict[str, AgentSpec] = {
     "codex": AgentSpec(
         name="codex",
@@ -417,6 +561,7 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         model_prefix="keep",
         home="/root/.codex",
         runtime="node",
+        usage_paths=("$CODEX_HOME/sessions",),
         command=(
             "codex exec "
             "--dangerously-bypass-approvals-and-sandbox "
@@ -436,6 +581,8 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         run_as="root",
         model_prefix="keep",
         runtime="node",
+        # Session totals, subagents included, written as each step finishes.
+        usage_paths=("${XDG_DATA_HOME:-$HOME/.local/share}/opencode",),
         command=(
             "opencode --model={model_quoted} run "
             "--format=json --thinking --auto "
@@ -451,10 +598,14 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         model_prefix="keep",
         home="/root",
         runtime="node",
+        usage_paths=("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects",),
         command=(
             "cat {instruction_quoted} | claude --print --verbose --output-format stream-json "
             "--permission-mode bypassPermissions "
             "--model {model_quoted} "
+            # Stream thinking summaries: a gateway that forwards nothing while the
+            # model thinks otherwise outlasts Claude Code's stream idle timeout.
+            "--thinking-display summarized "
             "2>&1 | stdbuf -oL tee {log_quoted}"
         ),
     ),
@@ -464,11 +615,33 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         run_as="root",
         model_prefix="keep",
         home="/root",
+        # The billed total arrives on turnEnded and is otherwise printed only
+        # on the final result line. The setup writes that total to
+        # /logs/agent immediately, so a crash after the server has reported
+        # it still leaves a usage file for the archive to copy.
+        setup_script=_CURSOR_USAGE_HOOK_SETUP,
         command=(
             "cursor-agent -p --force --trust --sandbox disabled "
             "--model {model_quoted} --workspace {workdir_quoted} "
-            "--output-format text "
+            "--output-format stream-json "
             "< {instruction_quoted} "
+            "2>&1 | stdbuf -oL tee {log_quoted}"
+        ),
+    ),
+    "openhands": AgentSpec(
+        name="openhands",
+        env_passthrough=("LLM_API_KEY", "LLM_BASE_URL"),
+        run_as="root",
+        model_prefix="keep",
+        home="/root",
+        # Each completion is appended under /logs/agent as add_token_usage
+        # returns, so a kill does not lose the calls already billed.
+        setup_script=_OPENHANDS_USAGE_SETUP,
+        usage_paths=("/root/.openhands",),
+        command=(
+            "openhands --headless --json --always-approve "
+            "--exit-without-confirmation --override-with-envs "
+            "-f {instruction_quoted} "
             "2>&1 | stdbuf -oL tee {log_quoted}"
         ),
     ),

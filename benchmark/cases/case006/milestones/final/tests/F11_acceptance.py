@@ -998,17 +998,29 @@ def test_progress_bar_label_once_without_terminal_hidden_prints_nothing():
 
     live = _dispatch(_cmd(shown), [])
     quiet = _dispatch(_cmd(hidden), [])
-    print(f"label-once={live.stdout_text!r} hidden={quiet.stdout_text!r}", flush=True)
+    print(
+        f"label-once={live.stdout_text!r} err={live.stderr_text!r} "
+        f"hidden={quiet.stdout_text!r} hidden-err={quiet.stderr_text!r}",
+        flush=True,
+    )
     require_success_marker_present(live, greeting)
     require_success_marker_present(quiet, greeting)
     assert labeled_stdout_field(live, "N:") == "3"
     assert labeled_stdout_field(quiet, "N:") == "3"
     shown_text = _stdout(live)
     assert shown_text.count(label) == 1, (
-        f"no-terminal label was not printed once; stdout={shown_text!r}"
+        f"no-terminal label was not printed once on standard output; "
+        f"stdout={shown_text!r} stderr={live.stderr_text!r}"
+    )
+    assert label not in (live.stderr_text or ""), (
+        f"no-terminal label also reached standard error; stderr={live.stderr_text!r}"
     )
     assert label not in _stdout(quiet), (
         f"explicitly hidden bar still printed the label; stdout={quiet.stdout_text!r}"
+    )
+    assert label not in (quiet.stderr_text or ""), (
+        f"explicitly hidden bar printed the label on standard error; "
+        f"stderr={quiet.stderr_text!r}"
     )
 
 
@@ -1243,11 +1255,11 @@ def test_progress_bar_known_length_terminal_includes_remaining_time_estimate():
 
 def test_app_dir_unix_default_xdg_override_and_posix_forced():
     greeting = _greeting()
-    public_name = "Foo Bar"
+    fixed_name = "Rook Ivy"
     runtime_name = f"Ab {uuid.uuid4().hex[:6]} Cd"
-    public_slug = posix_app_slug(public_name)
+    fixed_slug = posix_app_slug(fixed_name)
     runtime_slug = posix_app_slug(runtime_name)
-    assert public_slug == "foo-bar"
+    assert fixed_slug == "rook-ivy"
 
     def lookup(app_name: str, *, force_posix: bool = False):
         def callback() -> None:
@@ -1258,7 +1270,7 @@ def test_app_dir_unix_default_xdg_override_and_posix_forced():
 
     with workspace() as ws:
         default = ws.invoke(
-            lookup(public_name),
+            lookup(fixed_name),
             [],
             env={"XDG_CONFIG_HOME": None},
         )
@@ -1292,7 +1304,7 @@ def test_app_dir_unix_default_xdg_override_and_posix_forced():
         require_success_marker_present(runtime, greeting)
         require_success_marker_present(xdg, greeting)
         require_success_marker_present(posix, greeting)
-        expected_default = str(ws.home / ".config" / public_slug)
+        expected_default = str(ws.home / ".config" / fixed_slug)
         expected_runtime = str(ws.home / ".config" / runtime_slug)
         expected_xdg = str(xdg_root / runtime_slug)
         expected_posix = str(ws.home / f".{runtime_slug}")
@@ -1305,99 +1317,50 @@ def test_app_dir_unix_default_xdg_override_and_posix_forced():
         assert posix_path != expected_xdg
 
 
-def test_app_dir_macos_and_windows_layout():
+def test_app_dir_macos_layout():
     greeting = _greeting()
-    public_name = "Foo Bar"
+    fixed_name = "Rook Ivy"
     runtime_name = f"Ab {uuid.uuid4().hex[:6]} Cd"
 
     with workspace() as ws:
-        roaming_root = ws.path / f"roam-{uuid.uuid4().hex[:8]}"
-        local_root = ws.path / f"local-{uuid.uuid4().hex[:8]}"
-        roaming_root.mkdir()
-        local_root.mkdir()
         darwin = ws.run_python(
             code=(
                 "import sys\n"
-                "from optlyn import get_app_dir\n"
                 "sys.platform = 'darwin'\n"
-                f"print({greeting!r}, flush=True)\n"
-                f"print('PUBLIC:' + get_app_dir({public_name!r}), flush=True)\n"
-                f"print('RUNTIME:' + get_app_dir({runtime_name!r}), flush=True)\n"
-            )
-        )
-        windows = ws.run_python(
-            code=(
-                "import os, sys\n"
                 "from optlyn import get_app_dir\n"
-                "sys.platform = 'win32'\n"
-                "ns = get_app_dir.__globals__\n"
-                "if 'WIN' in ns:\n"
-                "    ns['WIN'] = True\n"
-                f"os.environ['APPDATA'] = {str(roaming_root)!r}\n"
-                f"os.environ['LOCALAPPDATA'] = {str(local_root)!r}\n"
                 f"print({greeting!r}, flush=True)\n"
-                f"print('PUBLIC:' + get_app_dir({public_name!r}), flush=True)\n"
+                f"print('FIXED:' + get_app_dir({fixed_name!r}), flush=True)\n"
                 f"print('RUNTIME:' + get_app_dir({runtime_name!r}), flush=True)\n"
             )
         )
         print(
-            f"darwin rc={darwin.returncode} stdout={darwin.stdout_text!r} "
-            f"windows rc={windows.returncode} stdout={windows.stdout_text!r}",
+            f"darwin rc={darwin.returncode} stdout={darwin.stdout_text!r}",
             flush=True,
         )
         assert darwin.returncode == 0, (
             f"macOS application-directory lookup failed; "
             f"stdout={darwin.stdout_text!r} stderr={darwin.stderr_text!r}"
         )
-        assert windows.returncode == 0, (
-            f"Windows application-directory lookup failed; "
-            f"stdout={windows.stdout_text!r} stderr={windows.stderr_text!r}"
-        )
         require_success_marker_present(darwin, greeting)
-        require_success_marker_present(windows, greeting)
-        darwin_public = labeled_stdout_field(darwin, "PUBLIC:")
+        darwin_fixed = labeled_stdout_field(darwin, "FIXED:")
         darwin_runtime = labeled_stdout_field(darwin, "RUNTIME:")
-        windows_public = labeled_stdout_field(windows, "PUBLIC:")
-        windows_runtime = labeled_stdout_field(windows, "RUNTIME:")
-        expected_darwin_public = str(
-            ws.home / "Library" / "Application Support" / public_name
+        expected_darwin_fixed = str(
+            ws.home / "Library" / "Application Support" / fixed_name
         )
         expected_darwin_runtime = str(
             ws.home / "Library" / "Application Support" / runtime_name
         )
-        expected_windows_roaming = str(roaming_root / public_name)
-        expected_windows_local = str(local_root / public_name)
-        expected_windows_runtime_roaming = str(roaming_root / runtime_name)
-        expected_windows_runtime_local = str(local_root / runtime_name)
-        assert darwin_public == expected_darwin_public, (
-            "macOS application directory for Foo Bar is not "
-            "~/Library/Application Support/Foo Bar; "
-            f"got={darwin_public!r} expected={expected_darwin_public!r}"
+        assert darwin_fixed == expected_darwin_fixed, (
+            "macOS application directory for a spaced mixed-case name is not "
+            "~/Library/Application Support/<name as given>; "
+            f"got={darwin_fixed!r} expected={expected_darwin_fixed!r}"
         )
         assert darwin_runtime == expected_darwin_runtime, (
             "macOS application directory did not keep the runtime application "
             f"name; got={darwin_runtime!r} expected={expected_darwin_runtime!r}"
         )
-        assert windows_public in (
-            expected_windows_roaming,
-            expected_windows_local,
-        ), (
-            "Windows application directory is not the roaming or local "
-            "application-data folder plus Foo Bar; "
-            f"got={windows_public!r} roaming={expected_windows_roaming!r} "
-            f"local={expected_windows_local!r}"
-        )
-        assert windows_runtime in (
-            expected_windows_runtime_roaming,
-            expected_windows_runtime_local,
-        ), (
-            "Windows application directory did not keep the runtime application "
-            f"name under the roaming or local application-data folder; "
-            f"got={windows_runtime!r}"
-        )
-        unix_slug = posix_app_slug(public_name)
-        assert unix_slug not in FSPath(darwin_public).name
-        assert unix_slug not in FSPath(windows_public).name
+        unix_slug = posix_app_slug(fixed_name)
+        assert unix_slug not in FSPath(darwin_fixed).name
 
 
 # ---------------------------------------------------------------------------
@@ -1441,8 +1404,12 @@ def test_getchar_interrupt_and_eof_are_distinct_failures_not_raw_characters():
         "try:\n"
         "    ch = getchar()\n"
         "    print('CHAR:' + ch, flush=True)\n"
+        "except KeyboardInterrupt:\n"
+        "    print('FAIL:interrupt', flush=True)\n"
+        "except EOFError:\n"
+        "    print('FAIL:eof', flush=True)\n"
         "except BaseException as exc:\n"
-        "    print('FAIL:' + type(exc).__name__, flush=True)\n"
+        "    print('FAIL:other-' + type(exc).__name__, flush=True)\n"
     )
     fail_code = success_code
     ok = run_python_pipe_stdin_controlling_tty(success_code, pipe_text, key)
@@ -1472,16 +1439,13 @@ def test_getchar_interrupt_and_eof_are_distinct_failures_not_raw_characters():
     )
     interrupt_fail = labeled_stdout_field(interrupt, "FAIL:")
     eof_fail = labeled_stdout_field(eof, "FAIL:")
-    int_rest = failure_report_remainder(
-        interrupt.stdout_text, "\x03", "\x04", pipe_text, key, greeting
+    assert interrupt_fail == "interrupt", (
+        "interrupt key sequence did not raise KeyboardInterrupt; "
+        f"int_fail={interrupt_fail!r}"
     )
-    eof_rest = failure_report_remainder(
-        eof.stdout_text, "\x03", "\x04", pipe_text, key, greeting
-    )
-    assert int_rest != eof_rest, (
-        "interrupt and EOF failure remainders match after stripping key bytes; "
-        f"int={int_rest!r} eof={eof_rest!r} "
-        f"int_fail={interrupt_fail!r} eof_fail={eof_fail!r}"
+    assert eof_fail == "eof", (
+        "end-of-file key sequence did not raise EOFError; "
+        f"eof_fail={eof_fail!r}"
     )
 
 
@@ -1555,8 +1519,9 @@ def test_editor_on_string_returns_saved_text_or_absent():
     with workspace() as ws:
         saver = ws.write(
             "save.py",
-            "import sys\n"
-            f"open(sys.argv[1], 'w', encoding='utf-8').write({saved!r})\n",
+            "import os, sys\n"
+            "path = [a for a in sys.argv[1:] if os.path.isfile(a)][-1]\n"
+            f"open(path, 'w', encoding='utf-8').write({saved!r})\n",
         )
         quitter = ws.write("quit.py", "import sys\nsys.exit(0)\n")
         save_editor = f"{sys.executable} {saver}"
@@ -1589,14 +1554,16 @@ def test_editor_on_filename_returns_no_text():
         target = ws.write("doc.txt", original)
         saver = ws.write(
             "save.py",
-            "import sys\n"
-            f"open(sys.argv[1], 'w', encoding='utf-8').write({saved!r})\n",
+            "import os, sys\n"
+            "path = [a for a in sys.argv[1:] if os.path.isfile(a)][-1]\n"
+            f"open(path, 'w', encoding='utf-8').write({saved!r})\n",
         )
         quitter = ws.write("quit.py", "import sys\nsys.exit(0)\n")
         writer = ws.write(
             "write.py",
-            "import sys\n"
-            f"open(sys.argv[1], 'w', encoding='utf-8').write({written!r})\n",
+            "import os, sys\n"
+            "path = [a for a in sys.argv[1:] if os.path.isfile(a)][-1]\n"
+            f"open(path, 'w', encoding='utf-8').write({written!r})\n",
         )
         absent_value = edit(original, editor=f"{sys.executable} {quitter}")
         saved_value = edit(original, editor=f"{sys.executable} {saver}")

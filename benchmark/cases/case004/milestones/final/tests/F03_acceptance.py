@@ -1,9 +1,9 @@
 # feature: F03
 """FP-03: timestamped signatures and expiry.
 
-Assertions follow Full_PRD.original.md FP-03 (L154–L181). Exception class
-names, failure message text, and failure-object attribute spellings are
-not pinned.
+Assertions follow Full_PRD.original.md FP-03 (L154–L181). Failure objects are read
+through the exception classes and attributes the Interface Contract
+states.
 """
 
 from __future__ import annotations
@@ -903,20 +903,10 @@ def test_expiry_is_distinguishable_from_mismatch_missing_and_malformed():
     assert expired_dts, "expiry must carry a signing-time datetime"
     assert not datetimes_on_failure(missing_exc)
     assert not datetimes_on_failure(malformed_exc)
-    dummy = dummy_undecodable_time_suffix()
-    dummy_payload = expected_bytes(PUBLIC_VALUE) + DEFAULT_SEPARATOR + dummy
     require_distinct_failure_kinds(
         malformed_exc,
         missing_exc,
-        covariates=(
-            missing,
-            malformed,
-            legal,
-            expected_bytes(PUBLIC_VALUE),
-            PUBLIC_VALUE,
-            dummy,
-            dummy_payload,
-        ),
+        expect=("malformed-timestamp", "missing-timestamp"),
     )
     print(
         "expiry vs missing/malformed/mismatch distinguished by datetime "
@@ -1181,12 +1171,6 @@ def test_non_timestamped_token_with_different_secret_is_signature_mismatch():
     assert_signature_mismatch_not_missing_timestamp(
         mismatch_exc,
         missing_exc,
-        covariates=(
-            missing_token,
-            mismatch_token,
-            expected_bytes(PUBLIC_VALUE),
-            PUBLIC_VALUE,
-        ),
     )
     print(
         "different-secret non-timestamped token is signature mismatch, "
@@ -1218,7 +1202,6 @@ def test_runtime_non_timestamped_token_with_different_secret_is_signature_mismat
     assert_signature_mismatch_not_missing_timestamp(
         mismatch_exc,
         missing_exc,
-        covariates=(missing_token, mismatch_token, payload),
     )
     print(
         "runtime different-secret non-timestamped token is signature mismatch, "
@@ -1242,21 +1225,12 @@ def test_dummy_time_suffix_is_malformed_timestamp():
     missing_exc = require_recovery_failure(recover_timestamped(signer, missing))
     require_signing_time_absent(missing_exc)
 
-    dummy = dummy_undecodable_time_suffix()
-    dummy_payload = expected_bytes(PUBLIC_VALUE) + DEFAULT_SEPARATOR + dummy
     require_distinct_failure_kinds(
         malformed_exc,
         missing_exc,
-        covariates=(
-            token,
-            missing,
-            expected_bytes(PUBLIC_VALUE),
-            PUBLIC_VALUE,
-            dummy,
-            dummy_payload,
-        ),
+        expect=("malformed-timestamp", "missing-timestamp"),
     )
-    print(f"dummy suffix={dummy!r}", flush=True)
+    print(f"dummy suffix={dummy_undecodable_time_suffix()!r}", flush=True)
 
 
 def test_malformed_signing_time_absent():
@@ -1288,23 +1262,13 @@ def test_malformed_distinguishable_from_expiry():
     missing_exc = require_recovery_failure(recover_timestamped(signer, missing))
     require_signing_time_absent(missing_exc)
 
-    dummy = dummy_undecodable_time_suffix()
-    dummy_payload = expected_bytes(PUBLIC_VALUE) + DEFAULT_SEPARATOR + dummy
     assert datetimes_on_failure(expired_exc)
     assert not datetimes_on_failure(malformed_exc)
     assert not datetimes_on_failure(missing_exc)
     require_distinct_failure_kinds(
         malformed_exc,
         missing_exc,
-        covariates=(
-            malformed,
-            missing,
-            legal,
-            expected_bytes(PUBLIC_VALUE),
-            PUBLIC_VALUE,
-            dummy,
-            dummy_payload,
-        ),
+        expect=("malformed-timestamp", "missing-timestamp"),
     )
 
 
@@ -1336,15 +1300,14 @@ def test_replaced_out_of_range_time_field_is_malformed_not_expiry():
         )
         assert datetimes_on_failure(expired_exc)
         assert not datetimes_on_failure(exc)
-        covariates = (
-            replaced,
-            in_range,
-            legal,
-            expected_bytes(PUBLIC_VALUE),
-            PUBLIC_VALUE,
+        require_distinct_failure_kinds(
+            exc, mismatch_with_time,
+            expect=("malformed-timestamp", "time-signature"),
         )
-        require_distinct_failure_kinds(exc, mismatch_with_time, covariates=covariates)
-        require_distinct_failure_kinds(exc, expired_exc, covariates=covariates)
+        require_distinct_failure_kinds(
+            exc, expired_exc,
+            expect=("malformed-timestamp", "expired"),
+        )
 
 
 def test_replaced_out_of_range_time_field_signing_time_absent():
@@ -1382,15 +1345,14 @@ def test_runtime_replaced_out_of_range_time_field_is_malformed():
         )
         assert datetimes_on_failure(expired_exc)
         assert not datetimes_on_failure(exc)
-        covariates = (
-            replaced,
-            in_range,
-            legal,
-            expected_bytes(text),
-            text,
+        require_distinct_failure_kinds(
+            exc, mismatch_with_time,
+            expect=("malformed-timestamp", "time-signature"),
         )
-        require_distinct_failure_kinds(exc, mismatch_with_time, covariates=covariates)
-        require_distinct_failure_kinds(exc, expired_exc, covariates=covariates)
+        require_distinct_failure_kinds(
+            exc, expired_exc,
+            expect=("malformed-timestamp", "expired"),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1640,11 +1602,6 @@ def test_expired_sha256_with_sha1_fallback_is_expired_not_mismatch():
         require_expired_not_signature_mismatch(
             expired_exc,
             mismatch_exc,
-            covariates=(
-                token,
-                PUBLIC_ID_MAPPING,
-                default_json_text(PUBLIC_ID_MAPPING),
-            ),
         )
 
 

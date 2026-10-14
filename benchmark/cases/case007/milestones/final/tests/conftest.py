@@ -51,6 +51,7 @@ def _restore_process_state():
     previous_stdout = sys.stdout
     previous_stderr = sys.stderr
     previous_time_fn = time_module.time
+    previous_time_ns_fn = time_module.time_ns
     previous_datetime_cls = datetime_module.datetime
     previous_tz = os.environ.get("TZ")
     try:
@@ -64,6 +65,7 @@ def _restore_process_state():
         sys.stdout = previous_stdout
         sys.stderr = previous_stderr
         time_module.time = previous_time_fn
+        time_module.time_ns = previous_time_ns_fn
         datetime_module.datetime = previous_datetime_cls
         current_tz = os.environ.get("TZ")
         if current_tz != previous_tz:

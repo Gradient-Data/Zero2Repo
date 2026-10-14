@@ -28,7 +28,7 @@ from _harness import (
 )
 
 # ---------------------------------------------------------------------------
-# PRD-named literals (Check 1). Hyphen in the 7-Eleven host is U+2011.
+# Fixed sample inputs. Hyphen in the 7-Eleven host is U+2011.
 # ---------------------------------------------------------------------------
 
 UINT32_MAX: int = 2**32 - 1
@@ -2941,14 +2941,14 @@ int run_session(bool have_pattern, const std::string& pattern, bool have_base,
   options.ignore_case = ignore_case;
   const hrefparse::url_pattern_options* opt_ptr = &options;
 
-  tl::expected<hrefparse::url_pattern<Provider>, hrefparse::errors> compiled;
-  if (have_pattern) {
-    std::string_view pat = pattern;
-    std::string_view base_sv = base;
-    const std::string_view* base_ptr = have_base ? &base_sv : nullptr;
-    compiled = hrefparse::parse_url_pattern<Provider>(std::string_view(pat), base_ptr,
-                                                opt_ptr);
-  } else {
+  auto compiled = [&]() -> tl::expected<hrefparse::url_pattern<Provider>, hrefparse::errors> {
+    if (have_pattern) {
+      std::string_view pat = pattern;
+      std::string_view base_sv = base;
+      const std::string_view* base_ptr = have_base ? &base_sv : nullptr;
+      return hrefparse::parse_url_pattern<Provider>(std::string_view(pat), base_ptr,
+                                                  opt_ptr);
+    }
     hrefparse::url_pattern_init init;
     for (const auto& kv : comps) {
       apply_comp(init, kv.first, kv.second);
@@ -2956,9 +2956,9 @@ int run_session(bool have_pattern, const std::string& pattern, bool have_base,
     if (have_base) {
       init.base_url = base;
     }
-    compiled = hrefparse::parse_url_pattern<Provider>(std::move(init), nullptr,
+    return hrefparse::parse_url_pattern<Provider>(std::move(init), nullptr,
                                                 opt_ptr);
-  }
+  }();
 
   if (!compiled) {
     emit_status("FAIL");
@@ -2980,20 +2980,28 @@ int run_session(bool have_pattern, const std::string& pattern, bool have_base,
     return 0;
   }
 
-  hrefparse::result<bool> test_result;
-  hrefparse::result<std::optional<hrefparse::url_pattern_result>> exec_result;
-  if (have_input) {
-    std::string_view in = input_url;
-    test_result = compiled->test(in, nullptr);
-    exec_result = compiled->exec(in, nullptr);
-  } else {
-    hrefparse::url_pattern_init in_init;
+  // The Contract leaves hrefparse::errors to the implementer, so default
+  // construction and assignment of a result are not promised; each result
+  // is initialized directly from its call.
+  const std::string_view in = input_url;
+  hrefparse::url_pattern_init in_init;
+  if (!have_input) {
     for (const auto& kv : in_comps) {
       apply_comp(in_init, kv.first, kv.second);
     }
-    test_result = compiled->test(in_init, nullptr);
-    exec_result = compiled->exec(in_init, nullptr);
   }
+  auto test_result = [&]() {
+    if (have_input) {
+      return compiled->test(in, nullptr);
+    }
+    return compiled->test(in_init, nullptr);
+  }();
+  auto exec_result = [&]() {
+    if (have_input) {
+      return compiled->exec(in, nullptr);
+    }
+    return compiled->exec(in_init, nullptr);
+  }();
 
   if (!test_result) {
     std::cerr << "test returned an unexpected error\n";

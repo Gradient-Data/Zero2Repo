@@ -359,38 +359,33 @@ def _public_value(event: Any, name: str) -> Any:
 
 
 def chunk_mark(event: Any) -> Hashable:
-    """Return a hashable public mark for a pulled data event.
+    """Return ``(chunk_start, chunk_end)`` of a pulled data event.
 
-    Uses two independent public true/false fields, or one field that
-    can take four values. Missing or unclassifiable marks raise —
-    never rewritten as "neither".
+    The Interface Contract states both fields, each exactly ``bool``.
+    A missing field or a non-bool value raises — never rewritten as
+    "neither".
     """
     if event is None:
         raise HarnessError("cannot read a chunk mark from None")
-    payload = data_payload(event)
-    bools: dict[str, bool] = {}
-    others: dict[str, Any] = {}
-    for name in _public_names(event):
+    marks = []
+    for name in ("chunk_start", "chunk_end"):
         value = _public_value(event, name)
-        if callable(value):
-            continue
-        if name == "data" or value is payload:
-            continue
-        if type(value) is bool:
-            bools[name] = as_bool(value)
-        elif isinstance(value, (str, bytes, int)) and type(value) is not bool:
-            others[name] = value
-    if len(bools) >= 2:
-        mark: Hashable = ("bools", tuple(sorted(bools.items())))
-        print(f"chunk_mark {mark!r}", flush=True)
-        return mark
-    if others:
-        mark = ("fields", tuple(sorted((k, others[k]) for k in others)))
-        print(f"chunk_mark {mark!r}", flush=True)
-        return mark
-    raise HarnessError(
-        f"{type(event).__name__} public surface has no classifiable chunk mark"
-    )
+        if type(value) is not bool:
+            raise HarnessError(
+                f"{type(event).__name__}.{name} is not a bool: {value!r}"
+            )
+        marks.append(value)
+    mark: Hashable = (marks[0], marks[1])
+    print(f"chunk_mark {mark!r}", flush=True)
+    return mark
+
+
+_STATED_ROLE_MARKS: dict[str, Hashable] = {
+    _ROLE_BOTH: (True, True),
+    _ROLE_START: (True, False),
+    _ROLE_NEITHER: (False, False),
+    _ROLE_END: (False, True),
+}
 
 
 def _feed_chunked_post(server: Any) -> None:
@@ -405,8 +400,8 @@ def _feed_chunked_post(server: Any) -> None:
     print(f"chunked POST pulled {type(pulled).__name__}", flush=True)
 
 
-def public_hello_role_marks() -> dict[str, Hashable]:
-    """Calibrate the four chunk-role marks from the public hello walks.
+def fixed_hello_role_marks() -> dict[str, Hashable]:
+    """Calibrate the four chunk-role marks from the fixed hello walks.
 
     Raises if the four situations are not four distinct public marks.
     """
@@ -444,22 +439,22 @@ def public_hello_role_marks() -> dict[str, Hashable]:
         _ROLE_NEITHER: neither_mark,
         _ROLE_END: end_mark,
     }
-    if len(set(roles.values())) != 4:
-        raise HarnessError(
-            "public hello walks did not produce four distinguishable marks: "
-            f"{roles!r}"
+    if roles != _STATED_ROLE_MARKS:
+        raise AssertionError(
+            "hello walks did not produce the stated chunk marks: "
+            f"got {roles!r}, expected {_STATED_ROLE_MARKS!r}"
         )
-    print(f"public_hello_role_marks {roles!r}", flush=True)
+    print(f"fixed_hello_role_marks {roles!r}", flush=True)
     return roles
 
 
 def chunk_role(event: Any, roles: dict[str, Hashable] | None = None) -> str:
     """Map a pulled data event to start / end / both / neither.
 
-    *roles* is the four-mark table from :func:`public_hello_role_marks`.
+    *roles* is the four-mark table from :func:`fixed_hello_role_marks`.
     An unknown mark raises — it is never rewritten as neither.
     """
-    table = roles if roles is not None else public_hello_role_marks()
+    table = roles if roles is not None else fixed_hello_role_marks()
     mark = chunk_mark(event)
     for role, known in table.items():
         if mark == known:
@@ -719,7 +714,7 @@ __all__ = (
     "neighbor_hello_chunk",
     "passthrough_send",
     "payload_as_bytes",
-    "public_hello_role_marks",
+    "fixed_hello_role_marks",
     "pull_until_remote_refusal",
     "public_value_blobs",
     "pull_kind",

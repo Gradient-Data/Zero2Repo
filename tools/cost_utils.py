@@ -28,20 +28,25 @@ PRICING_MODEL_ALIASES: dict[str, str] = {
     "anthropic/claude-opus-4-8": "anthropic/claude-opus-4.6",
 }
 
-# First path segment of an OpenRouter-style pricing key. Any other prefix is a
-# gateway alias and is removed before pricing lookup.
+# First path segment of a catalog pricing key. Any other prefix is a gateway
+# alias and is removed before pricing lookup.
 _PRICING_VENDORS = frozenset(
     {
         "anthropic",
+        "bytedance-seed",
         "cohere",
         "deepseek",
         "gemini",
         "google",
         "meta-llama",
         "mistralai",
+        "moonshot",
         "openai",
         "qwen",
+        "stepfun",
+        "tencent",
         "x-ai",
+        "z-ai",
     }
 )
 
