@@ -1,17 +1,38 @@
-# <img src="icon.svg" width="36" height="36" alt="" valign="middle"> Zero2Repo
+<div align="center">
+
+<img src="icon.svg" width="56" height="56" alt="">
+
+# Zero2Repo
+
+### Can coding agents build repositories from scratch?
+
+**A product spec, an empty workspace, and hidden acceptance tests. The agent builds the repository.**
+
+[![Paper](https://img.shields.io/badge/Paper-arXiv%3A2609.38269-b31b1b)](https://arxiv.org/abs/2609.38269)
+[![Website](https://img.shields.io/badge/Website-zero2repo.ai-0f766e)](https://zero2repo.ai/)
+[![GitHub Stars](https://img.shields.io/github/stars/OpenEdgeHQ/Zero2Repo?style=flat&color=f97316)](https://github.com/OpenEdgeHQ/Zero2Repo/stargazers)
+
+[**Website**](https://zero2repo.ai/) ·
+[**Paper**](https://arxiv.org/abs/2609.38269) ·
+[**PDF**](zero2repo.pdf)
 
 Formerly CodingBench. Same exam. Clearer name.
-[zero2repo.ai](https://zero2repo.ai/)
+
+</div>
+
+<p align="center">
+  <img src="figures/intro.png" width="100%" alt="Data flow for one Zero2Repo task. The specification is given to the agent; hidden tests run only after submission, in a fresh offline judge container.">
+</p>
+
+<p align="center">
+<em>One task, from the public specification to a binary reward. The agent builds in an empty workspace. After an explicit submission, a fresh offline container receives the hidden tests and writes the reward.</em>
+</p>
 
 Zero2Repo evaluates coding agents on **repo-scale, from-scratch** tasks.
 
 The agent receives a product spec and an empty workspace, implements the project
 in a real shell environment, and is scored by **hidden, deterministic acceptance
 tests** (binary reward: `1.0` / `0.0`). No LLM-as-judge.
-
-<p align="center">
-  <img src="fig_overview.png" alt="Zero2Repo evaluation architecture">
-</p>
 
 This repository ships:
 
@@ -229,6 +250,23 @@ harbor run --config configs/agents/codex.yaml
 | [`benchmark/local_agents/README.md`](benchmark/local_agents/README.md) | Agent env templates and smoke tests |
 
 ---
+
+## Citation
+
+If you use Zero2Repo, please cite the paper. The PDF is also in this repository
+as [`zero2repo.pdf`](zero2repo.pdf).
+
+```bibtex
+@misc{yang2026zero2repocodingagentsbuild,
+  title         = {Zero2Repo: Can Coding Agents Build Repositories from Scratch?},
+  author        = {Pei Yang and Tianyu Shi and Yuhang Yao and Wanyi Chen and Tongyun Yang and Dun Pei and Haonan Wang and Pengbin Feng and Guanxu Yu and Jingchun Huang and Zeyu Zhang and Shuhan Sun and Hao Li and Alex Gu and Xiang Li and Jie Xiao and Xinyu Wang and Hanxin Chen and Daqi Li and Qi Jia and Hongshan Lin and Zhizhou Gu and Zijun Tian and Weizhi Du and Lynn Ai and Eric Yang},
+  year          = {2026},
+  eprint        = {2609.38269},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.SE},
+  url           = {https://arxiv.org/abs/2609.38269}
+}
+```
 
 ## License
 

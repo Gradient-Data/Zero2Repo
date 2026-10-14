@@ -1,0 +1,121 @@
+cff-version: 1.2.0
+message: "If you use Zero2Repo, please cite the paper."
+title: "Zero2Repo: Can Coding Agents Build Repositories from Scratch?"
+type: software
+authors:
+  - family-names: Yang
+    given-names: Pei
+  - family-names: Shi
+    given-names: Tianyu
+  - family-names: Yao
+    given-names: Yuhang
+  - family-names: Chen
+    given-names: Wanyi
+  - family-names: Yang
+    given-names: Tongyun
+  - family-names: Pei
+    given-names: Dun
+  - family-names: Wang
+    given-names: Haonan
+  - family-names: Feng
+    given-names: Pengbin
+  - family-names: Yu
+    given-names: Guanxu
+  - family-names: Huang
+    given-names: Jingchun
+  - family-names: Zhang
+    given-names: Zeyu
+  - family-names: Sun
+    given-names: Shuhan
+  - family-names: Li
+    given-names: Hao
+  - family-names: Gu
+    given-names: Alex
+  - family-names: Li
+    given-names: Xiang
+  - family-names: Xiao
+    given-names: Jie
+  - family-names: Wang
+    given-names: Xinyu
+  - family-names: Chen
+    given-names: Hanxin
+  - family-names: Li
+    given-names: Daqi
+  - family-names: Jia
+    given-names: Qi
+  - family-names: Lin
+    given-names: Hongshan
+  - family-names: Gu
+    given-names: Zhizhou
+  - family-names: Tian
+    given-names: Zijun
+  - family-names: Du
+    given-names: Weizhi
+  - family-names: Ai
+    given-names: Lynn
+  - family-names: Yang
+    given-names: Eric
+year: 2026
+url: "https://arxiv.org/abs/2609.38269"
+preferred-citation:
+  type: article
+  title: "Zero2Repo: Can Coding Agents Build Repositories from Scratch?"
+  authors:
+    - family-names: Yang
+      given-names: Pei
+    - family-names: Shi
+      given-names: Tianyu
+    - family-names: Yao
+      given-names: Yuhang
+    - family-names: Chen
+      given-names: Wanyi
+    - family-names: Yang
+      given-names: Tongyun
+    - family-names: Pei
+      given-names: Dun
+    - family-names: Wang
+      given-names: Haonan
+    - family-names: Feng
+      given-names: Pengbin
+    - family-names: Yu
+      given-names: Guanxu
+    - family-names: Huang
+      given-names: Jingchun
+    - family-names: Zhang
+      given-names: Zeyu
+    - family-names: Sun
+      given-names: Shuhan
+    - family-names: Li
+      given-names: Hao
+    - family-names: Gu
+      given-names: Alex
+    - family-names: Li
+      given-names: Xiang
+    - family-names: Xiao
+      given-names: Jie
+    - family-names: Wang
+      given-names: Xinyu
+    - family-names: Chen
+      given-names: Hanxin
+    - family-names: Li
+      given-names: Daqi
+    - family-names: Jia
+      given-names: Qi
+    - family-names: Lin
+      given-names: Hongshan
+    - family-names: Gu
+      given-names: Zhizhou
+    - family-names: Tian
+      given-names: Zijun
+    - family-names: Du
+      given-names: Weizhi
+    - family-names: Ai
+      given-names: Lynn
+    - family-names: Yang
+      given-names: Eric
+  year: 2026
+  url: "https://arxiv.org/abs/2609.38269"
+  identifiers:
+    - type: other
+      value: "arXiv:2609.38269"
+      description: arXiv identifier
