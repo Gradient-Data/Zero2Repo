@@ -9,7 +9,9 @@ pytest file has been rejected.
 from __future__ import annotations
 
 import os
+import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 
@@ -131,6 +133,60 @@ def _side_effect_hook(event: str, args: tuple, workspace: Path, bans: set[str]) 
                 )
 
 
+class ExecutionAudit:
+    """Freeze collected identities before selection and account for every phase.
+
+    This checks runner completeness, not isolation against arbitrary code
+    modifying the Python interpreter in which the tests execute.
+    """
+
+    def __init__(self) -> None:
+        self.collected: list[str] = []
+        self.selected: list[str] = []
+        self.reports: dict[str, dict[str, list[str]]] = {}
+        self.issues: list[str] = []
+
+    def pytest_itemcollected(self, item) -> None:
+        self.collected.append(item.nodeid)
+
+    def pytest_collection_finish(self, session) -> None:
+        self.selected = [item.nodeid for item in session.items]
+
+    def pytest_deselected(self, items) -> None:
+        self.issues.append(f"deselected {len(items)} tests")
+
+    def pytest_collectreport(self, report) -> None:
+        if report.skipped:
+            self.issues.append(f"skipped collection: {report.nodeid}")
+
+    def pytest_runtest_logreport(self, report) -> None:
+        phases = self.reports.setdefault(report.nodeid, {})
+        phases.setdefault(report.when, []).append(report.outcome)
+        if report.skipped or hasattr(report, "wasxfail") or report.outcome == "rerun":
+            self.issues.append(f"nonstandard outcome: {report.nodeid} ({report.when})")
+
+    def finish(self) -> dict:
+        if not self.collected:
+            self.issues.append("no tests collected")
+        if any(n != 1 for n in Counter(self.collected).values()):
+            self.issues.append("duplicate collected test identities")
+        if Counter(self.collected) != Counter(self.selected):
+            self.issues.append("selected tests differ from collected tests")
+        if set(self.reports) != set(self.collected):
+            self.issues.append("executed tests differ from collected tests")
+        for node, phases in self.reports.items():
+            if any(len(values) != 1 for values in phases.values()):
+                self.issues.append(f"duplicate phase reports: {node}")
+            # A setup failure is an ordinary test error, not a missing call.
+            expected = {"setup", "teardown"}
+            if phases.get("setup") == ["passed"]:
+                expected.add("call")
+            if set(phases) != expected:
+                self.issues.append(f"incomplete test phases: {node}")
+        return {"collected": self.collected, "selected": self.selected,
+                "reports": self.reports, "issues": self.issues}
+
+
 def main(argv: list[str] | None = None) -> int:
     workspace = Path(os.environ.get("CODING_BENCH_WORKSPACE", "/app"))
     tests_final = Path(os.environ.get("CODING_BENCH_TESTS_FINAL", "/tests/final"))
@@ -171,7 +227,11 @@ def main(argv: list[str] | None = None) -> int:
         *(argv if argv is not None else sys.argv[1:]),
     ]
     os.chdir(workspace)
-    return int(pytest.main(args))
+    audit = ExecutionAudit()
+    result = int(pytest.main(args, plugins=[audit]))
+    receipt = audit.finish()
+    print("CODING_BENCH_COLLECTION_AUDIT=" + json.dumps(receipt, sort_keys=True), flush=True)
+    return 86 if receipt["issues"] else result
 
 
 if __name__ == "__main__":

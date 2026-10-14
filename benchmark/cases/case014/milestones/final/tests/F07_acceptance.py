@@ -850,53 +850,53 @@ def test_persistent_weather_offset_does_not_deadlock():
     )
 
 
-def test_all_zero_config_default_baro_altitude_1sigma_is_2m():
-    """an omitted barometer 1-sigma matches explicit 2 m on the first update, and a tighter 1-sigma pulls harder."""
-    pad_h = runtime_pad_isa_m()
-    # Metre-scale step on the first update after init: large enough to see,
-    # small enough that a tighter 1-sigma is not chi²-crushed into pulling
-    # *less* than 2 m. A 1 s pad before the step collapses height
-    # variance so 0.5 m and 2 m Kalman gains both look like noise under a
-    # centimetre additive slack. The third arm is the plan's ~0.2 m, not
-    # a 0.55–0.75 m band that sits next to a 0.5 m default cheat.
-    step = 1.05 + (runtime_weather_isa_m() % 0.20)
-    p_pad = tropospheric_isa_pressure_pa(pad_h)
-    p_step = tropospheric_isa_pressure_pa(pad_h + step)
-    tight = runtime_tight_baro_std_m()
-    first = vert_stream(duration_s=DT_SEC, t0_us=0, pressure_pa=p_step)
-
-    def _pull(baro_std: float) -> float:
-        run = c_vert_run(
-            VertScenario(
-                t_init=0,
-                pressure_pa=p_pad,
-                baro_std=baro_std,
-                cmds=first,
-            )
+def _first_baro_pull(baro_std: float, pad_h: float, step: float) -> float:
+    """Compare measurement noise with the same explicit initial uncertainty."""
+    run = c_vert_run(
+        VertScenario(
+            t_init=0,
+            pressure_pa=tropospheric_isa_pressure_pa(pad_h),
+            h_init_std=2.0,
+            baro_std=baro_std,
+            cmds=vert_stream(
+                duration_s=DT_SEC, t0_us=0,
+                pressure_pa=tropospheric_isa_pressure_pa(pad_h + step),
+            ),
         )
-        assert run.init_ok, "default-1-sigma init was refused"
-        at_init = [s for s in run.snaps if s.t_us <= 0 and s.h_ok]
-        after = [s for s in run.snaps if s.t_us > 0 and s.h_ok]
-        assert at_init and after
-        return after[-1].h - at_init[-1].h
+    )
+    assert run.init_ok, "barometer noise comparison init was refused"
+    at_init = [s for s in run.snaps if s.t_us <= 0 and s.h_ok]
+    after = [s for s in run.snaps if s.t_us > 0 and s.h_ok]
+    assert at_init and after
+    assert after[-1].n_invalid == at_init[-1].n_invalid
+    return after[-1].h - at_init[-1].h
 
-    dh_omit = _pull(0.0)
-    dh_2m = _pull(BARO_1SIGMA_DEFAULT_M)
-    dh_tight = _pull(tight)
-    print(
-        f"first-update dh omit={dh_omit} explicit_2m={dh_2m} tight={dh_tight} "
-        f"step={step} tight_std={tight}",
-        flush=True,
+
+def test_all_zero_config_default_baro_altitude_1sigma_is_2m():
+    """The default measurement noise equals the explicitly specified 2 m."""
+    pad_h = runtime_pad_isa_m()
+    step = 1.05 + (runtime_weather_isa_m() % 0.20)
+    dh_omit = _first_baro_pull(0.0, pad_h, step)
+    dh_2m = _first_baro_pull(BARO_1SIGMA_DEFAULT_M, pad_h, step)
+    print(f"first-update dh omit={dh_omit} explicit_2m={dh_2m}", flush=True)
+    assert dh_2m > 0.0, "explicit measurement did not move height toward the observation"
+    assert math.isclose(dh_omit, dh_2m, rel_tol=1e-5, abs_tol=1e-6), (
+        "omitted barometer noise differs from explicit 2 m under identical initial conditions"
     )
-    assert abs(dh_2m) > 0.04 * step, (
-        "explicit 2 m first update did not pull — live baseline missing"
-    )
-    scale = max(abs(dh_2m), 0.02)
-    assert abs(dh_omit - dh_2m) < 0.35 * scale, (
-        "omitted barometer 1-sigma did not match an explicit 2 m on the first update"
-    )
-    assert abs(dh_tight) > 1.2 * abs(dh_2m) + 0.005, (
-        "a tighter altitude 1-sigma did not pull harder than 2 m on the first update"
+
+
+def test_baro_measurement_noise_changes_weight_with_fixed_initial_uncertainty():
+    """Only measurement noise changes; no prescribed first-update gain ratio."""
+    pad_h = runtime_pad_isa_m()
+    # This innovation is below the explicit 2 m initial uncertainty. Unlike
+    # an omitted initial uncertainty, it does not shrink with measurement noise.
+    step = 1.05 + (runtime_weather_isa_m() % 0.20)
+    tight = runtime_tight_baro_std_m()
+    dh_2m = _first_baro_pull(BARO_1SIGMA_DEFAULT_M, pad_h, step)
+    dh_tight = _first_baro_pull(tight, pad_h, step)
+    print(f"fixed-prior dh explicit_2m={dh_2m} tight={dh_tight} std={tight}", flush=True)
+    assert 0.0 < dh_2m < dh_tight, (
+        "lower measurement uncertainty did not increase its weight with the same initial state"
     )
 
 

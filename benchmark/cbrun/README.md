@@ -462,6 +462,24 @@ bare Harbor run of a substrate case reports `substrates_missing`.
 * `coding_bench_harbor.final_judge`: the scoring engine (single source of truth,
   shared with the Harbor adapter).
 
+### Test execution completeness
+
+The trusted pytest launcher records each collected node before selection and
+checks that the same nodes finish exactly once, including setup and teardown.
+Skipped collection, deselection, skip/xfail/xpass outcomes, missing nodes,
+duplicate execution, and interrupted phases are incomplete evaluations, not
+successful submissions. Ordinary completed assertion failures remain test
+failures. The collection receipt is retained in `final_tests.log` under
+`CODING_BENCH_COLLECTION_AUDIT`; launcher exit 86 signals incompleteness to the
+shared judge. This is execution accounting, not a sandbox against arbitrary
+interpreter tampering by in-process solution code.
+
+Historical logs without receipts are not silently upgraded to node-level
+verification. Audit their recorded collection, execution counts, and outcomes
+before deciding which saved submissions need rejudging. Rejudging uses the
+original workspace and image without an agent run, and does not change the
+original submission validity or timeout status.
+
 ## Local agent smoke
 
 Your credentials, no source edits: [`../local_agents/README.md`](../local_agents/README.md).

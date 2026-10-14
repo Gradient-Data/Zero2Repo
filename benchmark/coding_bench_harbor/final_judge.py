@@ -281,6 +281,10 @@ def _frozen_expected_count(manifest: dict | None) -> int | None:
 
 def _apply_collection_gate(result: dict, manifest: dict | None = None) -> None:
     """Require a parseable executed-test summary; exit 0 is not enough."""
+    if result.get("exit_code") == 86:
+        raise JudgeError("pytest execution was incomplete; see the collection audit in final_tests.log")
+    if result.get("skipped_count"):
+        raise JudgeError("acceptance contains skipped, deselected, or nonstandard test outcomes")
     total = result.get("total_count")
     if not result.get("counts_parsed") or not total:
         raise JudgeError(
@@ -328,6 +332,7 @@ def _result_from_proc(
         "passed_count": counts.passed if counts else None,
         "failed_count": counts.failed if counts else None,
         "error_count": counts.errors if counts else None,
+        "skipped_count": counts.skipped if counts else None,
         "total_count": counts.total if counts else None,
         "pass_rate": counts.pass_rate if counts else None,
         "test_framework": counts.framework if counts else None,

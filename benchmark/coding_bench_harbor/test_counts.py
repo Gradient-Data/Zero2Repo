@@ -103,7 +103,9 @@ def _parse_pytest(out: str) -> tuple[int, int, int, int] | None:
     passed = grab("passed")
     failed = grab("failed")
     errors = grab("error", "errors")
-    skipped = grab("skipped", "deselected")
+    # None of these outcomes establishes an ordinary executed pass. Keep
+    # them visible to the fail-closed judge instead of dropping them.
+    skipped = grab("skipped", "deselected", "xfailed", "xpassed", "rerun")
     if passed == failed == errors == 0:
         return None
     return passed, failed, errors, skipped
