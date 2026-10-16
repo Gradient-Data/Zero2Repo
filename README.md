@@ -10,7 +10,7 @@
 
 [![Paper](https://img.shields.io/badge/Paper-arXiv%3A2609.38269-b31b1b)](https://arxiv.org/abs/2609.38269)
 [![Website](https://img.shields.io/badge/Website-zero2repo.ai-0f766e)](https://zero2repo.ai/)
-[![GitHub Stars](https://img.shields.io/github/stars/OpenEdgeHQ/Zero2Repo?style=flat&color=f97316)](https://github.com/OpenEdgeHQ/Zero2Repo/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/Gradient-Data/Zero2Repo?style=flat&color=f97316)](https://github.com/Gradient-Data/Zero2Repo/stargazers)
 
 [**Website**](https://zero2repo.ai/) ·
 [**Paper**](https://arxiv.org/abs/2609.38269) ·
@@ -123,7 +123,7 @@ distribution, test on another".
 ### Install
 
 ```bash
-git clone https://github.com/OpenEdgeHQ/Zero2Repo.git
+git clone https://github.com/Gradient-Data/Zero2Repo.git
 cd Zero2Repo
 
 # vendor dependency used by cost reporting

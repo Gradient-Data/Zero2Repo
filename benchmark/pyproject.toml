@@ -12,7 +12,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://zero2repo.ai/"
-Repository = "https://github.com/OpenEdgeHQ/Zero2Repo"
+Repository = "https://github.com/Gradient-Data/Zero2Repo"
 
 [project.optional-dependencies]
 # The Harbor engine itself. Kept optional so the adapter/judge can be installed
