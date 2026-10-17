@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="icon.svg" width="56" height="56" alt="">
+<img src="figures/exam.gif" width="468" alt="The exam, one hidden run. Hidden tests resolve to 1 when every hidden test passed.">
 
 # Zero2Repo
 
