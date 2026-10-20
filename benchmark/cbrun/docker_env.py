@@ -202,7 +202,10 @@ class Container:
         The stall watchdog stops the agent when stdout and ``activity_path``
         (typically ``/app``) both stay quiet for ``stall_window_sec``.
         Setting ``abort`` stops the agent the same way (used by the access monitor).
+        The agent sees the wall budget as ``CBRUN_WALL_SEC`` (its time reminders
+        count down from it).
         """
+        env = {**(env or {}), "CBRUN_WALL_SEC": str(int(wall_timeout_sec))}
         wrapped = (
             f"timeout --signal=KILL {int(wall_timeout_sec)} "
             f"bash -o pipefail -lc {_shq(command)}"

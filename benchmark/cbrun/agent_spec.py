@@ -12,10 +12,11 @@ import importlib
 import json
 import os
 import shlex
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
+from . import time_reminder
 from .agent_hooks import claude_code_env, opencode_env
 from .codex_config import (
     CODEX_GATEWAY_WEBSOCKETS_ENV,
@@ -547,7 +548,176 @@ path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
 PY
 """
 
-_BUILTIN_SPECS: dict[str, AgentSpec] = {
+# Agent setup writes this file to time_reminder.CONTAINER_PATH; the hooks and
+# plugins installed below call it.
+TIME_REMINDER_SOURCE = Path(time_reminder.__file__).read_bytes()
+_TIME_REMINDER_EOF = "CBRUN_TIME_REMINDER_EOF"
+_TIME_REMINDER_CMD = f"python3 {time_reminder.CONTAINER_PATH}"
+# The solve exec sets CBRUN_WALL_SEC to the round's wall budget.
+_TIME_REMINDER_INIT = f'{_TIME_REMINDER_CMD} init "$CBRUN_WALL_SEC" && '
+
+
+def _hooks_file_setup(path: str, top: dict[str, Any], entries: dict[str, dict]) -> str:
+    """Merge hook entries into a JSON config file at shell path ``path``."""
+    payload = json.dumps({"top": top, "entries": entries, "mark": _TIME_REMINDER_CMD})
+    return (
+        f'CBRUN_HOOKS_FILE="{path}" python3 - << \'PY\'\n'
+        "import json\n"
+        "import os\n"
+        "from pathlib import Path\n"
+        f"spec = json.loads({payload!r})\n"
+        'path = Path(os.environ["CBRUN_HOOKS_FILE"])\n'
+        "path.parent.mkdir(parents=True, exist_ok=True)\n"
+        'data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}\n'
+        'data.update(spec["top"])\n'
+        'hooks = data.setdefault("hooks", {})\n'
+        'for event, entry in spec["entries"].items():\n'
+        '    kept = [e for e in hooks.get(event, []) if spec["mark"] not in json.dumps(e)]\n'
+        "    hooks[event] = kept + [entry]\n"
+        'path.write_text(json.dumps(data, indent=2) + "\\n", encoding="utf-8")\n'
+        'print("time reminder hooks:", path)\n'
+        "PY\n"
+    )
+
+
+def _command_hook(fmt: str, event: str, matcher: str | None) -> dict:
+    entry: dict[str, Any] = {
+        "hooks": [{"type": "command", "command": f"{_TIME_REMINDER_CMD} hook {fmt} {event}"}],
+    }
+    if matcher is not None:
+        entry = {"matcher": matcher, **entry}
+    return entry
+
+
+def _claude_style_hooks(fmt: str, path: str) -> str:
+    return _hooks_file_setup(path, {}, {
+        "UserPromptSubmit": _command_hook(fmt, "UserPromptSubmit", None),
+        "PostToolUse": _command_hook(fmt, "PostToolUse", "*"),
+    })
+
+
+_CURSOR_TIME_HOOKS = _hooks_file_setup("$HOME/.cursor/hooks.json", {"version": 1}, {
+    event: {"command": f"{_TIME_REMINDER_CMD} hook cursor {event}"}
+    for event in ("sessionStart", "beforeSubmitPrompt", "postToolUse")
+})
+
+# OpenCode has no command hooks. Its plugin API lets chat.message edit the user
+# prompt and tool.execute.after edit the result the model is about to read, so
+# the reminder is appended there; each session (subagents run in their own)
+# counts as a separate agent.
+_OPENCODE_TIME_PLUGIN = f"""import {{ execFileSync }} from "node:child_process"
+
+const reminder = (agent, event) =>
+  execFileSync("python3", ["{time_reminder.CONTAINER_PATH}", "text", agent, event], {{ encoding: "utf8" }})
+
+export const CbrunTimeReminder = async () => ({{
+  "chat.message": async (input, output) => {{
+    const part = output.parts.find((p) => p.type === "text")
+    if (!part) return
+    const text = reminder(input.sessionID || "main", "chat.message")
+    if (text) part.text = `${{part.text}}\\n\\n${{text}}`
+  }},
+  "tool.execute.after": async (input, output) => {{
+    const text = reminder(input.sessionID || "main", "tool.execute.after")
+    if (text) output.output = `${{output.output ?? ""}}\\n\\n${{text}}`
+  }},
+}})
+"""
+_OPENCODE_TIME_SETUP = (
+    'CBRUN_PLUGIN_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/plugin"\n'
+    'mkdir -p "$CBRUN_PLUGIN_DIR"\n'
+    f"cat > \"$CBRUN_PLUGIN_DIR/cbrun-time-reminder.js\" << '{_TIME_REMINDER_EOF}'\n"
+    f"{_OPENCODE_TIME_PLUGIN}"
+    f"{_TIME_REMINDER_EOF}\n"
+)
+
+# OpenHands runs PostToolUse hooks but drops their additionalContext, so the
+# tool result conversion is patched instead. The reminder for an observation
+# is decided the first time it is rendered and reused on every later render,
+# which keeps the replayed history (and its prompt cache) unchanged.
+_OPENHANDS_TIME_SETUP = _hooks_file_setup("$HOME/.openhands/hooks.json", {}, {
+    "UserPromptSubmit": _command_hook("openhands", "UserPromptSubmit", None),
+}) + r"""python3 - << 'PY'
+import os
+from pathlib import Path
+import_marker = "from openhands.sdk.tool.schema import Observation\n"
+helper = import_marker + (
+    "\n"
+    "_cbrun_reminders: dict = {}\n"
+    "_cbrun_module = None\n"
+    "\n"
+    "\n"
+    "def _cbrun_time_reminder(event_id):\n"
+    "    global _cbrun_module\n"
+    "    if event_id not in _cbrun_reminders:\n"
+    "        if _cbrun_module is None:\n"
+    "            import importlib.util\n"
+    "            spec = importlib.util.spec_from_file_location(\"cbrun_time_reminder\", \"/tmp/cbrun/time_reminder.py\")\n"
+    "            _cbrun_module = importlib.util.module_from_spec(spec)\n"
+    "            spec.loader.exec_module(_cbrun_module)\n"
+    "        _cbrun_reminders[event_id] = _cbrun_module.due_reminder(\"main\", event=\"observation\") or \"\"\n"
+    "    return _cbrun_reminders[event_id]\n"
+)
+render_marker = (
+    "    def to_llm_message(self) -> Message:\n"
+    "        return Message(\n"
+    "            role=\"tool\",\n"
+    "            content=self.observation.to_llm_content,\n"
+)
+render_patched = (
+    "    def to_llm_message(self) -> Message:\n"
+    "        content = list(self.observation.to_llm_content)\n"
+    "        reminder = _cbrun_time_reminder(self.id)\n"
+    "        if reminder:\n"
+    "            content.append(TextContent(text=reminder))\n"
+    "        return Message(\n"
+    "            role=\"tool\",\n"
+    "            content=content,\n"
+)
+roots = [
+    Path("/root/.local/share/uv/tools/openhands/lib"),
+    Path("/usr/local/lib"),
+]
+found = []
+for root in roots:
+    if not root.is_dir():
+        continue
+    for dirpath, _dirs, names in os.walk(root):
+        if "observation.py" in names and dirpath.endswith("openhands/sdk/event/llm_convertible"):
+            found.append(Path(dirpath) / "observation.py")
+if len(found) != 1:
+    raise SystemExit("cbrun: openhands time reminder patch matched %d files" % len(found))
+path = found[0]
+text = path.read_text(encoding="utf-8")
+if "_cbrun_time_reminder" in text:
+    raise SystemExit(0)
+for marker in (import_marker, render_marker):
+    if text.count(marker) != 1:
+        raise SystemExit("cbrun: openhands time reminder marker count %d" % text.count(marker))
+text = text.replace(import_marker, helper, 1).replace(render_marker, render_patched, 1)
+path.write_text(text, encoding="utf-8")
+print("time reminder patch:", path)
+PY
+"""
+
+_TIME_REMINDER_SETUPS = {
+    "claude-code": _claude_style_hooks("claude", "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"),
+    "codex": _claude_style_hooks("codex", "$CODEX_HOME/hooks.json"),
+    "cursor": _CURSOR_TIME_HOOKS,
+    "opencode": _OPENCODE_TIME_SETUP,
+    "openhands": _OPENHANDS_TIME_SETUP,
+}
+
+
+def _with_time_reminder(spec: AgentSpec) -> AgentSpec:
+    """Install the wall-clock reminder for ``spec`` and arm it at solve start."""
+    setup = "set -eu\n" + _TIME_REMINDER_SETUPS[spec.name]
+    if spec.setup_script:
+        setup += spec.setup_script
+    return replace(spec, setup_script=setup, command=_TIME_REMINDER_INIT + spec.command)
+
+
+_BASE_SPECS: dict[str, AgentSpec] = {
     "codex": AgentSpec(
         name="codex",
         env_passthrough=(
@@ -565,6 +735,9 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         command=(
             "codex exec "
             "--dangerously-bypass-approvals-and-sandbox "
+            # Codex skips hooks nobody has trusted interactively; the only
+            # hooks here are the time reminders cbrun installs during setup.
+            "--dangerously-bypass-hook-trust "
             "--skip-git-repo-check "
             "--cd {workdir_quoted} "
             "--model {model_quoted} "
@@ -645,4 +818,8 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
             "2>&1 | stdbuf -oL tee {log_quoted}"
         ),
     ),
+}
+
+_BUILTIN_SPECS: dict[str, AgentSpec] = {
+    name: _with_time_reminder(spec) for name, spec in _BASE_SPECS.items()
 }

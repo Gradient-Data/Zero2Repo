@@ -70,6 +70,16 @@ wall-clock budgets:
 A conservative stall watchdog stops a wedged CLI when both stdout and `/app`
 stay quiet, without treating a long compile or a long model turn as a hang.
 
+The shared instruction says only that a wall-clock budget exists. During the
+solve, every built-in agent is also told how much of that budget remains: at
+the start, then hourly; every 30 minutes in the last hour; every 10 minutes in
+the last 30 minutes; every 5 minutes in the last 10 minutes; every minute in
+the last 5 minutes; every 30 seconds in the last minute. The reminder is
+delivered at the agent's next hook point, so a turn or a command that has not
+returned yet delays it. It states the time left, that expiry kills the session
+and records a timeout, and that scoring requires writing `/logs/agent/submit`
+with the single line `CODINGBENCH_SUBMIT` and then finishing the session.
+
 ## Termination and submit
 
 The agent submits by writing `/logs/agent/submit` with the single line

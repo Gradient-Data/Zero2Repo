@@ -208,6 +208,20 @@ def test_prices_cover_sol_deepseek_and_kimi():
     assert qwen["cost_usd"] == round(2.0 + 0.25 + 6.0, 6)
     qwen_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "qwen3.8-max-0902")
     assert qwen_write["cost_usd"] == round(2.0 + 0.25 + 2.5 + 6.0, 6)
+    gemini_id, gemini_price = lookup_model("anthropic/google/gemini-4-argon")
+    assert gemini_id == "google/gemini-4-argon"
+    assert gemini_price["cache_write_per_m"] == gemini_price["input_per_m"]
+    gemini = trial_cost(buckets, "google/gemini-4-argon")
+    assert gemini["cost_usd"] == round(2.0 + 0.1 + 10.0, 6)
+    gemini_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "gemini-4-argon")
+    assert gemini_write["cost_usd"] == round(2.0 + 0.1 + 2.0 + 10.0, 6)
+    flash_id, flash_price = lookup_model("openrouter/deepseek/deepseek-v4.1-flash-1017")
+    assert flash_id == "deepseek/deepseek-v4.1-flash-1017"
+    assert flash_price["cache_write_per_m"] == flash_price["input_per_m"]
+    flash = trial_cost(buckets, "openrouter/deepseek/deepseek-v4.1-flash-1017")
+    assert flash["cost_usd"] == round(0.08 + 0.008 + 0.50, 6)
+    flash_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "deepseek-v4.1-flash-1017")
+    assert flash_write["cost_usd"] == round(0.08 + 0.008 + 0.08 + 0.50, 6)
 
 
 def _step_finish(inp: int, read: int, write: int, output: int, reasoning: int, cost: float) -> str:

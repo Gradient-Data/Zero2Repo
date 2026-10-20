@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-10-11",
+  "fetched_at": "2026-10-18",
   "currency": "USD",
   "unit": "per_1M_tokens",
-  "notes": "USD entries are standard-tier list prices. GPT-6 Sol is the OpenAI API price; DeepSeek V4 Pro and Kimi K3 are the USD prices supplied on 2026-10-05; GLM-5.3 and Qwen3.8 Max are the USD prices supplied on 2026-10-07; the others are the first-party endpoint on OpenRouter. Long-context surcharges (GPT-6 Astra and GPT-6 Sol above 272K prompt tokens, Grok 4.7 above 200K) apply per request and are not applied to per-trial totals. No separate cache-write price was supplied for DeepSeek V4 Pro, Kimi K3, and GLM-5.3, so a cache write is priced as fresh input. Qwen3.8 Max cache_read_per_m is the implicit cache-read rate and cache_write_per_m is 5-minute cache creation. cache_read_5m_per_m is the explicit 5-minute cache-read rate; trial logs do not separate it from implicit cache reads, so cache_read_tokens are priced at cache_read_per_m.",
+  "notes": "USD entries are standard-tier list prices. GPT-6 Sol is the OpenAI API price; DeepSeek V4 Pro and Kimi K3 are the USD prices supplied on 2026-10-05; GLM-5.3 and Qwen3.8 Max are the USD prices supplied on 2026-10-07; Gemini 4 Argon prices were supplied on 2026-10-17; DeepSeek V4.1 Flash 1017 prices were supplied on 2026-10-18; the others are the first-party endpoint on OpenRouter. Long-context surcharges (GPT-6 Astra and GPT-6 Sol above 272K prompt tokens, Grok 4.7 above 200K) apply per request and are not applied to per-trial totals. No separate cache-write price was supplied for DeepSeek V4 Pro, Kimi K3, GLM-5.3, and Gemini 4 Argon, so a cache write is priced as fresh input. Qwen3.8 Max cache_read_per_m is the implicit cache-read rate and cache_write_per_m is 5-minute cache creation. cache_read_5m_per_m is the explicit 5-minute cache-read rate; trial logs do not separate it from implicit cache reads, so cache_read_tokens are priced at cache_read_per_m.",
   "models": {
     "openai/gpt-6-astra": {
       "aliases": ["gpt-6-astra"],
@@ -99,6 +99,20 @@
       "cache_write_per_m": 1.00,
       "output_per_m": 2.70,
       "source_url": "https://platform.stepfun.com/docs/pricing/list"
+    },
+    "google/gemini-4-argon": {
+      "aliases": ["gemini-4-argon"],
+      "input_per_m": 2.0,
+      "cache_read_per_m": 0.1,
+      "cache_write_per_m": 2.0,
+      "output_per_m": 10.0
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+      "aliases": ["deepseek-v4.1-flash-1017"],
+      "input_per_m": 0.08,
+      "cache_read_per_m": 0.008,
+      "cache_write_per_m": 0.08,
+      "output_per_m": 0.50
     }
   }
 }
