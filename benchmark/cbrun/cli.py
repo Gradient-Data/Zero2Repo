@@ -62,6 +62,7 @@ def _build_images(args: argparse.Namespace, case_dirs: list[Path]) -> int:
     """
     from concurrent.futures import ThreadPoolExecutor
 
+    from .docker_env import build_output_to
     from .images import ensure_agent_image, ensure_cli_image
     from .recipe_image import ensure_deliverable_image
 
@@ -91,18 +92,44 @@ def _build_images(args: argparse.Namespace, case_dirs: list[Path]) -> int:
             for backend in backends
         ]
 
+    log_dir = args.cache_root / "build-logs"
+    parallel = args.jobs > 1
+
+    def build_logged(case_dir: Path) -> list[str]:
+        if not parallel:
+            return build_case(case_dir)
+        with build_output_to(log_dir / f"{case_dir.name}.log"):
+            return build_case(case_dir)
+
     failed = 0
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {pool.submit(build_case, case_dir): case_dir for case_dir in case_dirs}
+        futures = {pool.submit(build_logged, case_dir): case_dir for case_dir in case_dirs}
         for future, case_dir in futures.items():
             try:
                 for tag in future.result():
                     print(tag)
+                if parallel:
+                    print(f"[cbrun] built {case_dir.name}; log {log_dir / (case_dir.name + '.log')}",
+                          file=sys.stderr)
             except Exception as exc:  # noqa: BLE001 - keep the matrix going
                 print(f"[cbrun] build-images {case_dir.name} FAILED: {type(exc).__name__}: {exc}",
                       file=sys.stderr)
+                if parallel:
+                    tail = _tail(log_dir / f"{case_dir.name}.log")
+                    if tail:
+                        print(f"[cbrun] last lines of {log_dir / (case_dir.name + '.log')}:\n{tail}",
+                              file=sys.stderr)
                 failed += 1
     return 1 if failed else 0
+
+
+def _tail(path: Path, lines: int = 40) -> str:
+    """The last *lines* of a build log, or "" when it is missing or empty."""
+    try:
+        text = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return ""
+    return "\n".join(text[-lines:])
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:

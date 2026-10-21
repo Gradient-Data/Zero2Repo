@@ -39,7 +39,7 @@ from .denylist import (
     probe_banned_imports,
     write_shim_assets,
 )
-from .docker_env import image_build_lock, image_exists
+from .docker_env import build_output, image_build_lock, image_exists
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_identity, image_matches, platform_name
 
 # Defense in depth when :deliverable was built before workspace sanitization existed.
@@ -205,6 +205,7 @@ def ensure_cli_image(
             print(f"[cbrun] building shared CLI image {tag}", flush=True)
             build = subprocess.run(
                 ["docker", "build", "--platform", platform_name(), "-t", tag, ctx],
+                **build_output(),
             )
         if build.returncode != 0:
             raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")
@@ -416,6 +417,7 @@ def ensure_agent_image(
                 "--iidfile", str(iid_path),
                 "-t", tag, "-f", str(df_path), ctx,
             ],
+            **build_output(),
         )
         if build.returncode != 0:
             raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")

@@ -28,6 +28,8 @@ __all__ = [
     "docker_available",
     "image_exists",
     "image_build_lock",
+    "build_output",
+    "build_output_to",
     "ExecResult",
     "Container",
     "CONTAINER_MEMORY",
@@ -81,6 +83,34 @@ def image_build_lock(tag: str) -> Iterator[None]:
             yield
         finally:
             fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+# Per-thread destination for the output of the commands a build runs. Trials
+# built side by side would otherwise write their docker output into one stream,
+# where a failure is unreadable. Only the current thread's commands are
+# diverted, so workers do not disturb each other.
+_BUILD_LOG = threading.local()
+
+
+@contextmanager
+def build_output_to(path: Path) -> Iterator[None]:
+    """Send this thread's build command output to *path* instead of the console."""
+    previous = getattr(_BUILD_LOG, "handle", None)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as handle:
+        _BUILD_LOG.handle = handle
+        try:
+            yield
+        finally:
+            _BUILD_LOG.handle = previous
+
+
+def build_output() -> dict:
+    """``subprocess.run`` keywords that report the command's output to the build log."""
+    handle = getattr(_BUILD_LOG, "handle", None)
+    if handle is None:
+        return {}
+    return {"stdout": handle, "stderr": subprocess.STDOUT}
 
 
 @dataclass

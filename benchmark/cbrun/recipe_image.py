@@ -35,7 +35,7 @@ from .denylist import (
     probe_banned_imports,
     render_strip_script,
 )
-from .docker_env import docker_available, image_build_lock, image_exists
+from .docker_env import build_output, docker_available, image_build_lock, image_exists
 from .images import deliverable_tag
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_matches
 from .recipe import (
@@ -202,11 +202,11 @@ def _ensure_base_image(base_image: str) -> None:
 def _pull_or_build_base_image(base_image: str) -> None:
     from_image = public_base_pull_ref(base_image)
     print(f"[cbrun] pulling {from_image}", flush=True)
-    proc = subprocess.run(["docker", "pull", from_image])
+    proc = subprocess.run(["docker", "pull", from_image], **build_output())
     if proc.returncode != 0:
         raise RecipeLockError(
             f"docker pull failed for {from_image} "
-            f"(exit {proc.returncode}; see streamed docker output above)"
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
         )
     if from_image == base_image:
         if not image_exists(base_image):
@@ -230,12 +230,13 @@ def _pull_or_build_base_image(base_image: str) -> None:
             "-t",
             base_image,
             str(BASE_IMAGE_DOCKERFILE_DIR),
-        ]
+        ],
+        **build_output(),
     )
     if proc.returncode != 0:
         raise RecipeLockError(
             f"docker build failed for {base_image} "
-            f"(exit {proc.returncode}; see streamed docker output above)"
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
         )
     if not image_exists(base_image):
         raise RecipeLockError(f"base image still missing after build: {base_image}")
@@ -295,7 +296,7 @@ def _strip_env_image(
             ]
         )
         print(f"[cbrun] stripping banned artefacts from {source_tag}", flush=True)
-        proc = subprocess.run(argv)
+        proc = subprocess.run(argv, **build_output())
         if proc.returncode != 0:
             _remove_container(strip_name)
             raise RecipeLockError(
@@ -371,10 +372,10 @@ def _build_env_image(
             f"(attempt {attempt}/{retries})",
             flush=True,
         )
-        proc = subprocess.run(argv)
+        proc = subprocess.run(argv, **build_output())
         if proc.returncode == 0:
             break
-        last_output = f"exit {proc.returncode} (see streamed docker output above)"
+        last_output = f"exit {proc.returncode} (see the build output above or in the build log)"
         if attempt < retries:
             print(
                 f"[cbrun] env install failed (attempt {attempt}); "
@@ -452,12 +453,12 @@ def _stage_deliverable(
             staging_shell_command(),
         ]
         print(f"[cbrun] staging deliverable {tag} from {env_tag}", flush=True)
-        proc = subprocess.run(argv)
+        proc = subprocess.run(argv, **build_output())
         if proc.returncode != 0:
             _remove_container(container_name)
             raise RecipeLockError(
                 f"deliverable staging failed (exit {proc.returncode}; "
-                "see streamed docker output above)"
+                "see the build output above or in the build log)"
             )
         commit = subprocess.run(
             [

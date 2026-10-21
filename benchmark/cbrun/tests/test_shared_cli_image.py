@@ -158,3 +158,35 @@ def test_agent_image_pins_the_id_it_built(tmp_path: Path, monkeypatch: pytest.Mo
     )
     assert built.agent_image == "codingbench-benchmark/case001:agent-claude-code"
     assert built.agent_image_id == "sha256:built"
+
+
+
+def test_parallel_builds_write_separate_logs_and_report_a_failure_tail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from cbrun.docker_env import build_output
+
+    class Built:
+        def __init__(self, case_id: str) -> None:
+            self.agent_image = f"{case_id}:agent"
+
+    def fake_ensure_agent_image(case_id: str, **_kw) -> Built:
+        subprocess.run(["sh", "-c", f"echo building {case_id}"], **build_output())
+        if case_id == "case002":
+            subprocess.run(["sh", "-c", "echo boom in build"], **build_output())
+            raise RuntimeError("docker build failed (exit 1)")
+        return Built(case_id)
+
+    monkeypatch.setattr(images, "ensure_cli_image", lambda backend, force=False: "cli")
+    monkeypatch.setattr(images, "ensure_agent_image", fake_ensure_agent_image)
+    case_dirs = [tmp_path / f"case{i:03d}" for i in (1, 2)]
+    args = argparse.Namespace(backend=["claude-code"], jobs=2, force_image=False,
+                              cache_root=tmp_path, enforce_denylist=True)
+    assert cli._build_images(args, case_dirs) == 1
+
+    err = capsys.readouterr().err
+    assert "case002 FAILED" in err
+    assert "boom in build" in err, "the failing build's last output must be shown"
+    for case_dir in case_dirs:
+        assert (tmp_path / "build-logs" / f"{case_dir.name}.log").is_file()
+    assert "building case001" in (tmp_path / "build-logs" / "case001.log").read_text()
