@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from cbrun import agent_spec, cli, images
+from cbrun import agent_spec, agents, cli, images
 from cbrun.docker_env import image_build_lock
 
 PINNED = {"CBRUN_CLAUDE_VERSION": "2.1.280"}
@@ -129,3 +129,11 @@ def test_claude_effort_becomes_the_cli_flag() -> None:
 def test_unknown_claude_effort_is_refused() -> None:
     with pytest.raises(ValueError, match="CBRUN_CLAUDE_EFFORT"):
         _claude_command({"CBRUN_CLAUDE_EFFORT": "ultra"})
+
+
+def test_npm_install_runs_lifecycle_scripts_with_the_same_node() -> None:
+    # claude-code's postinstall runs `node install.cjs`; on an image without a
+    # system node that lookup must find the private node.
+    cmd = agents.cli_install_command("claude-code", PINNED)
+    assert 'ln -sfn "$NODE" /usr/local/bin/node' in cmd
+    assert 'PATH="$(dirname "$NODE"):$PATH" "$NODE" "$NPM" install -g' in cmd

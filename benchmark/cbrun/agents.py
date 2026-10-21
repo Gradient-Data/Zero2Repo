@@ -168,6 +168,9 @@ def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> 
         "fi; "
         # npm's shebang is `#!/usr/bin/env node`. The private prefix is not
         # on PATH, so invoke the script with the absolute node binary.
+        # Package lifecycle scripts (`node install.cjs`) look node up on
+        # PATH, so put the same node first for the install alone.
+        f'PATH="$(dirname "$NODE"):$PATH" '
         f'"$NODE" "$NPM" install -g --prefix "$NPM_PREFIX" {shlex.quote(pkg + spec)}; '
         f'CBRUN_CLI_PATH="$NPM_PREFIX/bin/{bin_name}"; '
         '[ -x "$CBRUN_CLI_PATH" ] || { '
