@@ -12,6 +12,8 @@ import json
 import re
 from pathlib import Path
 
+from .claude_resume import RESUME_EVENT, SYNTHETIC_MODEL
+
 __all__ = [
     "count_infra_signals",
     "invalid_reason",
@@ -80,15 +82,9 @@ def count_infra_signals(*paths: Path | str | None) -> dict[str, int]:
     return totals
 
 
-def _truncated_stream(tail: str) -> bool:
-    """Claude Code stream-json that ends on a cut-off turn.
-
-    The CLI can report ``subtype: success`` after the API stream breaks
-    mid-message: the last assistant event holds only thinking, or the final
-    ``result`` carries an open-turn stop reason. Other log shapes never match.
-    """
+def _json_lines(text: str) -> list[dict]:
     events = []
-    for line in tail.splitlines():
+    for line in text.splitlines():
         line = line.strip()
         if not line.startswith("{"):
             continue
@@ -98,29 +94,72 @@ def _truncated_stream(tail: str) -> bool:
             continue
         if isinstance(event, dict):
             events.append(event)
+    return events
+
+
+def _final_exit(events: list[dict]) -> tuple[dict, dict] | None:
+    """The last Claude Code ``result`` and the assistant message before it."""
     results = [e for e in events if e.get("type") == "result" and "subtype" in e]
     assistants = [
         e["message"] for e in events
         if e.get("type") == "assistant" and isinstance(e.get("message"), dict)
     ]
     if not results or not assistants:
-        return False
-    blocks = {
-        b.get("type") for b in assistants[-1].get("content") or [] if isinstance(b, dict)
-    }
-    return blocks <= _THINKING_BLOCKS or results[-1].get("stop_reason") in _OPEN_TURN_STOPS
+        return None
+    return results[-1], assistants[-1]
+
+
+def _truncated_stream(final: tuple[dict, dict]) -> bool:
+    """Claude Code stream-json that ends on a cut-off turn.
+
+    The CLI can report ``subtype: success`` after the API stream breaks
+    mid-message: the last assistant event holds only thinking, or the final
+    ``result`` carries an open-turn stop reason.
+    """
+    result, message = final
+    blocks = {b.get("type") for b in message.get("content") or [] if isinstance(b, dict)}
+    return blocks <= _THINKING_BLOCKS or result.get("stop_reason") in _OPEN_TURN_STOPS
+
+
+def _api_failure_exit(final: tuple[dict, dict]) -> bool:
+    """Claude Code gave up on a failed request.
+
+    The CLI then writes a synthetic assistant message holding the error text and
+    a final ``result`` with ``is_error``, whatever its ``terminal_reason`` says.
+    """
+    result, message = final
+    return bool(result.get("is_error")) and message.get("model") == SYNTHETIC_MODEL
+
+
+def _last_process(text: str) -> str:
+    """Log text written by the agent process that ended the solve."""
+    lines = text.splitlines()
+    for i in range(len(lines) - 1, -1, -1):
+        if RESUME_EVENT in lines[i]:
+            try:
+                event = json.loads(lines[i])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(event, dict) and event.get("subtype") == RESUME_EVENT:
+                return "\n".join(lines[i + 1:])
+    return text
 
 
 def invalid_reason(*, submitted: bool, log_text: str) -> str | None:
     """Return ``infra:<signal>`` when the trial is not a valid model result."""
     if submitted:
         return None
-    tail = "\n".join((log_text or "").splitlines()[-_TAIL_LINES:])
+    tail = "\n".join(_last_process(log_text or "").splitlines()[-_TAIL_LINES:])
     for name, pattern in _COUNT_PATTERNS:
         if name not in _TERMINATING:
             continue
         if pattern.search(tail):
             return f"infra:{name}"
-    if _truncated_stream(tail):
+    final = _final_exit(_json_lines(tail))
+    if final is None:
+        return None
+    if _api_failure_exit(final):
+        return "infra:api_error"
+    if _truncated_stream(final):
         return "infra:truncated_stream"
     return None

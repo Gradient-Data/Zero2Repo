@@ -16,7 +16,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
-from . import time_reminder
+from . import claude_resume, time_reminder
 from .agent_hooks import claude_code_env, opencode_env
 from .codex_config import (
     CODEX_GATEWAY_WEBSOCKETS_ENV,
@@ -548,9 +548,14 @@ path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
 PY
 """
 
-# Agent setup writes this file to time_reminder.CONTAINER_PATH; the hooks and
-# plugins installed below call it.
+# Agent setup writes these files into the container. The hooks and plugins
+# installed below call the time reminder; the Claude Code command runs under
+# the resume runner.
 TIME_REMINDER_SOURCE = Path(time_reminder.__file__).read_bytes()
+CONTAINER_HELPERS: dict[str, bytes] = {
+    time_reminder.CONTAINER_PATH: TIME_REMINDER_SOURCE,
+    claude_resume.CONTAINER_PATH: Path(claude_resume.__file__).read_bytes(),
+}
 _TIME_REMINDER_EOF = "CBRUN_TIME_REMINDER_EOF"
 _TIME_REMINDER_CMD = f"python3 {time_reminder.CONTAINER_PATH}"
 # The solve exec sets CBRUN_WALL_SEC to the round's wall budget.
@@ -773,13 +778,13 @@ _BASE_SPECS: dict[str, AgentSpec] = {
         runtime="node",
         usage_paths=("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects",),
         command=(
-            "cat {instruction_quoted} | claude --print --verbose --output-format stream-json "
+            f"python3 {claude_resume.CONTAINER_PATH} {{log_quoted}} {{instruction_quoted}} -- "
+            "claude --print --verbose --output-format stream-json "
             "--permission-mode bypassPermissions "
             "--model {model_quoted} "
             # Stream thinking summaries: a gateway that forwards nothing while the
             # model thinks otherwise outlasts Claude Code's stream idle timeout.
-            "--thinking-display summarized "
-            "2>&1 | stdbuf -oL tee {log_quoted}"
+            "--thinking-display summarized"
         ),
     ),
     "cursor": AgentSpec(

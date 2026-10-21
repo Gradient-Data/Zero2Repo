@@ -166,6 +166,13 @@ def _claude_model_usage(model_usage: dict) -> tuple[Buckets, dict[str, dict[str,
     return total, by_model
 
 
+def _add_by_model(into: dict[str, dict[str, int]], part: dict[str, dict[str, int]]) -> None:
+    for name, slot in part.items():
+        acc = into.setdefault(name, {k: 0 for k in slot})
+        for k, v in slot.items():
+            acc[k] = acc.get(k, 0) + v
+
+
 def _openai(usage: dict) -> Buckets:
     """OpenAI counts cached tokens inside ``input_tokens``; split them out."""
     cached = _int(usage.get("cached_input_tokens"))
@@ -192,6 +199,11 @@ def parse_usage_text(text: str) -> LogUsage:
     """Extract usage from one log or session file."""
     out = LogUsage()
     claude_msgs: dict[str, tuple[str, Buckets]] = {}
+    # Claude Code totals each process on its own result line. A resumed session
+    # logs one result per process; a process killed before its result leaves
+    # only its messages.
+    process_msgs: dict[str, tuple[str, Buckets]] = {}
+    reported: set[str] = set()
     opencode_calls: Buckets | None = None
     opencode_cost = 0.0
     saw_opencode_cost = False
@@ -206,13 +218,20 @@ def parse_usage_text(text: str) -> LogUsage:
                 continue
             model_usage = event.get("modelUsage")
             if isinstance(model_usage, dict) and model_usage:
-                out.summary, out.by_model = _claude_model_usage(model_usage)
+                part, part_by_model = _claude_model_usage(model_usage)
             else:
-                out.summary = _anthropic(usage)
+                part, part_by_model = _anthropic(usage), {}
+            if out.summary_source == "claude_result" and out.summary is not None:
+                out.summary.add(part)
+                _add_by_model(out.by_model, part_by_model)
+            else:
+                out.summary, out.by_model = part, part_by_model
             out.summary_source = "claude_result"
             cost = event.get("total_cost_usd")
             if isinstance(cost, (int, float)) and not isinstance(cost, bool):
-                out.harness_cost_usd = float(cost)
+                out.harness_cost_usd = (out.harness_cost_usd or 0.0) + float(cost)
+            reported.update(process_msgs)
+            process_msgs = {}
             continue
 
         if etype == "turn.completed" and usage is not None:
@@ -229,6 +248,7 @@ def parse_usage_text(text: str) -> LogUsage:
         if etype == "assistant" and isinstance(message, dict) and isinstance(message.get("usage"), dict):
             key = str(message.get("id") or event.get("requestId") or event.get("uuid") or len(claude_msgs))
             claude_msgs[key] = (str(message.get("model") or ""), _anthropic(message["usage"]))
+            process_msgs[key] = claude_msgs[key]
             continue
 
         part = event.get("part")
@@ -249,6 +269,14 @@ def parse_usage_text(text: str) -> LogUsage:
                 opencode_cost += float(cost)
                 saw_opencode_cost = True
 
+    if out.summary_source == "claude_result" and out.summary is not None:
+        for key, (model, b) in process_msgs.items():
+            # Claude Code's synthetic error messages carry no usage and no priced model.
+            if key in reported or b.total() == 0:
+                continue
+            out.summary.add(b)
+            if out.by_model:
+                _add_by_model(out.by_model, {model: {k: getattr(b, k) for k in _BUCKETS}})
     if claude_msgs:
         out.calls = Buckets()
         for model, b in claude_msgs.values():

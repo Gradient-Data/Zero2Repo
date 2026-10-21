@@ -20,13 +20,12 @@ from coding_bench_harbor._leakage import scan_leakage
 from .agent_spec import (
     CODEX_REASONING_EFFORT_ENV,
     CONTAINER_AGENT_LOG,
+    CONTAINER_HELPERS,
     CONTAINER_INSTRUCTION_PATH,
     CONTAINER_WORKDIR,
-    TIME_REMINDER_SOURCE,
     AgentInvocation,
     resolve_agent,
 )
-from . import time_reminder
 from .access_monitor import AccessMonitor, AccessMonitorError
 from .assets import AdapterError, CaseSpec, load_case
 from .denylist import (
@@ -370,8 +369,9 @@ def _run_agent_setup(
     out_dir: Path,
 ) -> ExecResult | None:
     container.exec(invocation.prepare_workspace, timeout_sec=60.0)
-    container.write_file(time_reminder.CONTAINER_PATH, TIME_REMINDER_SOURCE)
-    container.exec(f"chmod 0644 {time_reminder.CONTAINER_PATH}", timeout_sec=10.0)
+    for path, source in CONTAINER_HELPERS.items():
+        container.write_file(path, source)
+        container.exec(f"chmod 0644 {path}", timeout_sec=10.0)
 
     if invocation.install_script:
         install = container.exec(
