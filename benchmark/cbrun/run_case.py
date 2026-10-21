@@ -231,8 +231,8 @@ def run_trial(
         host_arch=host_arch(),
         emulated=is_emulated(),
     )
+    result.agent_image_id = image.agent_image_id
     try:
-        result.agent_image_id = image_identity(image.agent_image)["id"]
         result.deliverable_image_id = image_identity(image.deliverable_image)["id"]
     except (RuntimeError, OSError, ValueError):
         pass
@@ -242,7 +242,7 @@ def run_trial(
     block_hosts = CODE_HOST_BLOCK_HOSTS if block_github else None
     result.blocked_hosts = list(block_hosts or ())
     container = Container.start(
-        image.agent_image,
+        image.agent_image_id,
         gpus=gpus,
         network="host",
         block_hosts=block_hosts,
@@ -733,7 +733,7 @@ def _run_step(
     task_toml = synthesize_task_toml(case, step)
     outcome = run_isolated_judge(
         container,
-        image=image.agent_image,
+        image=image.agent_image_id,
         tests_final_dir=image.tests_cache_dir / "final",
         task_toml=task_toml,
         test_timeout_sec=limits.max_test_timeout_sec,

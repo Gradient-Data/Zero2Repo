@@ -74,6 +74,9 @@ class AgentImage:
     deliverable_image: str
     agent_image: str
     tests_cache_dir: Path  # host dir holding the extracted /tests/final
+    # The image the tag named when this call checked or built it. Another run
+    # may retag ``agent_image`` later, so containers start from this ID.
+    agent_image_id: str
 
 
 def extract_hidden_tests(deliverable_image: str, dest_dir: Path) -> Path:
@@ -373,20 +376,16 @@ def ensure_agent_image(
                 "cli_image_id": cli_image_id,
             }
         )
-        if (
-            not force
-            and image_exists(tag)
-            and image_matches(tag, fingerprint)
-            and cached_ready
-        ):
+        existing_id = image_identity(tag)["id"] if not force and image_exists(tag) else None
+        if existing_id and image_matches(existing_id, fingerprint) and cached_ready:
             if case_dir is None:
-                return AgentImage(case_id, deliverable, tag, tests_cache)
-            probe = probe_banned_imports(tag, case_dir / "source" / "denylist.json")
+                return AgentImage(case_id, deliverable, tag, tests_cache, existing_id)
+            probe = probe_banned_imports(existing_id, case_dir / "source" / "denylist.json")
             log_probe_result(probe)
-            leak = _runtime_leak_probe(tag, deliverable, backend)
+            leak = _runtime_leak_probe(existing_id, deliverable, backend)
             log_probe_result(leak)
             if not probe.errors and not leak.errors:
-                return AgentImage(case_id, deliverable, tag, tests_cache)
+                return AgentImage(case_id, deliverable, tag, tests_cache, existing_id)
             print(
                 f"[cbrun] cached agent image {tag} failed denylist probe; rebuilding",
                 flush=True,
@@ -405,6 +404,7 @@ def ensure_agent_image(
         extract_hidden_tests(deliverable, tests_cache)
         df_path = build_ctx / "Dockerfile"
         df_path.write_text(dockerfile, encoding="utf-8")
+        iid_path = build_ctx / "image.id"
         print(
             f"[cbrun] building agent image {tag} (cli={backend or 'all'})",
             flush=True,
@@ -413,20 +413,24 @@ def ensure_agent_image(
             [
                 "docker", "build", "--platform", platform_name(),
                 "--label", f"{FINGERPRINT_LABEL}={fingerprint}",
+                "--iidfile", str(iid_path),
                 "-t", tag, "-f", str(df_path), ctx,
             ],
         )
         if build.returncode != 0:
             raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")
+        built_id = iid_path.read_text(encoding="utf-8").strip()
+        if not built_id:
+            raise RuntimeError(f"docker build of {tag} wrote no image ID")
         if case_dir is not None:
-            probe = probe_banned_imports(tag, case_dir / "source" / "denylist.json")
+            probe = probe_banned_imports(built_id, case_dir / "source" / "denylist.json")
             log_probe_result(probe)
-            leak = _runtime_leak_probe(tag, deliverable, backend)
+            leak = _runtime_leak_probe(built_id, deliverable, backend)
             log_probe_result(leak)
             errors = probe.errors + leak.errors
             if errors:
                 raise RuntimeError("; ".join(errors))
-    return AgentImage(case_id, deliverable, tag, tests_cache)
+    return AgentImage(case_id, deliverable, tag, tests_cache, built_id)
 
 
 def _runtime_leak_probe(

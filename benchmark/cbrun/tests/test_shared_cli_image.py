@@ -137,3 +137,24 @@ def test_npm_install_runs_lifecycle_scripts_with_the_same_node() -> None:
     cmd = agents.cli_install_command("claude-code", PINNED)
     assert 'ln -sfn "$NODE" /usr/local/bin/node' in cmd
     assert 'PATH="$(dirname "$NODE"):$PATH" "$NODE" "$NPM" install -g' in cmd
+
+
+def test_agent_image_pins_the_id_it_built(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Another run may retag the agent image while this one is solving; the
+    # solve and judge containers must start from the image this call built.
+    monkeypatch.setattr(images, "image_exists", lambda tag: tag == "d:deliverable")
+    monkeypatch.setattr(images, "image_identity", lambda ref: {"id": "sha256:deliv"})
+    monkeypatch.setattr(images, "ensure_cli_image", lambda backend, environ=None: "cli")
+    monkeypatch.setattr(images, "extract_hidden_tests", lambda *a, **k: tmp_path)
+
+    def fake_build(argv, **kwargs):
+        Path(argv[argv.index("--iidfile") + 1]).write_text("sha256:built\n")
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(images.subprocess, "run", fake_build)
+    built = images.ensure_agent_image(
+        "case001", cache_root=tmp_path, deliverable_image="d:deliverable",
+        environ=PINNED, backend="claude-code",
+    )
+    assert built.agent_image == "codingbench-benchmark/case001:agent-claude-code"
+    assert built.agent_image_id == "sha256:built"
