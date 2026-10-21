@@ -10,11 +10,15 @@ judge runs against the final workspace.
 
 from __future__ import annotations
 
+import fcntl
 import os
+import re
 import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +27,7 @@ from .state import platform_name
 __all__ = [
     "docker_available",
     "image_exists",
+    "image_build_lock",
     "ExecResult",
     "Container",
     "CONTAINER_MEMORY",
@@ -55,6 +60,27 @@ def image_exists(tag: str) -> bool:
         text=True,
     )
     return proc.returncode == 0
+
+
+IMAGE_LOCK_DIR = Path(tempfile.gettempdir()) / "cbrun-image-locks"
+
+
+@contextmanager
+def image_build_lock(tag: str) -> Iterator[None]:
+    """Hold an exclusive host-wide lock for building one image tag.
+
+    Trials started side by side would otherwise each find a shared image missing
+    and build it at the same time. Callers check for the image again after
+    taking the lock.
+    """
+    IMAGE_LOCK_DIR.mkdir(parents=True, exist_ok=True)
+    name = re.sub(r"[^A-Za-z0-9_.-]", "_", tag)
+    with open(IMAGE_LOCK_DIR / f"image-{name}.lock", "w") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 @dataclass

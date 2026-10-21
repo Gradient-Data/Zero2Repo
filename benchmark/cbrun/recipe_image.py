@@ -35,7 +35,7 @@ from .denylist import (
     probe_banned_imports,
     render_strip_script,
 )
-from .docker_env import docker_available, image_exists
+from .docker_env import docker_available, image_build_lock, image_exists
 from .images import deliverable_tag
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_matches
 from .recipe import (
@@ -193,6 +193,13 @@ def _ensure_base_image(base_image: str) -> None:
     """
     if image_exists(base_image):
         return
+    with image_build_lock(base_image):
+        if image_exists(base_image):
+            return
+        _pull_or_build_base_image(base_image)
+
+
+def _pull_or_build_base_image(base_image: str) -> None:
     from_image = public_base_pull_ref(base_image)
     print(f"[cbrun] pulling {from_image}", flush=True)
     proc = subprocess.run(["docker", "pull", from_image])

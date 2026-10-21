@@ -39,6 +39,9 @@ __all__ = [
 BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands")
 CODEX_REASONING_EFFORT_ENV = "CBRUN_CODEX_REASONING_EFFORT"
 CODEX_REASONING_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh"})
+# Claude Code's --effort levels. Unset leaves the CLI's own default.
+CLAUDE_EFFORT_ENV = "CBRUN_CLAUDE_EFFORT"
+CLAUDE_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 
 AGENT_USER = "cbagent"
 AGENT_USER_HOME = "/home/cbagent"
@@ -225,6 +228,7 @@ def resolve_agent(
 
     environ = os.environ if environ is None else environ
     _validate_codex_effort(resolved_spec, environ)
+    claude_effort = _claude_effort(resolved_spec, environ)
     env, env_keys = _resolve_env(resolved_spec, model=model, environ=environ)
     resolved_model = _resolve_model(resolved_spec, model)
     ctx = {
@@ -238,6 +242,7 @@ def resolve_agent(
         "workdir": CONTAINER_WORKDIR,
         "workdir_quoted": shlex.quote(CONTAINER_WORKDIR),
         "home": _home_for(resolved_spec),
+        "claude_effort_args": f" --effort {claude_effort}" if claude_effort else "",
     }
     command = _render_template(resolved_spec.command, ctx)
     setup = _render_optional(resolved_spec.setup_script, ctx)
@@ -272,6 +277,18 @@ def _validate_codex_effort(spec: AgentSpec, environ: dict[str, str]) -> None:
         raise ValueError(
             f"{CODEX_REASONING_EFFORT_ENV} must be one of {allowed}, got {raw!r}"
         )
+
+
+def _claude_effort(spec: AgentSpec, environ: dict[str, str]) -> str | None:
+    if spec.name != "claude-code":
+        return None
+    raw = (environ.get(CLAUDE_EFFORT_ENV) or "").strip()
+    if not raw:
+        return None
+    if raw not in CLAUDE_EFFORTS:
+        allowed = ", ".join(sorted(CLAUDE_EFFORTS))
+        raise ValueError(f"{CLAUDE_EFFORT_ENV} must be one of {allowed}, got {raw!r}")
+    return raw
 
 
 def _home_for(spec: AgentSpec) -> str:
@@ -784,7 +801,7 @@ _BASE_SPECS: dict[str, AgentSpec] = {
             "--model {model_quoted} "
             # Stream thinking summaries: a gateway that forwards nothing while the
             # model thinks otherwise outlasts Claude Code's stream idle timeout.
-            "--thinking-display summarized"
+            "--thinking-display summarized{claude_effort_args}"
         ),
     ),
     "cursor": AgentSpec(

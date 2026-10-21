@@ -16,12 +16,13 @@ removing ``/tests/final`` in a new image layer. Per-backend images are tagged
 tests are absent from the solve filesystem entirely (not merely deleted at
 runtime), and are re-injected only for the judge phase.
 
-Note on a shared CLI base: the published ``:deliverable`` images have
-heterogeneous bases (e.g. ``python:3.13-slim`` vs ``cuda:13.0-devel-ubuntu24.04``),
-so a single shared ``FROM`` base cannot be overlaid onto all of them. cbrun
-instead installs pinned CLI versions per case with idempotent caching (skip when
-the ``:agent`` image already exists), which gives the same reproducibility goal
-without an impossible image merge.
+Shared CLI image: the published ``:deliverable`` images have heterogeneous
+bases (e.g. ``python:3.13-slim`` vs ``cuda:13.0-devel-ubuntu24.04``), so they
+cannot share one ``FROM``. They can share a copy. For an npm backend cbrun
+builds ``codingbench-cli/<backend>:<version>`` once, holding a private Node and
+the pinned CLI under ``NODE_RUNTIME_PREFIX``, and each ``:agent`` image copies
+that tree in with ``COPY --from``. The CLI is downloaded once per version rather
+than once per case, so cases can build their ``:agent`` images side by side.
 """
 
 from __future__ import annotations
@@ -38,7 +39,7 @@ from .denylist import (
     probe_banned_imports,
     write_shim_assets,
 )
-from .docker_env import image_exists
+from .docker_env import image_build_lock, image_exists
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_identity, image_matches, platform_name
 
 # Defense in depth when :deliverable was built before workspace sanitization existed.
@@ -159,6 +160,54 @@ def _node_install_snippet() -> str:
     )
 
 
+CLI_IMAGE_REPO = "codingbench-cli"
+# Any glibc image works: the tree it produces is copied into the case images.
+CLI_BASE_IMAGE = "ubuntu:24.04"
+
+
+def cli_image_tag(backend: str, environ: dict[str, str] | None = None) -> str:
+    """Tag of the shared image holding *backend*'s pinned CLI and a private Node."""
+    version = agents.cli_version_spec(backend, environ).lstrip("@")
+    return f"{CLI_IMAGE_REPO}/{backend}:{version}"
+
+
+def ensure_cli_image(
+    backend: str,
+    environ: dict[str, str] | None = None,
+    *,
+    force: bool = False,
+) -> str:
+    """Build (or reuse) the shared CLI image for an npm *backend*; return its tag.
+
+    The image installs Node and the CLI under ``NODE_RUNTIME_PREFIX`` exactly as
+    a per-case install would. The tag carries the pinned version, so a new pin
+    builds a new image. An unpinned smoke run (``@latest``) reuses whatever
+    ``:latest`` was built first unless *force* is set.
+    """
+    if backend not in agents.NPM_BACKENDS:
+        raise ValueError(f"{backend} has no shared CLI image")
+    tag = cli_image_tag(backend, environ)
+    if not force and image_exists(tag):
+        return tag
+    with image_build_lock(tag):
+        if not force and image_exists(tag):
+            return tag
+        dockerfile = (
+            f"FROM {CLI_BASE_IMAGE}\n"
+            f"RUN set -eux; {_node_install_snippet()}; "
+            f"{agents.cli_install_command(backend, environ)}\n"
+        )
+        with tempfile.TemporaryDirectory() as ctx:
+            (Path(ctx) / "Dockerfile").write_text(dockerfile, encoding="utf-8")
+            print(f"[cbrun] building shared CLI image {tag}", flush=True)
+            build = subprocess.run(
+                ["docker", "build", "--platform", platform_name(), "-t", tag, ctx],
+            )
+        if build.returncode != 0:
+            raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")
+    return tag
+
+
 def _cli_install_snippet(environ: dict[str, str] | None, backend: str | None = None) -> str:
     if backend == "cursor":
         return agents.cli_install_command("cursor", environ)
@@ -190,6 +239,7 @@ def _build_dockerfile(
     denylist_snippet: str = "",
     backend: str | None = None,
     openhands_patch: bool = False,
+    cli_image: str | None = None,
 ) -> str:
     denylist_block = ""
     if denylist_snippet:
@@ -216,6 +266,12 @@ def _build_dockerfile(
         install += f"\nRUN set -eux; {_agent_user_snippet()}\n"
     elif backend == "cursor":
         install = f"RUN set -eux; {cli}; {_agent_user_snippet()}\n"
+    elif cli_image is not None:
+        prefix = agents.NODE_RUNTIME_PREFIX
+        install = (
+            f"COPY --from={cli_image} {prefix} {prefix}\n"
+            f"RUN set -eux; {agents.cli_link_command(backend)}; {_agent_user_snippet()}\n"
+        )
     else:
         install = (
             f"RUN set -eux; {_node_install_snippet()}; {cli}; "
@@ -294,12 +350,17 @@ def ensure_agent_image(
                     patch.read_text(encoding="utf-8"), encoding="utf-8"
                 )
                 openhands_patch = True
+        cli_image = cli_image_id = None
+        if backend in agents.NPM_BACKENDS:
+            cli_image = ensure_cli_image(backend, environ)
+            cli_image_id = image_identity(cli_image)["id"]
         dockerfile = _build_dockerfile(
             deliverable,
             environ,
             denylist_snippet=denylist_snippet,
             backend=backend,
             openhands_patch=openhands_patch,
+            cli_image=cli_image,
         )
         fingerprint = digest(
             {
@@ -308,6 +369,8 @@ def ensure_agent_image(
                 "platform": platform_name(),
                 "backend": backend,
                 "shim_assets": file_manifest(build_ctx),
+                # A rebuilt CLI image must rebuild the agent images copied from it.
+                "cli_image_id": cli_image_id,
             }
         )
         if (

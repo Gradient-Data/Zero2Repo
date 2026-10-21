@@ -18,6 +18,7 @@ from pathlib import Path
 from coding_bench_harbor._leakage import scan_leakage
 
 from .agent_spec import (
+    CLAUDE_EFFORT_ENV,
     CODEX_REASONING_EFFORT_ENV,
     CONTAINER_AGENT_LOG,
     CONTAINER_HELPERS,
@@ -218,7 +219,13 @@ def run_trial(
         platform=platform_name(),
         provenance=source_identity(case_dir),
         test_files=file_manifest(image.tests_cache_dir / "final"),
-        reasoning_effort=(os.environ.get(CODEX_REASONING_EFFORT_ENV) or "").strip() or None,
+        reasoning_effort=(
+            os.environ.get(
+                CLAUDE_EFFORT_ENV if invocation.spec.name == "claude-code" else CODEX_REASONING_EFFORT_ENV
+            )
+            or ""
+        ).strip()
+        or None,
         judge_timeout_sec=limits.max_test_timeout_sec,
         agent_timeout_sec=limits.max_agent_timeout_sec,
         host_arch=host_arch(),

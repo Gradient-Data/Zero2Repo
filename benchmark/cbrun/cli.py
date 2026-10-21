@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .agent_spec import BACKENDS, CODEX_REASONING_EFFORT_ENV, CODEX_REASONING_EFFORTS
-from .agents import cli_version_spec
+from .agents import NPM_BACKENDS, cli_version_spec
 from .assets import AdapterError
 from .limits import DEFAULT_AGENT_TIMEOUT_SEC, DEFAULT_TEST_TIMEOUT_SEC, resolve_limits
 from .results import TrialResult, format_reward_matrix, write_summary
@@ -52,6 +52,59 @@ def _print_token_usage(usage: dict) -> None:
         print(f"  WARNING: token usage incomplete: {detail}", file=sys.stderr)
 
 
+def _build_images(args: argparse.Namespace, case_dirs: list[Path]) -> int:
+    """Build each npm backend's shared CLI image once, then each case's images,
+    up to ``--jobs`` at once.
+
+    The CLI image is built first so ``--force-image`` rebuilds it once, not once
+    per case. Recipe base images need no separate step: the first case to need
+    one builds it under a host-wide lock while the others wait and then reuse it.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    from .images import ensure_agent_image, ensure_cli_image
+    from .recipe_image import ensure_deliverable_image
+
+    backends = list(args.backend)
+    try:
+        for backend in backends:
+            if backend in NPM_BACKENDS:
+                tag = ensure_cli_image(backend, force=args.force_image)
+                print(f"[cbrun] shared CLI image ready: {tag}", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001 - no case can build its agent image without it
+        print(f"error: shared CLI image: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+
+    def build_case(case_dir: Path) -> list[str]:
+        if not backends:
+            return [ensure_deliverable_image(case_dir, force=args.force_image)]
+        return [
+            ensure_agent_image(
+                case_dir.name,
+                cache_root=args.cache_root,
+                case_dir=case_dir,
+                force=args.force_image,
+                environ=os.environ,
+                backend=backend,
+                enforce_denylist=args.enforce_denylist,
+            ).agent_image
+            for backend in backends
+        ]
+
+    failed = 0
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        futures = {pool.submit(build_case, case_dir): case_dir for case_dir in case_dirs}
+        for future, case_dir in futures.items():
+            try:
+                for tag in future.result():
+                    print(tag)
+            except Exception as exc:  # noqa: BLE001 - keep the matrix going
+                print(f"[cbrun] build-images {case_dir.name} FAILED: {type(exc).__name__}: {exc}",
+                      file=sys.stderr)
+                failed += 1
+    return 1 if failed else 0
+
+
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="cbrun",
@@ -78,7 +131,17 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--build-images",
         action="store_true",
-        help="Build :deliverable from recipe.lock + shared base image, then exit.",
+        help="Build images, then exit. Without --backend: each case's :deliverable. "
+        "With --backend: the shared CLI image first, then each case's "
+        ":deliverable and :agent-<backend>.",
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="With --build-images, build this many cases' images at once (default: 1). "
+        "Shared images are built once: the CLI image before any case, a recipe "
+        "base image by the first case that needs it while the others wait.",
     )
     parser.add_argument("--cases-root", type=Path, default=_default_cases_root())
     parser.add_argument(
@@ -172,9 +235,9 @@ def main(argv: list[str] | None = None) -> int:
     else:
         backends = args.backend or ["codex"]
 
-    # Deliverable images contain no agent CLI, so the pin check only applies
-    # to trial runs.
-    if not args.build_images:
+    # Deliverable images contain no agent CLI, so the pin check applies to
+    # trial runs and to building agent images.
+    if not args.build_images or args.backend:
         for backend in backends:
             if backend is None:
                 continue
@@ -200,19 +263,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.build_images:
-        from .recipe_image import ensure_deliverable_image
-
-        failed = 0
-        for case_dir in case_dirs:
-            print(f"[cbrun] build-images {case_dir.name} ...", file=sys.stderr)
-            try:
-                tag = ensure_deliverable_image(case_dir, force=args.force_image)
-            except Exception as exc:  # noqa: BLE001 - keep the matrix going
-                print(f"  FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
-                failed += 1
-                continue
-            print(tag)
-        return 1 if failed else 0
+        if args.jobs < 1:
+            print("error: --jobs must be at least 1", file=sys.stderr)
+            return 2
+        return _build_images(args, case_dirs)
 
     if args.out is None:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")

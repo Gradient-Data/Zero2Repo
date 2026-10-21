@@ -24,6 +24,8 @@ __all__ = [
     "provider_env",
     "cli_version_spec",
     "cli_install_command",
+    "cli_link_command",
+    "NPM_BACKENDS",
     "resolve_invocation",
 ]
 
@@ -112,6 +114,26 @@ def _cursor_install_command(environ: dict[str, str] | None) -> str:
 # Private prefix used when the deliverable image has no Node. Must not land
 # on the default PATH (Codex/Claude Bash inherits the CLI process env).
 NODE_RUNTIME_PREFIX = "/opt/cbrun/runtime/node"
+
+# Backends whose CLI is an npm package. Their CLI and a private Node are built
+# once into a shared image and copied into each case's agent image.
+NPM_BACKENDS = frozenset(_CLI_PACKAGES)
+
+
+def cli_link_command(backend: str) -> str:
+    """Put a CLI already present under NODE_RUNTIME_PREFIX on PATH and verify it."""
+    if backend not in NPM_BACKENDS:
+        raise ValueError(f"{backend} is not an npm backend")
+    bin_name = _CLI_BINS[backend]
+    cli = f"{NODE_RUNTIME_PREFIX}/bin/{bin_name}"
+    verify = shlex.quote(f"command -v {bin_name} && {bin_name} --version")
+    return (
+        "set -eu; "
+        f"[ -x {cli} ] || {{ echo 'cbrun: {cli} missing from the shared CLI image' >&2; exit 1; }}; "
+        "mkdir -p /usr/local/bin; "
+        f"ln -sfn {cli} /usr/local/bin/{bin_name}; "
+        f"bash -lc {verify}"
+    )
 
 
 def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> str:
