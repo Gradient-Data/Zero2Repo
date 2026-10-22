@@ -583,29 +583,49 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
     mag_ned = ned_field_from_independent_wmm(lat, lon, WMM_YEAR)
     mag_pad = body_mag_for_yaw(0.0, 0.0, pad_yaw, mag_ned)
     mag_harsh = body_mag_for_yaw(0.0, 0.0, harsh_yaw, mag_ned)
-    print(f"F09 mag harsh={harsh_yaw} pad={pad_yaw}", flush=True)
+    # Direction checks (hard reject, override pull) use a persistent heading
+    # error of 0.7-0.9 rad: small enough that a linearised update of a
+    # heading or of the 3-D field vector turns yaw toward it (beyond ~90 deg
+    # a vector update may legitimately turn the other way), and at a 0.25
+    # uT^2 field variance still an outlier under any plausible gate.
+    frac = min(max((abs(angle_diff_rad(harsh_yaw, pad_yaw)) - 1.6) / 0.8, 0.0), 1.0)
+    off_yaw = wrap_pi(pad_yaw + 0.7 + 0.2 * frac)
+    mag_off = body_mag_for_yaw(0.0, 0.0, off_yaw, mag_ned)
+    off_var = (0.25, 0.25, 0.25)
+    h_field = math.hypot(mag_ned[0], mag_ned[1])
+    resid_ut = 2.0 * h_field * math.sin(0.5 * abs(angle_diff_rad(off_yaw, pad_yaw)))
+    resid_sigma = resid_ut / math.sqrt(off_var[0])
+    print(
+        f"F09 mag harsh={harsh_yaw} offset={off_yaw} pad={pad_yaw} "
+        f"horizontal field={h_field} uT offset residual={resid_ut} uT = {resid_sigma} sigma",
+        flush=True,
+    )
+    assert resid_sigma > 10.0, (
+        f"scenario: offset residual {resid_sigma:.1f} sigma is not an outlier for every gate"
+    )
     kw = dict(arm_wmm=False, auto_zupt_disable=True)
 
-    def _arms(mag_after, chi2, duration_s, **site_kw):
+    def _arms(mag_after, chi2, duration_s, mag_var=MAG_VAR, **site_kw):
         pad = hygiene_pad(
-            origin, mag=mag_pad, mag_var=MAG_VAR, yaw_rad=pad_yaw, yaw_std=math.radians(8.0)
+            origin, mag=mag_pad, mag_var=mag_var, yaw_rad=pad_yaw, yaw_std=math.radians(8.0)
         )
         stream = _continue(
-            list(pad), origin, origin, duration_s=duration_s, mag=mag_after, mag_var=MAG_VAR
+            list(pad), origin, origin, duration_s=duration_s, mag=mag_after, mag_var=mag_var
         )
         return run_fn(hygiene_site(lat, lon, h, stream, chi2_disable=chi2, **kw, **site_kw))
 
     for kind, run_fn in _LANGS:
         t_pad = hygiene_pad(origin)[-1].t_us
-        # Downweighted, not rejected: a heading error of 1.6-2.4 rad at a
-        # 1 uT^2 field variance is an outlier under any plausibility check,
-        # so the default arm counts downweights. Fused every sample over the
-        # long window, it moves toward the persistent heading; a rejecting
-        # filter stays on the pad heading like the no-offset twin.
-        skip_l = _arms(mag_pad, False, LONG_WINDOW_S, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
-        down_l = _arms(mag_harsh, False, LONG_WINDOW_S, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
-        e_skip_l = abs(angle_diff_rad(skip_l.last().att[2], harsh_yaw))
-        e_down_l = abs(angle_diff_rad(down_l.last().att[2], harsh_yaw))
+        # Downweighted, not rejected: the persistent offset heading is an
+        # outlier (checked above), so the default arm counts downweights.
+        # Fused every sample over the long window, it moves toward the
+        # persistent heading; a rejecting filter stays on the pad heading
+        # like the no-offset twin.
+        long_kw = dict(mag_var=off_var, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
+        skip_l = _arms(mag_pad, False, LONG_WINDOW_S, **long_kw)
+        down_l = _arms(mag_off, False, LONG_WINDOW_S, **long_kw)
+        e_skip_l = abs(angle_diff_rad(skip_l.last().att[2], off_yaw))
+        e_down_l = abs(angle_diff_rad(down_l.last().att[2], off_yaw))
         dw_skip = skip_l.last().n_downweighted - last_at_or_before(skip_l, t_pad).n_downweighted
         dw_down = down_l.last().n_downweighted - last_at_or_before(down_l, t_pad).n_downweighted
         # Override counter on the default-rate short window.
@@ -613,15 +633,15 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
         full_h = _arms(mag_harsh, True, SHORT_WINDOW_S)
         # Override weight: the same every-sample stream with the switch on.
         # Both arms start from the same state and fuse the same samples, so
-        # at the first fusion of the harsh heading the only difference is
+        # at the first fusion of the offset heading the only difference is
         # the weight: nominal variance must pull further toward it than a
         # downweighted fusion, whatever the gate or downweight law. Each
         # arm's pull is measured against the no-offset twin at the same
         # instant, so any non-magnetometer dynamics cancel. A filter that
         # keeps downweighting under the override pulls exactly as far.
-        full_l = _arms(mag_harsh, True, LONG_WINDOW_S, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
+        full_l = _arms(mag_off, True, LONG_WINDOW_S, **long_kw)
         dw_full = full_l.last().n_downweighted - last_at_or_before(full_l, t_pad).n_downweighted
-        yaw_err = _yaw_err(harsh_yaw)
+        yaw_err = _yaw_err(off_yaw)
         twin = {sn.t_us: sn for sn in skip_l.snaps if sn.t_us > t_pad and sn.att is not None}
         full_at = {sn.t_us: sn for sn in full_l.snaps if sn.t_us > t_pad and sn.att is not None}
         t_first = None
@@ -636,13 +656,13 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
                 t_first = sn.t_us
                 break
         assert t_first is not None, (
-            f"{kind}: neither the default nor the override arm moved toward the harsh heading"
+            f"{kind}: neither the default nor the override arm moved toward the offset heading"
         )
         print(
             f"{kind} mag long every-sample e_skip={e_skip_l} e_down={e_down_l} "
             f"dw skip=+{dw_skip} down=+{dw_down} | "
             f"short dw down={down_h.last().n_downweighted} full={full_h.last().n_downweighted} | "
-            f"first harsh fusion t={t_first} pull down={pull_down} full={pull_full} "
+            f"first offset fusion t={t_first} pull down={pull_down} full={pull_full} "
             f"long override dw=+{dw_full}",
             flush=True,
         )
@@ -655,7 +675,7 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
         )
         # Strictly further, above float32 heading resolution (~1e-7 rad).
         assert pull_full > pull_down + 1.0e-5, (
-            f"{kind}: override did not fuse the harsh mag heading at more than "
+            f"{kind}: override did not fuse the offset mag heading at more than "
             f"the downweighted weight (pull {pull_full} vs {pull_down} rad)"
         )
 

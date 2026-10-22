@@ -1371,10 +1371,6 @@ def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
     t_wobble = wobble[-1].t_us
     still = extend_epochs(list(wobble), duration_s=1.2)
     latched = extend_epochs(list(still), duration_s=0.05)
-    t_latched = latched[-1].t_us
-    no_imu = extend_epochs(
-        list(latched), duration_s=0.3, acc_valid=False, gyr_valid=False
-    )
     turn = extend_epochs(
         list(latched), duration_s=0.3, gyr=(0.0, 0.0, TURN_RPS)
     )
@@ -1388,26 +1384,45 @@ def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
         after_turn = trun.last()
         assert not after_turn.stationary, f"{kind}: turntable IMU left the latch set"
         if kind == "c":
-            # The window half: the same still IMU samples with a no-IMU epoch
-            # between every two of them. A window that no-IMU epochs leave
-            # untouched accumulates exactly as in the uninterrupted twin, so
-            # both report stationary within the PRD's 1 s of coming to rest;
-            # a window cleared by each no-IMU epoch never fills.
+            # The same still IMU samples with a no-IMU epoch between every two
+            # of them. The PRD says such an epoch leaves the window and the
+            # latched verdict untouched, so the detector accumulates exactly
+            # as in the uninterrupted twin: it reports stationary within the
+            # PRD's 1 s of coming to rest and, once it has, every later IMU
+            # epoch on which the twin reports it does too. A window or verdict
+            # cleared by each no-IMU epoch never latches or keeps dropping it.
+            # Only epochs that carry IMU are read: what the diagnostic shows
+            # on an epoch without IMU, and what the window holds after a time
+            # gap with no IMU, are not specified.
             settle_us = t_wobble + 1_000_000
+            imu_t = {e.t_us for e in still if e.t_us > t_wobble}
             irun = runner(
                 aiding_site(
                     lat, lon, h, _interleave_no_imu(still, t_wobble), origin_ecef=origin
                 )
             )
+            i_imu = [snap for snap in irun.snaps if snap.t_us in imu_t]
+            assert len(i_imu) == len(imu_t) and irun.last().t_us == still[-1].t_us, (
+                f"{kind}: harness error, interleaved run did not publish every IMU epoch"
+            )
+            latched_snap = srun.last()
             t_twin = _first_stationary_after(srun, t_wobble)
-            t_inter = _first_stationary_after(irun, t_wobble)
+            t_inter = next((snap.t_us for snap in i_imu if snap.stationary), None)
+            twin_on = {snap.t_us for snap in srun.snaps if snap.stationary}
+            dropped = [] if t_inter is None else [
+                snap.t_us
+                for snap in i_imu
+                if snap.t_us > t_inter and snap.t_us in twin_on and not snap.stationary
+            ]
             print(
-                f"{kind}: first stationary after rest: continuous="
-                f"{None if t_twin is None else (t_twin - t_wobble) / 1000.0} ms "
+                f"{kind}: latch={latched_snap.stationary} first stationary after rest: "
+                f"continuous={None if t_twin is None else (t_twin - t_wobble) / 1000.0} ms "
                 f"interleaved={None if t_inter is None else (t_inter - t_wobble) / 1000.0} ms "
-                f"interleaved at end={irun.last().stationary}",
+                f"interleaved IMU epochs dropping it afterwards={len(dropped)} "
+                f"interleaved at end={irun.last().stationary} turn={after_turn.stationary}",
                 flush=True,
             )
+            assert latched_snap.stationary, f"{kind}: dwell did not latch stationary"
             assert t_twin is not None and t_twin <= settle_us, (
                 f"{kind}: still IMU after motion was not reported stationary within 1 s"
             )
@@ -1415,35 +1430,12 @@ def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
                 f"{kind}: no-IMU epochs between still IMU samples kept the detector from "
                 f"reporting stationary within 1 s (the stillness window was disturbed)"
             )
+            assert not dropped, (
+                f"{kind}: no-IMU epochs between still IMU samples cleared the latched "
+                f"stationary verdict (first IMU epoch without it at t={dropped[0]} us)"
+            )
             assert irun.last().stationary, (
                 f"{kind}: interleaved no-IMU epochs left the still stream not stationary"
-            )
-            # The verdict half: the PRD says an epoch with no IMU leaves the
-            # window and the latched verdict untouched, so every epoch of a
-            # no-IMU gap still reports the verdict latched before it. What the
-            # window holds once IMU resumes after a time gap is not specified
-            # and is not read.
-            grun = runner(aiding_site(lat, lon, h, no_imu, origin_ecef=origin))
-            latched_snap = srun.last()
-            before_gap = grun.at_or_after(t_latched)
-            gap = [s for s in grun.snaps if s.t_us > t_latched]
-            print(
-                f"{kind}: latch={latched_snap.stationary} "
-                f"at gap start={before_gap.stationary} "
-                f"gap epochs={len(gap)} stationary during gap="
-                f"{sum(1 for s in gap if s.stationary)}/{len(gap)} "
-                f"turn={after_turn.stationary}",
-                flush=True,
-            )
-            assert latched_snap.stationary, f"{kind}: dwell did not latch stationary"
-            assert before_gap.stationary, f"{kind}: stationary latch lost before the no-IMU gap"
-            assert len(gap) == len(no_imu) - len(latched), (
-                f"{kind}: harness error, not every no-IMU epoch produced a snapshot"
-            )
-            flipped = [s.t_us for s in gap if not s.stationary]
-            assert not flipped, (
-                f"{kind}: an epoch with no IMU changed the latched stationary verdict "
-                f"(first at t={flipped[0]} us, {len(flipped)} of {len(gap)} gap epochs)"
             )
         else:
             print(f"{kind}: turntable after latch={after_turn.stationary}", flush=True)
