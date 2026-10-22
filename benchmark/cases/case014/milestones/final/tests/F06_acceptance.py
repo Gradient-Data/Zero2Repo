@@ -711,26 +711,37 @@ def test_ahrs_earth_rate_is_not_corrected():
     the same run on a tilted specific force.
     """
     acc = SPECIFIC_FORCE_LEVEL
-    # z-rate 11-12 deg/s over 200 s. The rate stays above any stillness bound
-    # a detector may use while gyro bias is still uncertain (the PRD admits
-    # 5 deg/s of bias per axis), so the turn is not absorbed as bias. The
-    # Earth-rate effect is ~0.84 deg and its half-effect tolerance
-    # (~0.42 deg) spans more than three 100 Hz samples of z-rate × dt, so
-    # whether the first or last IMU interval is integrated (a sample-timing
-    # convention the PRD does not state) cannot decide the verdict, while a
-    # filter that removes Earth rate is off by a whole effect. The
-    # yaw-variance restart watchdog is not the subject of this arm (_ahrs
-    # switches it off), so an unaided yaw 1-sigma cannot end the run early.
+    # z-rate 11-12 deg/s, sampled at 500 Hz for 36 s. The rate stays above
+    # any stillness bound a detector may use while gyro bias is still
+    # uncertain (the PRD admits 5 deg/s of bias per axis), so the turn is not
+    # absorbed as bias. The 500 Hz IMU (the PRD covers 100 Hz or faster)
+    # makes one sample of z-rate × dt ~0.024 deg, so the half-effect
+    # tolerance (~0.075 deg of a ~0.15 deg Earth-rate effect) spans three
+    # samples: whether the first or last IMU interval is integrated (a
+    # sample-timing convention the PRD does not state) cannot decide the
+    # verdict, while a filter that removes Earth rate is off by a whole
+    # effect. The duration is the original 36 s, so the unaided yaw 1-sigma
+    # grows no further than before. The yaw-variance restart watchdog is not
+    # the subject of this arm (_ahrs switches it off).
     omega = math.radians(11.0 + (math.degrees(runtime_z_rate_rps()) - 8.0) / 7.0)
-    duration_s = 200.0
+    duration_s = 36.0
+    imu_hz = 500
     gyr = (0.0, 0.0, omega)
     tilt = runtime_tilt_rad()
     acc_tilt = still_level_acc(0.0, tilt)
     run = c_att_run(
-        _ahrs(cmds=att_hold(t0_us=0, duration_s=duration_s, acc=acc, gyr=gyr))
+        _ahrs(
+            cmds=att_hold(
+                t0_us=0, duration_s=duration_s, acc=acc, gyr=gyr, imu_hz=imu_hz
+            )
+        )
     )
     tilted = c_att_run(
-        _ahrs(cmds=att_hold(t0_us=0, duration_s=duration_s, acc=acc_tilt, gyr=gyr))
+        _ahrs(
+            cmds=att_hold(
+                t0_us=0, duration_s=duration_s, acc=acc_tilt, gyr=gyr, imu_hz=imu_hz
+            )
+        )
     )
     _assert_init_ok(run, "AHRS Earth-rate")
     _assert_init_ok(tilted, "AHRS Earth-rate tilted twin")

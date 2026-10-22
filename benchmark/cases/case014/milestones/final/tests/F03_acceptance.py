@@ -472,16 +472,16 @@ def test_zero_mag_variance_is_weak_default_not_perfect():
         uz, us, _ = _pulls(kind, runner, unknown, "unknown-yaw")
         sz, ss, s_snaps = _pulls(kind, runner, seeded, "seeded")
         assert abs(us) > 2.0 * margin, (
-            f"{kind}: scenario error, a near-exact magnetometer did not move heading"
+            f"{kind}: a near-exact magnetometer did not move heading"
         )
         assert abs(uz) > margin and uz * us > 0.0, (
             f"{kind}: all-zero mag variance did not act as a heading anchor (treated as a skip)"
         )
         assert abs(angle_diff_rad(s_snaps["none"].rpy[2], yaw_seed)) < 0.5 * seed_std, (
-            f"{kind}: scenario error, the shared absolute yaw sample did not seed heading"
+            f"{kind}: the shared absolute yaw sample did not seed heading"
         )
         assert abs(ss) > 2.0 * margin, (
-            f"{kind}: scenario error, a near-exact magnetometer did not move the seeded heading"
+            f"{kind}: a near-exact magnetometer did not move the seeded heading"
         )
         weaker_unknown = abs(uz) + margin < abs(us)
         weaker_seeded = sz * ss > 0.0 and abs(sz) + margin < abs(ss)
@@ -751,7 +751,7 @@ def test_yaw_skipped_near_gimbal_lock():
             flush=True,
         )
         assert abs(pv.rpy[1]) > math.radians(85.0), (
-            f"{kind}: scenario error, the pitched arm did not reach gimbal lock "
+            f"{kind}: the pitched arm's attitude did not follow the gyro to gimbal lock "
             f"(pitch {_deg(pv.rpy[1])} deg)"
         )
         assert err_l < math.radians(15.0), f"{kind}: level arm was not pulled toward the yaw"
