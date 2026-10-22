@@ -716,8 +716,8 @@ def test_ahrs_earth_rate_is_not_corrected():
     # uncertain (the PRD admits 5 deg/s of bias per axis), so the turn is not
     # absorbed as bias. The 500 Hz IMU (the PRD covers 100 Hz or faster)
     # makes one sample of z-rate × dt ~0.024 deg, so the half-effect
-    # tolerance (~0.075 deg of a ~0.15 deg Earth-rate effect) spans three
-    # samples: whether the first or last IMU interval is integrated (a
+    # tolerance (~0.073 deg of a ~0.146 deg Earth-rate effect over the 35 s
+    # scored below) spans three samples: whether the first or last IMU interval is integrated (a
     # sample-timing convention the PRD does not state) cannot decide the
     # verdict, while a filter that removes Earth rate is off by a whole
     # effect. The duration is the original 36 s, so the unaided yaw 1-sigma
@@ -749,15 +749,34 @@ def test_ahrs_earth_rate_is_not_corrected():
     tr, tp, _ty = require_att(tilted.last(), "AHRS Earth-rate tilted twin")
     level_off = math.hypot(roll, pitch)
     tilt_off = math.hypot(tr, tp)
-    dt_s = run.last().t_us / 1e6
-    corrected = bias_corrected_z_integral(run.snaps, omega)
+    # Score the yaw change from a reference instant 1 s after the start to
+    # the end, against the bias-corrected z-rate integral over the same
+    # interval. When integration starts relative to init (whether the first
+    # epoch integrates from the init time, a nominal step, or not at all) is
+    # a convention the PRD does not state; it shifts yaw by a constant that
+    # cancels in this difference.
+    t_ref_us = 1_000_000
+    k_ref = next(
+        (k for k, sn in enumerate(run.snaps) if sn.t_us >= t_ref_us), None
+    )
+    assert k_ref is not None and k_ref + 1 < len(run.snaps), (
+        "AHRS Earth-rate: no snapshot at the 1 s reference instant"
+    )
+    ref = run.snaps[k_ref]
+    assert ref.rpy_ok and ref.att is not None, (
+        f"AHRS Earth-rate: attitude unpublished at the reference t={ref.t_us}"
+    )
+    dt_s = (run.last().t_us - ref.t_us) / 1e6
+    corrected = bias_corrected_z_integral(run.snaps, omega) - bias_corrected_z_integral(
+        run.snaps[: k_ref + 1], omega
+    )
     earth = _WGS84_OMEGA_RPS * dt_s
-    yaw_unwrapped = _unwrapped_yaw(run.snaps, "AHRS Earth-rate")
+    yaw_unwrapped = _unwrapped_yaw(run.snaps[k_ref:], "AHRS Earth-rate") - ref.att[2]
     print(
         f"AHRS Earth-rate: roll={math.degrees(roll)} pitch={math.degrees(pitch)} "
         f"tilt_roll={math.degrees(tr)} tilt_pitch={math.degrees(tp)} "
         f"level_off={math.degrees(level_off)} tilt_off={math.degrees(tilt_off)} "
-        f"last={math.degrees(yaw)} "
+        f"last={math.degrees(yaw)} ref_t={ref.t_us} scored_s={dt_s} "
         f"corrected={math.degrees(corrected)} earth={math.degrees(earth)} deg",
         flush=True,
     )
