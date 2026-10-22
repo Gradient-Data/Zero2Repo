@@ -297,8 +297,10 @@ RESIN_PARALLELISM_17 = (
 RESIN_WITHOUT_PARALLELISM = (
     "The resin holding the fibres in place. How the laminate fails under load."
 )
+# The stock phrase ends the sentence, so the input fires under either reading
+# of how far a "short 'no …' tail" may run; the spec does not settle that.
 TAILING_NEGATION_17 = (
-    "The joint is tight, no wasted motion in the crew's work."
+    "The joint is tight in the crew's work, no wasted motion."
 )
 # Same prose with the named comma-plus-"no wasted motion" tail removed (L108).
 TAILING_NEGATION_WITHOUT = (

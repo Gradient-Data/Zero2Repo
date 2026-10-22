@@ -1350,20 +1350,15 @@ def test_standstill_definition_from_ins_options_reaches_ars_and_baro():
     ars_rel = _last(True, ars_probe)
     ahrs_held = _last(False, ahrs_probe)
     ahrs_rel = _last(True, ahrs_probe)
-    baro_held = ars_held
-    baro_rel = ars_rel
     require_best_attitude(ars_held, "ARS standstill held")
     require_best_attitude(ars_rel, "ARS standstill released")
     ahrs_h = require_ahrs_attitude(ahrs_held, "AHRS standstill held")
     ahrs_r = require_ahrs_attitude(ahrs_rel, "AHRS standstill released")
-    h_held = require_local_height(baro_held, "baro standstill held")
-    h_rel = require_local_height(baro_rel, "baro standstill released")
     y_held = ars_held.best[2]
     y_rel = ars_rel.best[2]
     print(
         f"standstill ARS best held={y_held} released={y_rel} "
-        f"AHRS held={ahrs_h[2]} released={ahrs_r[2]} "
-        f"local_h held={h_held} released={h_rel}",
+        f"AHRS held={ahrs_h[2]} released={ahrs_r[2]}",
         flush=True,
     )
     assert abs(y_rel) > abs(y_held) + math.radians(1.5), (
@@ -1373,8 +1368,63 @@ def test_standstill_definition_from_ins_options_reaches_ars_and_baro():
     assert d_ahrs > math.radians(1.5), (
         "disabling INS standstill still held AHRS yaw against the residual z-rate"
     )
-    assert abs(h_rel - h_held) > 0.04, (
-        "disabling INS standstill still held unified local height against the vertical residual"
+
+    # Barometer leg. A barometer on every epoch pins height whether or not a
+    # vertical zero-velocity update runs, so the contrast has no barometer:
+    # the INS freezes on a still, level IMU with pad pressure, then the
+    # barometer stops and the vertical residual (inside the stillness bounds)
+    # runs for a few seconds. With the standstill definition disabled nothing
+    # observes the vertical channel, so its height integrates the residual
+    # freely (0.5·a·t²); with it enabled the platform is still by that
+    # definition and the vertical channel holds climb rate at zero after the
+    # detector's own (at most about one second) settling. The barometric
+    # vertical channel's own height is read, so how the unified local height
+    # arbitrates a source without fresh pressure does not enter.
+    baro_free_s = 4.0
+    baro_probe = imu_only(list(pad_ars), duration_s=FREEZE_11S, baro_pa=p0)
+    t_baro_stop = baro_probe[-1].t_us
+    baro_probe = imu_only(baro_probe, duration_s=baro_free_s, acc=acc_vert)
+    a_up = -acc_vert[2] - G_MPS2
+    free_rise = 0.5 * a_up * baro_free_s * baro_free_s
+
+    def _baro_h(snap, what):
+        assert snap.baro_ok and snap.baro_h is not None, (
+            f"{what}: barometric vertical channel height unpublished at t={snap.t_us}"
+        )
+        assert math.isfinite(snap.baro_h), f"{what}: barometric height is not finite"
+        return snap.baro_h
+
+    def _rise(disable: bool) -> float:
+        run = c_nav_run(
+            site_nav(
+                lat,
+                lon,
+                h,
+                baro_probe,
+                auto_zupt_disable=disable,
+                auto_zupt_static_gyr_rps=STILL_GYR_BOUND_RPS,
+                auto_zupt_static_acc_mps2=STILL_ACC_BOUND_MPS2,
+            )
+        )
+        pre = run.at_or_before(t_baro_stop)
+        last = run.last()
+        assert not pre.ready, "standstill baro arm: INS was still ready at baro stop"
+        assert not last.ready, "standstill baro arm: INS was still ready"
+        h0 = _baro_h(pre, f"baro standstill disable={disable} at baro stop")
+        h1 = _baro_h(last, f"baro standstill disable={disable} end")
+        return h1 - h0
+
+    rise_held = _rise(False)
+    rise_rel = _rise(True)
+    print(
+        f"standstill baro_h rise held={rise_held} released={rise_rel} "
+        f"free 0.5*a*t^2={free_rise}",
+        flush=True,
+    )
+    assert rise_rel - rise_held > 0.5 * free_rise, (
+        "disabling INS standstill did not release the barometric vertical channel "
+        "against the vertical residual: released and held heights differ by "
+        f"{rise_rel - rise_held:.3f} m, free drift is {free_rise:.3f} m"
     )
 
 

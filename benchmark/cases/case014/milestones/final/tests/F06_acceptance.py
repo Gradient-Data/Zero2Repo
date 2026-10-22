@@ -711,11 +711,18 @@ def test_ahrs_earth_rate_is_not_corrected():
     the same run on a tilted specific force.
     """
     acc = SPECIFIC_FORCE_LEVEL
-    omega = runtime_z_rate_rps()
-    # Long enough for the Earth-rate adjustment to exceed integration residual.
-    # The yaw-variance restart watchdog is not the subject of this arm (_ahrs
+    # z-rate 11-12 deg/s over 200 s. The rate stays above any stillness bound
+    # a detector may use while gyro bias is still uncertain (the PRD admits
+    # 5 deg/s of bias per axis), so the turn is not absorbed as bias. The
+    # Earth-rate effect is ~0.84 deg and its half-effect tolerance
+    # (~0.42 deg) spans more than three 100 Hz samples of z-rate × dt, so
+    # whether the first or last IMU interval is integrated (a sample-timing
+    # convention the PRD does not state) cannot decide the verdict, while a
+    # filter that removes Earth rate is off by a whole effect. The
+    # yaw-variance restart watchdog is not the subject of this arm (_ahrs
     # switches it off), so an unaided yaw 1-sigma cannot end the run early.
-    duration_s = 36.0
+    omega = math.radians(11.0 + (math.degrees(runtime_z_rate_rps()) - 8.0) / 7.0)
+    duration_s = 200.0
     gyr = (0.0, 0.0, omega)
     tilt = runtime_tilt_rad()
     acc_tilt = still_level_acc(0.0, tilt)

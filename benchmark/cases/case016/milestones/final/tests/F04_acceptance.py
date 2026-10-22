@@ -14,7 +14,7 @@ from F01_helpers import (
     proxy_sink,
     scan_stdin,
 )
-from F02_helpers import runtime_token
+from F02_helpers import runtime_token, write_plain
 from F04_helpers import (
     BANNED_VOCABULARY,
     CONTEXT_ONLY,
@@ -28,6 +28,7 @@ from F04_helpers import (
     require_empty_stdout,
     require_exported_contract_omits_machine_identity,
     require_full_scoring,
+    require_hook_success,
     require_lite_omits_scoring,
     require_named_welcome_facts,
     has_cleanup_switch_finish,
@@ -704,10 +705,36 @@ def test_session_start_drops_a_ledger_older_than_seven_days():
         assert gone in before, (
             "positive control: observer does not see the ledger the test just wrote"
         )
-        session_start(ws)
+        # The PRD says the stale ledger is gone by the time a later session
+        # is in use; it does not say which hook removes it. Start a later
+        # session and use it once (a prompt and a saved prose file) before
+        # checking.
+        session = runtime_token("s")
+        require_hook_success(session_start(ws, payload={"session_id": session}))
+        prompt_r, _payload = user_prompt(ws, ordinary_prompt())
+        require_hook_success(prompt_r)
+        saved = write_plain(
+            ws,
+            runtime_token("f") + ".md",
+            "The parish mill wheel turned slowly through the wet spring.\n",
+        )
+        save_r = ws.invoke_hook(
+            "post-tool-use",
+            payload={
+                "tool_name": "Write",
+                "tool_input": {
+                    "file_path": str(saved),
+                    "content": saved.read_text(encoding="utf-8"),
+                },
+                "session_id": session,
+                "cwd": str(ws.path),
+            },
+        )
+        require_hook_success(save_r)
         after = set(ledger_paths(ws.config_dir))
         assert gone not in after, (
-            "ledger older than seven days remained after session-start"
+            "ledger older than seven days remained after a later session "
+            "started and was used"
         )
     print("[F04] ledger older than seven days gone vs pre-start listing", flush=True)
 

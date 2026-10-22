@@ -935,9 +935,8 @@ def test_on_off_pair_tokens():
     greeting = _option_hi()
     on_option_ident = _option_ident()
     off_option_ident = _option_ident()
-    slash_name = _option_ident()
     plus_ch = _shorts(1)[0]
-    dest_a, dest_b, dest_c = _option_ident(), _option_ident(), _option_ident()
+    dest_a, dest_c = _option_ident(), _option_ident()
 
     def make(*decls, dest_name: str):
         def inner(**kwargs) -> None:
@@ -948,12 +947,13 @@ def test_on_off_pair_tokens():
         return _option_leaf(inner, option(*decls, dest_name))
 
     dashed = make(f"--{on_option_ident}/--{off_option_ident}", dest_name=dest_a)
-    slashed = make(f"/{slash_name};/no-{slash_name}", dest_name=dest_b)
     plused = make(f"+{plus_ch}/-{plus_ch}", dest_name=dest_c)
 
+    # The contract writes a pair as <on-flag>/<off-flag> and gives no separator
+    # for flags that themselves start with "/", so only "-" and "+" pairs are
+    # checked.
     cases = (
         (dashed, f"--{on_option_ident}", f"--{off_option_ident}"),
-        (slashed, f"/{slash_name}", f"/no-{slash_name}"),
         (plused, f"+{plus_ch}", f"-{plus_ch}"),
     )
     for cli, on_tok, off_tok in cases:
@@ -989,18 +989,20 @@ def test_slash_and_plus_prefixes():
         _emit_enc(kwargs[slash_dest])
 
     slash_cb.__name__ = f"{_option_ident()}_{_option_ident()}"
-    slash_cli = _option_leaf(slash_cb, option(f"/{slash_name}", slash_dest, is_flag=True))
+    # Long names repeat their prefix character, as the contract's name grammar
+    # writes them (<prefix><prefix><long>).
+    slash_cli = _option_leaf(slash_cb, option(f"//{slash_name}", slash_dest, is_flag=True))
 
     def plus_cb(**kwargs) -> None:
         print(greeting, flush=True)
         _emit_enc(kwargs[plus_dest])
 
     plus_cb.__name__ = f"{_option_ident()}_{_option_ident()}"
-    plus_cli = _option_leaf(plus_cb, option(f"+{plus_name}", plus_dest, is_flag=True))
+    plus_cli = _option_leaf(plus_cb, option(f"++{plus_name}", plus_dest, is_flag=True))
 
-    slash_ok = _option_run(slash_cli, [f"/{slash_name}"])
+    slash_ok = _option_run(slash_cli, [f"//{slash_name}"])
     slash_wrong = _option_run(slash_cli, [dashed_slash])
-    plus_ok = _option_run(plus_cli, [f"+{plus_name}"])
+    plus_ok = _option_run(plus_cli, [f"++{plus_name}"])
     plus_wrong = _option_run(plus_cli, [dashed_plus])
     print(
         f"slash_ok={slash_ok.stdout_text!r} slash_wrong={slash_wrong.stdout_text!r} "

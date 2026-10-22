@@ -1520,7 +1520,7 @@ FIRE_CASES = [
     ("ing-tail", "The beam sits true, highlighting the old scarf joint.", (16,)),
     ("ing-underscoring", UNDERSCOPING_16, (16,)),
     ("paving", "The repair finished on time, paving the way for the next season.", (21,)),
-    ("tailing-neg", "The joint is tight, no wasted motion in the crew's work.", (17,)),
+    ("tailing-neg", "The joint is tight in the crew's work, no wasted motion.", (17,)),
     ("resin-parallelism-17", RESIN_PARALLELISM_17, (17,)),
     (
         "not-just",

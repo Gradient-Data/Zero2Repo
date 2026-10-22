@@ -39,6 +39,7 @@ from __future__ import annotations
 import math
 from dataclasses import replace
 
+from _harness import HarnessError
 from F01_helpers import angle_diff_deg, hypot3, independent_wmm
 from F02_helpers import (
     ECEF_MATCH_M,
@@ -392,9 +393,27 @@ def test_zero_mag_variance_is_weak_default_not_perfect():
     Three otherwise identical arms bracket it: no magnetometer at all (a
     skip), the same samples with an explicit very small variance (close to
     infinite trust), and the same samples with all-zero variance. A finite
-    positive default pulls heading part of the way: the zero arm's final
-    yaw lies strictly between the other two. The size of the library's
-    default is not assumed.
+    positive default pulls heading part of the way, so the zero arm's yaw
+    lies strictly between the other two. The size of the library's default
+    is not assumed, so the bracket is run in two regimes and must open in at
+    least one; a zero-noise (or skipped) all-zero sample opens it in neither.
+
+    Unknown-yaw regime: heading starts unknown and the gyro drifts. The first
+    sample snaps heading in both magnetometer arms, leaving each arm's
+    heading uncertainty at the size of its own measurement noise; later
+    samples then correct the drift by about half in the zero arm and almost
+    fully in the near-exact arm. This separates a default of any size from a
+    near-exact variance the library does not floor up to that size. It is
+    also where "not a skip" is read: from unknown heading any finite
+    variance moves yaw.
+
+    Seeded regime: one shared absolute yaw sample gives every arm the same
+    finite heading uncertainty, the gyro is still, and the magnetometer
+    reports a heading about 1.5 sigma away (no outlier gate or downweight is
+    involved). With at most two fusions at the configured 1 s rate limit, a
+    near-exact variance pulls most of the way and a default a few degrees or
+    weaker pulls clearly less, even if the library floors near-exact
+    variances.
     """
     lat, lon, h = runtime_wmm_site()
     origin = ecef_from_llh_deg(lat, lon, h)
@@ -403,42 +422,72 @@ def test_zero_mag_variance_is_weak_default_not_perfect():
     body = body_mag_for_yaw(0.0, 0.0, yaw_cmd, mag_n)
     gyr = (0.0, 0.0, RATE_DRIFT_RPS)
     base = gnss_stream(origin, duration_s=HAPPY_DURATION_S)
-    none = extend_epochs(list(base), duration_s=3.5, gyr=gyr)
-    zero = extend_epochs(
-        list(base), duration_s=3.5, gyr=gyr, mag=body, mag_var=MAG_VAR_WEAK
+    unknown = {
+        "none": extend_epochs(list(base), duration_s=3.5, gyr=gyr),
+        "zero": extend_epochs(
+            list(base), duration_s=3.5, gyr=gyr, mag=body, mag_var=MAG_VAR_WEAK
+        ),
+        "strong": extend_epochs(
+            list(base), duration_s=3.5, gyr=gyr, mag=body, mag_var=MAG_VAR_STRONG
+        ),
+    }
+    seed_std = 0.1
+    yaw_seed = yaw_cmd - 1.5 * seed_std
+    seeded_base = extend_epochs(
+        list(base), duration_s=0.01, yaw_rad=yaw_seed, yaw_std=seed_std
     )
-    strong = extend_epochs(
-        list(base), duration_s=3.5, gyr=gyr, mag=body, mag_var=MAG_VAR_STRONG
-    )
+    seeded = {
+        "none": extend_epochs(list(seeded_base), duration_s=1.5),
+        "zero": extend_epochs(
+            list(seeded_base), duration_s=1.5, mag=body, mag_var=MAG_VAR_WEAK
+        ),
+        "strong": extend_epochs(
+            list(seeded_base), duration_s=1.5, mag=body, mag_var=MAG_VAR_STRONG
+        ),
+    }
 
     def _scen(epochs):
         return aiding_site(
             lat, lon, h, epochs, origin_ecef=origin, magnetic_n=mag_n, mag_min_delay_ms=1000
         )
 
-    margin = math.radians(1.0)
-    for kind, runner in (("c", c_aiding_run), ("py", py_aiding_run)):
-        ns = runner(_scen(none)).last()
-        zs = runner(_scen(zero)).last()
-        ss = runner(_scen(strong)).last()
-        require_ready_solution(ns, f"{kind} none")
-        require_ready_solution(zs, f"{kind} zero-var")
-        require_ready_solution(ss, f"{kind} strong-var")
-        pull_zero = angle_diff_rad(zs.rpy[2], ns.rpy[2])
-        pull_strong = angle_diff_rad(ss.rpy[2], ns.rpy[2])
+    def _pulls(kind, runner, arms, regime):
+        snaps = {}
+        for arm, epochs in arms.items():
+            snap = runner(_scen(epochs)).last()
+            require_ready_solution(snap, f"{kind} {regime} {arm}")
+            snaps[arm] = snap
+        pull_zero = angle_diff_rad(snaps["zero"].rpy[2], snaps["none"].rpy[2])
+        pull_strong = angle_diff_rad(snaps["strong"].rpy[2], snaps["none"].rpy[2])
         print(
-            f"{kind}: yaw vs no-mag arm: zero-var pull={pull_zero} "
-            f"strong-var pull={pull_strong}",
+            f"{kind} {regime}: yaw vs no-mag arm: zero-var pull={pull_zero} "
+            f"strong-var pull={pull_strong} no-mag yaw={snaps['none'].rpy[2]} "
+            f"yaw std zero={snaps['zero'].rpy_std} strong={snaps['strong'].rpy_std}",
             flush=True,
         )
-        assert abs(pull_strong) > 2.0 * margin, (
+        return pull_zero, pull_strong, snaps
+
+    margin = math.radians(1.0)
+    for kind, runner in (("c", c_aiding_run), ("py", py_aiding_run)):
+        uz, us, _ = _pulls(kind, runner, unknown, "unknown-yaw")
+        sz, ss, s_snaps = _pulls(kind, runner, seeded, "seeded")
+        assert abs(us) > 2.0 * margin, (
             f"{kind}: scenario error, a near-exact magnetometer did not move heading"
         )
-        assert abs(pull_zero) > margin and pull_zero * pull_strong > 0.0, (
+        assert abs(uz) > margin and uz * us > 0.0, (
             f"{kind}: all-zero mag variance did not act as a heading anchor (treated as a skip)"
         )
-        assert abs(pull_zero) + margin < abs(pull_strong), (
-            f"{kind}: all-zero mag variance pulled heading as far as an explicit near-exact variance"
+        assert abs(angle_diff_rad(s_snaps["none"].rpy[2], yaw_seed)) < 0.5 * seed_std, (
+            f"{kind}: scenario error, the shared absolute yaw sample did not seed heading"
+        )
+        assert abs(ss) > 2.0 * margin, (
+            f"{kind}: scenario error, a near-exact magnetometer did not move the seeded heading"
+        )
+        weaker_unknown = abs(uz) + margin < abs(us)
+        weaker_seeded = sz * ss > 0.0 and abs(sz) + margin < abs(ss)
+        assert weaker_unknown or weaker_seeded, (
+            f"{kind}: all-zero mag variance pulled heading as far as an explicit near-exact "
+            f"variance in both regimes (unknown-yaw {uz} vs {us}, seeded {sz} vs {ss})"
         )
 
 
@@ -665,6 +714,10 @@ def test_yaw_skipped_near_gimbal_lock():
     n = int(round(2.2 * 100))
     t0 = pitched[-1].t_us
     dt = 0.01
+    # The gyro pitches the nose up at +omega. A still FRD body pitched up by
+    # theta reads specific force (+g sin(theta), 0, -g cos(theta));
+    # still_level_acc returns that reading for the argument -theta, so the
+    # accelerometer is fed -pitch to agree with the gyro.
     for i in range(1, n + 1):
         t_us = t0 + int(round(i * dt * 1e6))
         pitch = omega * i * dt
@@ -672,14 +725,18 @@ def test_yaw_skipped_near_gimbal_lock():
             AidingEpoch(
                 t_us=t_us,
                 dt_sec=dt,
-                acc=still_level_acc(pitch),
+                acc=still_level_acc(-pitch),
                 gyr=(0.0, omega, 0.0),
                 gnss_ecef=origin if i % 100 == 0 else None,
                 gnss_std=GNSS_STD_M if i % 100 == 0 else None,
             )
         )
     pitched = extend_epochs(
-        pitched, duration_s=0.8, acc=still_level_acc(omega * 2.2), yaw_rad=target, yaw_std=YAW_STD_RAD
+        pitched,
+        duration_s=0.8,
+        acc=still_level_acc(-omega * 2.2),
+        yaw_rad=target,
+        yaw_std=YAW_STD_RAD,
     )
     for kind, runner in (("c", c_aiding_run), ("py", py_aiding_run)):
         lv = runner(aiding_site(lat, lon, h, level, origin_ecef=origin)).last()
@@ -693,6 +750,10 @@ def test_yaw_skipped_near_gimbal_lock():
             f"err_l={err_l} err_p={err_p}",
             flush=True,
         )
+        assert abs(pv.rpy[1]) > math.radians(85.0), (
+            f"{kind}: scenario error, the pitched arm did not reach gimbal lock "
+            f"(pitch {_deg(pv.rpy[1])} deg)"
+        )
         assert err_l < math.radians(15.0), f"{kind}: level arm was not pulled toward the yaw"
         assert err_p > err_l + math.radians(10.0), (
             f"{kind}: yaw near gimbal lock was fused like the level arm"
@@ -704,6 +765,24 @@ def test_yaw_skipped_near_gimbal_lock():
 # ---------------------------------------------------------------------------
 
 
+def _closest_north_speed(run, t_from_us, target):
+    """Smallest |v_north - target| over the published epochs after *t_from_us*.
+
+    The speed-window arms score the closest approach, not the last epoch:
+    how far a filter overshoots or relaxes after reaching the measured speed
+    depends on its unstated bias and noise tuning, while having reached it
+    at some epoch does not.
+    """
+    errs = [
+        abs(snap.vel_ned[0] - target)
+        for snap in run.snaps
+        if snap.t_us > t_from_us and snap.vel_ok and snap.vel_ned is not None
+    ]
+    if not errs:
+        raise HarnessError(f"no published velocity after t={t_from_us}")
+    return min(errs)
+
+
 def test_along_track_speed_error_pulled_toward_measurement():
     lat, lon, h = runtime_wmm_site()
     origin = ecef_from_llh_deg(lat, lon, h)
@@ -713,17 +792,24 @@ def test_along_track_speed_error_pulled_toward_measurement():
     walked = extend_gnss_constant_vel(
         list(still), origin, (biased, 0.0, 0.0), duration_s=3.0
     )
+    t_window = walked[-1].t_us
     with_speed = extend_epochs(list(walked), duration_s=2.5, speed_mps=truth)
     no_speed = extend_epochs(list(walked), duration_s=2.5)
     kw = dict(origin_ecef=origin, auto_zupt_disable=True)
     for kind, runner in (("c", c_aiding_run), ("py", py_aiding_run)):
-        s = runner(aiding_site(lat, lon, h, with_speed, **kw)).last()
-        n = runner(aiding_site(lat, lon, h, no_speed, **kw)).last()
+        s_run = runner(aiding_site(lat, lon, h, with_speed, **kw))
+        n_run = runner(aiding_site(lat, lon, h, no_speed, **kw))
+        s, n = s_run.last(), n_run.last()
         require_ready_solution(s, f"{kind} speed")
         require_ready_solution(n, f"{kind} no speed")
-        err_s = abs(s.vel_ned[0] - truth)
-        err_n = abs(n.vel_ned[0] - truth)
-        print(f"{kind}: vn with={s.vel_ned[0]} without={n.vel_ned[0]} truth={truth}", flush=True)
+        err_s = _closest_north_speed(s_run, t_window, truth)
+        err_n = _closest_north_speed(n_run, t_window, truth)
+        print(
+            f"{kind}: vn at window start={n_run.at_or_after(t_window).vel_ned[0]} "
+            f"end with={s.vel_ned[0]} without={n.vel_ned[0]} truth={truth} "
+            f"closest |vn-truth| with={err_s} without={err_n}",
+            flush=True,
+        )
         assert err_s + 0.8 < err_n, f"{kind}: along-track speed was not pulled toward the measurement"
 
 
@@ -736,6 +822,7 @@ def test_sideways_velocity_error_not_corrected_by_speed():
     along_walked = extend_gnss_constant_vel(
         list(still), origin, (biased, 0.0, 0.0), duration_s=3.0
     )
+    t_window = along_walked[-1].t_us
     along_s = extend_epochs(list(along_walked), duration_s=2.5, speed_mps=truth)
     along_n = extend_epochs(list(along_walked), duration_s=2.5)
     side = gnss_stream(
@@ -748,16 +835,19 @@ def test_sideways_velocity_error_not_corrected_by_speed():
     side_n = extend_epochs(list(side), duration_s=2.5)
     kw = dict(origin_ecef=origin, auto_zupt_disable=True)
     for kind, runner in (("c", c_aiding_run), ("py", py_aiding_run)):
-        a = runner(aiding_site(lat, lon, h, along_s, **kw)).last()
-        an = runner(aiding_site(lat, lon, h, along_n, **kw)).last()
+        a_run = runner(aiding_site(lat, lon, h, along_s, **kw))
+        an_run = runner(aiding_site(lat, lon, h, along_n, **kw))
+        a, an = a_run.last(), an_run.last()
         s = runner(aiding_site(lat, lon, h, side_s, **kw)).last()
         n = runner(aiding_site(lat, lon, h, side_n, **kw)).last()
         require_ready_solution(a, f"{kind} along")
         require_ready_solution(s, f"{kind} side")
-        err_a = abs(a.vel_ned[0] - truth)
-        err_an = abs(an.vel_ned[0] - truth)
+        err_a = _closest_north_speed(a_run, t_window, truth)
+        err_an = _closest_north_speed(an_run, t_window, truth)
         print(
-            f"{kind}: along vn speed={a.vel_ned[0]} none={an.vel_ned[0]} "
+            f"{kind}: along vn at window start={an_run.at_or_after(t_window).vel_ned[0]} "
+            f"end speed={a.vel_ned[0]} none={an.vel_ned[0]} "
+            f"closest |vn-truth| speed={err_a} none={err_an} "
             f"side vn={s.vel_ned[0]} ve={s.vel_ned[1]} no-speed vn={n.vel_ned[0]} ve={n.vel_ned[1]}",
             flush=True,
         )
@@ -1240,6 +1330,39 @@ def test_auto_zupt_gnss_speed_gate_blocks_when_moving():
         assert not m.stationary, f"{kind}: several m/s GNSS speed still reported stationary"
 
 
+def _interleave_no_imu(epochs, after_t_us):
+    """Insert one no-IMU epoch at the half step after every IMU epoch past *after_t_us*.
+
+    The IMU epochs themselves (timestamps, dt, samples) are kept exactly, so
+    any stillness window sees the same IMU samples as the uninterrupted
+    stream; only epochs that carry no IMU are added between them.
+    """
+    out = []
+    for i, e in enumerate(epochs):
+        out.append(e)
+        if e.t_us <= after_t_us or i + 1 >= len(epochs):
+            continue
+        half = (epochs[i + 1].t_us - e.t_us) // 2
+        out.append(
+            AidingEpoch(
+                t_us=e.t_us + half,
+                dt_sec=half * 1e-6,
+                acc=e.acc,
+                gyr=e.gyr,
+                acc_valid=False,
+                gyr_valid=False,
+            )
+        )
+    return out
+
+
+def _first_stationary_after(run, t_us):
+    for snap in run.snaps:
+        if snap.t_us > t_us and snap.stationary:
+            return snap.t_us
+    return None
+
+
 def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
     lat, lon, h = runtime_wmm_site()
     origin = ecef_from_llh_deg(lat, lon, h)
@@ -1248,10 +1371,10 @@ def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
     t_wobble = wobble[-1].t_us
     still = extend_epochs(list(wobble), duration_s=1.2)
     latched = extend_epochs(list(still), duration_s=0.05)
+    t_latched = latched[-1].t_us
     no_imu = extend_epochs(
         list(latched), duration_s=0.3, acc_valid=False, gyr_valid=False
     )
-    resumed = extend_epochs(list(no_imu), duration_s=0.08)
     turn = extend_epochs(
         list(latched), duration_s=0.3, gyr=(0.0, 0.0, TURN_RPS)
     )
@@ -1265,18 +1388,62 @@ def test_auto_zupt_not_on_single_sample_no_imu_leaves_latch():
         after_turn = trun.last()
         assert not after_turn.stationary, f"{kind}: turntable IMU left the latch set"
         if kind == "c":
-            rrun = runner(aiding_site(lat, lon, h, resumed, origin_ecef=origin))
-            latched_snap = srun.last()
-            after_gap = rrun.last()
+            # The window half: the same still IMU samples with a no-IMU epoch
+            # between every two of them. A window that no-IMU epochs leave
+            # untouched accumulates exactly as in the uninterrupted twin, so
+            # both report stationary within the PRD's 1 s of coming to rest;
+            # a window cleared by each no-IMU epoch never fills.
+            settle_us = t_wobble + 1_000_000
+            irun = runner(
+                aiding_site(
+                    lat, lon, h, _interleave_no_imu(still, t_wobble), origin_ecef=origin
+                )
+            )
+            t_twin = _first_stationary_after(srun, t_wobble)
+            t_inter = _first_stationary_after(irun, t_wobble)
             print(
-                f"{kind}: latch={latched_snap.stationary} resumed={after_gap.stationary} "
+                f"{kind}: first stationary after rest: continuous="
+                f"{None if t_twin is None else (t_twin - t_wobble) / 1000.0} ms "
+                f"interleaved={None if t_inter is None else (t_inter - t_wobble) / 1000.0} ms "
+                f"interleaved at end={irun.last().stationary}",
+                flush=True,
+            )
+            assert t_twin is not None and t_twin <= settle_us, (
+                f"{kind}: still IMU after motion was not reported stationary within 1 s"
+            )
+            assert t_inter is not None and t_inter <= settle_us, (
+                f"{kind}: no-IMU epochs between still IMU samples kept the detector from "
+                f"reporting stationary within 1 s (the stillness window was disturbed)"
+            )
+            assert irun.last().stationary, (
+                f"{kind}: interleaved no-IMU epochs left the still stream not stationary"
+            )
+            # The verdict half: the PRD says an epoch with no IMU leaves the
+            # window and the latched verdict untouched, so every epoch of a
+            # no-IMU gap still reports the verdict latched before it. What the
+            # window holds once IMU resumes after a time gap is not specified
+            # and is not read.
+            grun = runner(aiding_site(lat, lon, h, no_imu, origin_ecef=origin))
+            latched_snap = srun.last()
+            before_gap = grun.at_or_after(t_latched)
+            gap = [s for s in grun.snaps if s.t_us > t_latched]
+            print(
+                f"{kind}: latch={latched_snap.stationary} "
+                f"at gap start={before_gap.stationary} "
+                f"gap epochs={len(gap)} stationary during gap="
+                f"{sum(1 for s in gap if s.stationary)}/{len(gap)} "
                 f"turn={after_turn.stationary}",
                 flush=True,
             )
             assert latched_snap.stationary, f"{kind}: dwell did not latch stationary"
-            assert after_gap.stationary, (
-                f"{kind}: stillness window was reset by a no-IMU gap "
-                "(first still IMU after the gap was not immediately stationary)"
+            assert before_gap.stationary, f"{kind}: stationary latch lost before the no-IMU gap"
+            assert len(gap) == len(no_imu) - len(latched), (
+                f"{kind}: harness error, not every no-IMU epoch produced a snapshot"
+            )
+            flipped = [s.t_us for s in gap if not s.stationary]
+            assert not flipped, (
+                f"{kind}: an epoch with no IMU changed the latched stationary verdict "
+                f"(first at t={flipped[0]} us, {len(flipped)} of {len(gap)} gap epochs)"
             )
         else:
             print(f"{kind}: turntable after latch={after_turn.stationary}", flush=True)
