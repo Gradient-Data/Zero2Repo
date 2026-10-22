@@ -618,14 +618,28 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
         t_pad = hygiene_pad(origin)[-1].t_us
         # Downweighted, not rejected: the persistent offset heading is an
         # outlier (checked above), so the default arm counts downweights.
-        # Fused every sample over the long window, it moves toward the
-        # persistent heading; a rejecting filter stays on the pad heading
-        # like the no-offset twin.
+        # Rejection means the samples have no effect: with every other input
+        # equal and the filter deterministic, a rejecting default arm
+        # publishes exactly the no-offset twin's yaw. A downweighted fusion
+        # changes it. Which way a heavily downweighted vector update leaves
+        # yaw over a long window depends on attitude/bias coupling the PRD
+        # does not state, so only the difference is scored, at its largest
+        # over the window.
         long_kw = dict(mag_var=off_var, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
         skip_l = _arms(mag_pad, False, LONG_WINDOW_S, **long_kw)
         down_l = _arms(mag_off, False, LONG_WINDOW_S, **long_kw)
         e_skip_l = abs(angle_diff_rad(skip_l.last().att[2], off_yaw))
         e_down_l = abs(angle_diff_rad(down_l.last().att[2], off_yaw))
+        twin_yaw = {
+            sn.t_us: sn.att[2] for sn in skip_l.snaps if sn.t_us > t_pad and sn.att is not None
+        }
+        devs = [
+            abs(angle_diff_rad(sn.att[2], twin_yaw[sn.t_us]))
+            for sn in down_l.snaps
+            if sn.t_us in twin_yaw and sn.att is not None
+        ]
+        assert devs, f"{kind}: no published yaw to compare after the pad"
+        max_dev = max(devs)
         dw_skip = skip_l.last().n_downweighted - last_at_or_before(skip_l, t_pad).n_downweighted
         dw_down = down_l.last().n_downweighted - last_at_or_before(down_l, t_pad).n_downweighted
         # Override counter on the default-rate short window.
@@ -660,6 +674,7 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
         )
         print(
             f"{kind} mag long every-sample e_skip={e_skip_l} e_down={e_down_l} "
+            f"max|yaw_down-yaw_twin|={max_dev} "
             f"dw skip=+{dw_skip} down=+{dw_down} | "
             f"short dw down={down_h.last().n_downweighted} full={full_h.last().n_downweighted} | "
             f"first offset fusion t={t_first} pull down={pull_down} full={pull_full} "
@@ -669,7 +684,13 @@ def test_persistent_mag_heading_error_downweighted_not_rejected():
         assert dw_down > dw_skip, (
             f"{kind}: persistent mag error was not scored as a downweight"
         )
-        assert e_down_l + 0.05 < e_skip_l, f"{kind}: mag heading error was a hard reject"
+        # 1e-4 rad is three orders above float32 heading resolution (~1e-7
+        # rad), which is all a rejecting filter's identical trajectory could
+        # differ by.
+        assert max_dev > 1.0e-4, (
+            f"{kind}: mag heading error was a hard reject (default arm yaw stayed "
+            f"within {max_dev} rad of the no-offset twin)"
+        )
         assert down_h.last().n_downweighted > full_h.last().n_downweighted, (
             f"{kind}: harsh mag override still incremented downweight"
         )
