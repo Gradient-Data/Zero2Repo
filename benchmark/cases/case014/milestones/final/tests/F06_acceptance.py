@@ -2325,6 +2325,13 @@ def test_suite_standstill_fuses_bias_and_attitude_has_no_velocity():
                 f"{name}: {label} zero-speed z-bias was not closer to the gyro rate "
                 "than the fast-speed z-bias on the same IMU"
             )
+            # A zero-rotation update is a direct measurement of the gyro bias,
+            # fused on every epoch of several seconds of standstill, so any
+            # filter that fuses it recovers far more than half of the rate.
+            assert still_err < 0.5 * abs(omega), (
+                f"{name}: {label} zero-speed z-bias recovered less than half of "
+                "the gyro rate; the zero-rotation update was not fused"
+            )
 
 
 # ---------------------------------------------------------------------------
