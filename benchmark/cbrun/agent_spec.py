@@ -83,6 +83,9 @@ class AgentSpec:
     # usage. Shell-expanded in the solve env; archived after every trial so
     # usage survives a killed process.
     usage_paths: tuple[str, ...] = ()
+    # The built-in CLI the agent image must carry, one of BACKENDS. None installs
+    # no built-in CLI; the spec's own install_script brings what it runs.
+    image_backend: str | None = None
 
     def spec_hash(self) -> str:
         payload = json.dumps(self.to_dict(), sort_keys=True)
@@ -104,6 +107,8 @@ class AgentSpec:
         }
         if self.usage_paths:
             out["usage_paths"] = list(self.usage_paths)
+        if self.image_backend is not None:
+            out["image_backend"] = self.image_backend
         return out
 
     @classmethod
@@ -126,6 +131,11 @@ class AgentSpec:
         usage_paths = data.get("usage_paths") or []
         if not isinstance(usage_paths, list):
             raise ValueError(f"AgentSpec {name!r}: usage_paths must be a list")
+        image_backend = _optional_str(data.get("image_backend"))
+        if image_backend is not None and image_backend not in BACKENDS:
+            raise ValueError(
+                f"AgentSpec {name!r}: image_backend must be one of {BACKENDS}, got {image_backend!r}"
+            )
         return cls(
             name=name,
             command=command,
@@ -139,6 +149,7 @@ class AgentSpec:
             python_hook=_optional_str(data.get("python_hook")),
             runtime=_optional_str(data.get("runtime")),
             usage_paths=tuple(str(p) for p in usage_paths if str(p).strip()),
+            image_backend=image_backend,
         )
 
 
@@ -845,5 +856,5 @@ _BASE_SPECS: dict[str, AgentSpec] = {
 }
 
 _BUILTIN_SPECS: dict[str, AgentSpec] = {
-    name: _with_time_reminder(spec) for name, spec in _BASE_SPECS.items()
+    name: replace(_with_time_reminder(spec), image_backend=name) for name, spec in _BASE_SPECS.items()
 }

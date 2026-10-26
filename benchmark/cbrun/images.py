@@ -212,17 +212,6 @@ def ensure_cli_image(
     return tag
 
 
-def _cli_install_snippet(environ: dict[str, str] | None, backend: str | None = None) -> str:
-    if backend == "cursor":
-        return agents.cli_install_command("cursor", environ)
-    if backend is not None:
-        return agents.cli_install_command(backend, environ)
-    npm_clis = " && ".join(
-        agents.cli_install_command(name, environ) for name in agents._CLI_PACKAGES
-    )
-    return f"{npm_clis} && {agents.cli_install_command('cursor', environ)}"
-
-
 def _agent_user_snippet() -> str:
     """Create the fixed non-root user used by the judge and by specs that opt into it."""
     return (
@@ -248,11 +237,13 @@ def _build_dockerfile(
     denylist_block = ""
     if denylist_snippet:
         denylist_block = f"RUN mkdir -p /opt/cbrun/bin\n{denylist_snippet}"
-    cli = _cli_install_snippet(environ, backend)
-    # Cursor installs from the official script; OpenHands is copied from a
-    # prebuilt Python 3.12 image (the CLI pins 3.12, case images are 3.13);
-    # other backends need npm.
-    if backend == "openhands":
+    # Only the CLI the trial runs is installed; with no backend, none is. Cursor
+    # installs from the official script; OpenHands is copied from a prebuilt
+    # Python 3.12 image (the CLI pins 3.12, case images are 3.13); other
+    # backends need npm.
+    if backend is None:
+        install = f"RUN set -eux; {_agent_user_snippet()}\n"
+    elif backend == "openhands":
         image = agents.OPENHANDS_CLI_IMAGE
         install = f"COPY --from={image} /root/.local /root/.local\n"
         if openhands_patch:
@@ -269,6 +260,7 @@ def _build_dockerfile(
             )
         install += f"\nRUN set -eux; {_agent_user_snippet()}\n"
     elif backend == "cursor":
+        cli = agents.cli_install_command("cursor", environ)
         install = f"RUN set -eux; {cli}; {_agent_user_snippet()}\n"
     elif cli_image is not None:
         prefix = agents.NODE_RUNTIME_PREFIX
@@ -277,6 +269,7 @@ def _build_dockerfile(
             f"RUN set -eux; {agents.cli_link_command(backend)}; {_agent_user_snippet()}\n"
         )
     else:
+        cli = agents.cli_install_command(backend, environ)
         install = (
             f"RUN set -eux; {_node_install_snippet()}; {cli}; "
             f"{_agent_user_snippet()}\n"
@@ -407,7 +400,7 @@ def ensure_agent_image(
         df_path.write_text(dockerfile, encoding="utf-8")
         iid_path = build_ctx / "image.id"
         print(
-            f"[cbrun] building agent image {tag} (cli={backend or 'all'})",
+            f"[cbrun] building agent image {tag} (cli={backend or 'none'})",
             flush=True,
         )
         build = subprocess.run(

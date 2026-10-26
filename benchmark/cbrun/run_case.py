@@ -25,6 +25,7 @@ from .agent_spec import (
     CONTAINER_INSTRUCTION_PATH,
     CONTAINER_WORKDIR,
     AgentInvocation,
+    load_agent_spec,
     resolve_agent,
 )
 from .access_monitor import AccessMonitor, AccessMonitorError
@@ -181,19 +182,26 @@ def run_trial(
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(exist_ok=False)
 
+    if agent_spec_path is not None:
+        spec = load_agent_spec(agent_spec_path)
+        image_backend = spec.image_backend
+    else:
+        spec = None
+        image_backend = backend
     image = ensure_agent_image(
         case.case_id,
         cache_root=Path(cache_root),
         case_dir=case_dir,
         force=force_image,
-        backend=backend,
+        backend=image_backend,
         enforce_denylist=enforce_denylist,
     )
 
     gpus = case.docker_gpus or None
+    # The spec read once above decides both the image and the command.
     invocation = resolve_agent(
-        backend=backend,
-        agent_spec_path=agent_spec_path,
+        backend=backend if spec is None else None,
+        spec=spec,
         model=model,
         instruction_path=CONTAINER_INSTRUCTION_PATH,
         log_path=CONTAINER_AGENT_LOG,

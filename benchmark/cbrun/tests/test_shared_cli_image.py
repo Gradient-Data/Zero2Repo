@@ -190,3 +190,47 @@ def test_parallel_builds_write_separate_logs_and_report_a_failure_tail(
     for case_dir in case_dirs:
         assert (tmp_path / "build-logs" / f"{case_dir.name}.log").is_file()
     assert "building case001" in (tmp_path / "build-logs" / "case001.log").read_text()
+
+
+def test_spec_declares_the_one_cli_its_image_needs(tmp_path: Path) -> None:
+    for name in agent_spec.BACKENDS:
+        assert agent_spec.builtin_spec(name).image_backend == name
+    # A clone of a built-in spec keeps its CLI.
+    clone = agent_spec.AgentSpec.from_dict(agent_spec.builtin_spec("claude-code").to_dict())
+    assert clone.image_backend == "claude-code"
+    # A spec for a CLI cbrun does not ship gets none of the built-in ones.
+    own = agent_spec.AgentSpec.from_dict({"name": "mine", "command": "mine run"})
+    assert own.image_backend is None
+    with pytest.raises(ValueError, match="image_backend"):
+        agent_spec.AgentSpec.from_dict({"name": "mine", "command": "x", "image_backend": "aider"})
+
+
+@pytest.mark.parametrize("declared", [None, "codex"])
+def test_trial_builds_the_image_for_the_spec_cli_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, declared: str | None
+) -> None:
+    from cbrun import run_case
+
+    data = {"name": "mine", "command": "mine run"}
+    if declared:
+        data["image_backend"] = declared
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(__import__("json").dumps(data))
+    seen: list[str | None] = []
+
+    class Stop(Exception):
+        pass
+
+    def fake_ensure(case_id, **kwargs):
+        seen.append(kwargs["backend"])
+        raise Stop
+
+    monkeypatch.setattr(run_case, "ensure_agent_image", fake_ensure)
+    monkeypatch.setattr(run_case, "require_denylist", lambda case_dir: None)
+    case_dir = Path(__file__).resolve().parents[2] / "cases" / "case001"
+    with pytest.raises(Stop):
+        run_case.run_trial(
+            case_dir, agent_spec_path=spec_path, model="m", out_dir=tmp_path / "out",
+            cache_root=tmp_path / "cache", allow_leakage=True,
+        )
+    assert seen == [declared]
