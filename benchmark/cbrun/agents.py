@@ -168,8 +168,12 @@ def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> 
         "fi; "
         # npm's shebang is `#!/usr/bin/env node`. The private prefix is not
         # on PATH, so invoke the script with the absolute node binary.
-        # Package lifecycle scripts (`node install.cjs`) look node up on
-        # PATH, so put the same node first for the install alone.
+        # Lifecycle scripts (`sh -c node install.cjs`) do not see a PATH
+        # prefix on the npm process; they resolve `node` on the default PATH.
+        # The link lives only in this CLI image. Case images copy the prefix
+        # and not /usr/local/bin/node, so the agent shell still has no node.
+        "mkdir -p /usr/local/bin; "
+        'ln -sfn "$NODE" /usr/local/bin/node; '
         f'PATH="$(dirname "$NODE"):$PATH" '
         f'"$NODE" "$NPM" install -g --prefix "$NPM_PREFIX" {shlex.quote(pkg + spec)}; '
         f'CBRUN_CLI_PATH="$NPM_PREFIX/bin/{bin_name}"; '
