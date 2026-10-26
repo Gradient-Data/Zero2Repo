@@ -509,12 +509,13 @@ def _run_round(
     round_index: int,
     wall_timeout_sec: float | None,
     monitored: bool,
-) -> tuple[ExecResult, list[dict]]:
+) -> tuple[ExecResult, list[dict], str | None]:
     """One solve round, under the access monitor when the case has a denylist.
 
     The monitor must be ready before the agent starts; a monitor that cannot
     start raises ``AccessMonitorError`` so no round ever runs unmonitored. An
-    access or interference event stops the agent at once.
+    access or interference event stops the agent at once, and so does a
+    monitor infrastructure failure, returned as the third value.
     """
     log_name = _round_log_name(round_index)
     if not monitored:
@@ -522,7 +523,7 @@ def _run_round(
             container, invocation, limits=limits, out_dir=out_dir,
             log_name=log_name, wall_timeout_sec=wall_timeout_sec,
         )
-        return solve, []
+        return solve, [], None
     monitor = AccessMonitor(
         container.container_id,
         round_index=round_index,
@@ -532,7 +533,7 @@ def _run_round(
     try:
         solve = _run_solve(
             container, invocation, limits=limits, out_dir=out_dir,
-            log_name=log_name, wall_timeout_sec=wall_timeout_sec, abort=monitor.violated,
+            log_name=log_name, wall_timeout_sec=wall_timeout_sec, abort=monitor.abort,
         )
     finally:
         events = monitor.stop()
@@ -543,7 +544,10 @@ def _run_round(
             f"{len(events)} event(s): {events[0].get('message')}",
             flush=True,
         )
-    return solve, events
+    if monitor.infra_error:
+        print(f"[cbrun] access monitor infrastructure failure in round {round_index}: "
+              f"{monitor.infra_error}", flush=True)
+    return solve, events, monitor.infra_error
 
 
 def _fail_denylist(result: TrialResult, message: str, solve_start: float) -> bool:
@@ -649,7 +653,7 @@ def _run_step(
     wall: float | None = None
     while True:
         try:
-            solve, access = _run_round(
+            solve, access, monitor_infra = _run_round(
                 container,
                 invocation,
                 limits=limits,
@@ -672,6 +676,16 @@ def _run_step(
         result.agent_exit_code = solve.exit_code
         round_index += 1
         remaining = limits.max_agent_timeout_sec - (time.monotonic() - solve_start)
+
+        if monitor_infra and not access:
+            message = f"access monitor infrastructure failure in round {round_index - 1}: {monitor_infra}"
+            result.error = message
+            result.run_valid = False
+            result.invalid_reason = f"access_monitor: {monitor_infra}"
+            result.reward = 0.0
+            result.terminal_status = TerminalStatus.ERROR.value
+            result.solve_seconds = round(time.monotonic() - solve_start, 2)
+            return False
 
         if access:
             result.access_events.extend(access)

@@ -23,6 +23,7 @@ from .codex_config import (
     GATEWAY_MODEL_PROVIDER_LINE,
     GATEWAY_PROVIDER_TABLE,
 )
+from .submit import CONTAINER_SUBMIT_PATH, SUBMIT_TOKEN
 
 __all__ = [
     "AGENT_USER",
@@ -795,7 +796,8 @@ _BASE_SPECS: dict[str, AgentSpec] = {
         runtime="node",
         usage_paths=("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects",),
         command=(
-            f"python3 {claude_resume.CONTAINER_PATH} {{log_quoted}} {{instruction_quoted}} -- "
+            f"python3 {claude_resume.CONTAINER_PATH} {{log_quoted}} {{instruction_quoted}} "
+            f"{CONTAINER_SUBMIT_PATH} {SUBMIT_TOKEN} -- "
             "claude --print --verbose --output-format stream-json "
             "--permission-mode bypassPermissions "
             "--model {model_quoted} "
