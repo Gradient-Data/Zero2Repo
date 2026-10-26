@@ -7083,17 +7083,19 @@ def in_progress_on_remainder_off_empty(
     strip: Sequence[str],
     ignore: Sequence[RunResult] = (),
 ) -> str:
-    """Require a non-empty on-arm leftover and an empty off-arm leftover.
+    """Require in-progress output on the on arm and none on the off arm.
 
     Same covariate and shared-completion-chunk stripping as
     ``in_progress_remainder``. Chunks that remain on *ignore* runs after
     the same strip are also treated as non-progress (a coupled warning
     from an unrelated .lfsconfig ignore, not in-progress reporting).
-    The only accepted green path is a non-empty enabled / Git-config-on
-    / truthy remainder together with an empty disabled / non-truthy /
-    ignored-.lfsconfig remainder. Two different unique leftovers are
-    not a contrast. A read that cannot classify must not return empty
-    as 'no progress'.
+    A final summary line may appear on either arm and may differ
+    between arms (e.g. a rate on one arm only). The off arm may keep at
+    most its last chunk (its final summary) as a leftover. The on arm
+    must keep at least one leftover chunk of genuine in-progress output;
+    when the off arm left a summary, the on arm's own last chunk counts
+    as its summary, not as in-progress output. A read that cannot
+    classify must not return empty as 'no progress'.
     """
     vis_on = caller_visible(on)
     vis_off = caller_visible(off)
@@ -7118,22 +7120,32 @@ def in_progress_on_remainder_off_empty(
     drop = shared | ignored
     on_remain = [chunk for chunk in on_chunks if chunk not in drop]
     off_remain = [chunk for chunk in off_chunks if chunk not in drop]
-    remainder = " ".join(on_remain)
-    off_text = " ".join(off_remain)
+    # The off arm's last chunk may be its final summary line. When the off
+    # arm does leave such a summary, the on arm's last chunk may likewise
+    # be its own (differently worded) summary and is not counted as
+    # in-progress output.
+    off_progress = [chunk for chunk in off_chunks[:-1] if chunk not in drop]
+    if off_remain:
+        on_progress = [chunk for chunk in on_chunks[:-1] if chunk not in drop]
+    else:
+        on_progress = list(on_remain)
+    remainder = " ".join(on_progress)
     print(
         f"in_progress_off_empty on_remain={on_remain!r} "
-        f"off_remain={off_remain!r} shared_n={len(shared)} "
+        f"off_remain={off_remain!r} on_progress={on_progress!r} "
+        f"off_progress={off_progress!r} shared_n={len(shared)} "
         f"ignored_n={len(ignored)}"
     )
     assert remainder.strip(), (
-        "no in-progress remainder on the enabled arm after stripping "
-        "covariates and shared completion chunks: "
-        f"on={vis_on!r} off={vis_off!r}"
+        "no in-progress remainder on the enabled arm (other than its "
+        "final summary chunk) after stripping covariates and shared "
+        f"completion chunks: on={vis_on!r} off={vis_off!r}"
     )
-    assert not off_text.strip(), (
-        "disabled arm still had a leftover after stripping covariates "
-        "and shared completion chunks; in-progress reporting must be "
-        f"absent on that arm: {off_remain!r} on={vis_on!r} off={vis_off!r}"
+    assert not off_progress, (
+        "disabled arm still had a leftover other than its final summary "
+        "chunk after stripping covariates and shared completion chunks; "
+        "in-progress reporting must be absent on that arm: "
+        f"{off_progress!r} on={vis_on!r} off={vis_off!r}"
     )
     return remainder
 
@@ -8785,6 +8797,12 @@ _FIEMAP_EXTENT_SIZE = 56
 _FS_IOC_FIEMAP = (3 << 30) | (_FIEMAP_HEADER_SIZE << 16) | (ord("f") << 8) | 11
 _FIEMAP_FLAG_SYNC = 0x00000001
 _FIEMAP_EXTENT_SHARED = 0x00002000
+# Extents whose fe_physical is not a real on-disk location.
+_FIEMAP_EXTENT_NO_LOCATION = (
+    0x00000002  # FIEMAP_EXTENT_UNKNOWN
+    | 0x00000004  # FIEMAP_EXTENT_DELALLOC
+    | 0x00000200  # FIEMAP_EXTENT_DATA_INLINE
+)
 _COW_UNSUPPORTED_ERRNOS = {
     errno.EOPNOTSUPP,
     getattr(errno, "ENOTSUP", errno.EOPNOTSUPP),
@@ -8825,8 +8843,12 @@ def _stat_regular_file(path: Path) -> os.stat_result:
     return st
 
 
-def _fiemap_physical_keys(path: Path) -> set[tuple[int, int]]:
-    """Physical (offset, length) extents. Failure is unclassified, not empty."""
+def _fiemap_physical_ranges(path: Path) -> list[tuple[int, int]]:
+    """Physical [start, end) byte ranges backing the file's data.
+
+    Each extent is clipped to the file size, so post-EOF allocation is
+    not counted. Failure is unclassified, not empty.
+    """
     count = 64
     buf = bytearray(
         struct.pack(
@@ -8842,31 +8864,52 @@ def _fiemap_physical_keys(path: Path) -> set[tuple[int, int]]:
     )
     try:
         with open(path, "rb") as handle:
+            size = os.fstat(handle.fileno()).st_size
             fcntl.ioctl(handle.fileno(), _FS_IOC_FIEMAP, buf)
     except OSError as exc:
         raise AssertionError(f"FIEMAP failed on {path}: {exc}") from exc
     _start, _length, _flags, mapped, _extent_count, _reserved = struct.unpack_from(
         "QQIIII", buf, 0
     )
-    keys: set[tuple[int, int]] = set()
+    ranges: list[tuple[int, int]] = []
     for index in range(mapped):
         off = _FIEMAP_HEADER_SIZE + index * _FIEMAP_EXTENT_SIZE
         logical, physical, length, _r0, _r1, flags, _s0, _s1, _s2 = struct.unpack_from(
             "QQQQQIIII", buf, off
         )
-        del logical, flags
-        if physical == 0:
+        if physical == 0 or flags & _FIEMAP_EXTENT_NO_LOCATION:
             continue
-        keys.add((physical, length))
-    assert keys, (
+        if logical >= size:
+            continue
+        length = min(length, size - logical)
+        if length <= 0:
+            continue
+        ranges.append((physical, physical + length))
+    assert ranges, (
         f"FIEMAP returned no physical extents for {path}; "
-        f"mapped={mapped} cannot classify sharing"
+        f"mapped={mapped} size={size} cannot classify sharing"
     )
-    return keys
+    return ranges
 
 
 def _share_physical_storage(working: Path, stored: Path) -> bool:
-    return bool(_fiemap_physical_keys(working) & _fiemap_physical_keys(stored))
+    """True when any physical byte range of *working* overlaps *stored*.
+
+    Genuinely shared files may report the shared blocks split into
+    different extents, so sharing is range overlap, not equal extents.
+    """
+    working_ranges = _fiemap_physical_ranges(working)
+    stored_ranges = _fiemap_physical_ranges(stored)
+    shared = any(
+        w_start < s_end and s_start < w_end
+        for w_start, w_end in working_ranges
+        for s_start, s_end in stored_ranges
+    )
+    print(
+        f"fiemap working={working_ranges!r} stored={stored_ranges!r} "
+        f"overlap={shared}"
+    )
+    return shared
 
 
 def _run_captured(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
