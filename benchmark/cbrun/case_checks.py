@@ -17,7 +17,7 @@ from coding_bench_harbor._leakage import scan_leakage
 from .denylist import ALLOWED_JUDGE_BANS, validate_denylist_artifact
 from .substrates import KNOWN_PROVIDERS
 
-__all__ = ["check_case_assets", "check_case_warnings", "main"]
+__all__ = ["check_case_assets", "check_case_supply", "check_case_warnings", "main"]
 
 _OUTSIDE_CACHE = "/opt/cb-cache"
 _PRIVILEGE_MARKERS = (
@@ -250,6 +250,23 @@ def check_case_warnings(case_dir: Path | str) -> list[str]:
     return []
 
 
+def check_case_supply(case_dir: Path | str) -> list[str]:
+    """Problems with *case_dir*'s supply manifest entry and lock (empty if clean).
+
+    A full-suite run installs each case only from its lock, so a case without
+    one, or with a lock recorded from a different install command, cannot run.
+    """
+    from .supply import SupplyError, case_files, case_inputs_digest, load_manifest, require_lock
+
+    case_dir = Path(case_dir)
+    try:
+        case_files(load_manifest(), case_dir)
+        require_lock("case", case_dir.name, case_inputs_digest(case_dir))
+    except (SupplyError, OSError, ValueError) as exc:
+        return [str(exc)]
+    return []
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check case assets for runner defects.")
     parser.add_argument("--cases-root", type=Path, default=None)
@@ -271,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: case not found: {case_dir}", file=sys.stderr)
             errors += 1
             continue
-        issues = check_case_assets(case_dir)
+        issues = check_case_assets(case_dir) + check_case_supply(case_dir)
         notes = check_case_warnings(case_dir)
         for item in issues:
             print(f"error: {item}")

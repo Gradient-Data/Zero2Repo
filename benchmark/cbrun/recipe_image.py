@@ -19,6 +19,7 @@ no upstream tree to compile. The solving agent builds in ``/app``.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shlex
@@ -200,6 +201,12 @@ def _ensure_base_image(base_image: str) -> None:
 
 
 def _pull_or_build_base_image(base_image: str) -> None:
+    from . import supply
+
+    run = supply.active()
+    if run is not None:
+        _build_base_image_from_supply(run, base_image)
+        return
     from_image = public_base_pull_ref(base_image)
     print(f"[cbrun] pulling {from_image}", flush=True)
     proc = subprocess.run(["docker", "pull", from_image], **build_output())
@@ -233,6 +240,34 @@ def _pull_or_build_base_image(base_image: str) -> None:
         ],
         **build_output(),
     )
+    if proc.returncode != 0:
+        raise RecipeLockError(
+            f"docker build failed for {base_image} "
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
+        )
+    if not image_exists(base_image):
+        raise RecipeLockError(f"base image still missing after build: {base_image}")
+
+
+def _build_base_image_from_supply(run, base_image: str) -> None:
+    """Build the base image FROM the pinned system image, downloads served by the base lock."""
+    from_image = run.base_from_image()
+    if not image_exists(from_image):
+        print(f"[cbrun] pulling {from_image}", flush=True)
+        proc = subprocess.run(["docker", "pull", from_image], **build_output())
+        if proc.returncode != 0:
+            raise RecipeLockError(f"docker pull failed for {from_image} (exit {proc.returncode})")
+    lock = run.base_lock()
+    with run.locked(f"base image {base_image}", lock.entries) as session:
+        print(f"[cbrun] building {base_image} FROM {from_image} (supply lock)", flush=True)
+        proc = subprocess.run(
+            [
+                "docker", "build", *session.build_args(),
+                "--build-arg", f"FROM_IMAGE={from_image}",
+                "-t", base_image, str(BASE_IMAGE_DOCKERFILE_DIR),
+            ],
+            **build_output(),
+        )
     if proc.returncode != 0:
         raise RecipeLockError(
             f"docker build failed for {base_image} "
@@ -340,59 +375,56 @@ def _build_env_image(
     base_image = resolve_lock_base_image(lock)
     _ensure_base_image(base_image)
 
-    install = str(runner.get("install_command") or "").strip()
-    if not install or install.lower() == "true":
-        raise RecipeLockError("runner.install_command is empty")
-
     container_name = f"z2r-recipe-env-{case_id}"
     gpus = _runner_docker_gpus(runner)
-    argv = [
-        "docker",
-        "run",
-        "--name",
-        container_name,
-        "--network",
-        _docker_network(),
-        *_registry_docker_env(),
-    ]
-    if gpus:
-        argv.extend(["--gpus", gpus])
-    argv.extend(_volume_mounts(case_dir))
-    fetch = resource_fetch_command(case_dir)
-    command = f"{fetch} && {install}" if fetch else install
-    argv.extend([base_image, "bash", "-lc", command])
+    from . import supply
 
-    retries = _env_build_retries()
-    delay = _env_build_retry_delay_sec()
-    last_output = ""
-    for attempt in range(1, retries + 1):
-        _remove_container(container_name)
-        print(
-            f"[cbrun] building env {tag} from {base_image} "
-            f"(attempt {attempt}/{retries})",
-            flush=True,
-        )
-        proc = subprocess.run(argv, **build_output())
-        if proc.returncode == 0:
-            break
-        last_output = f"exit {proc.returncode} (see the build output above or in the build log)"
-        if attempt < retries:
+    run = supply.active()
+    with contextlib.ExitStack() as stack:
+        session = None
+        if run is not None:
+            lock = run.case_lock(case_dir)
+            session = stack.enter_context(run.locked(case_id, lock.entries))
+        argv = _env_install_argv(case_dir, base_image, runner, container_name, session)
+
+        retries = _env_build_retries()
+        delay = _env_build_retry_delay_sec()
+        last_output = ""
+        for attempt in range(1, retries + 1):
+            _remove_container(container_name)
             print(
-                f"[cbrun] env install failed (attempt {attempt}); "
-                f"retrying in {delay}s",
-                file=sys.stderr,
+                f"[cbrun] building env {tag} from {base_image} "
+                f"(attempt {attempt}/{retries})",
                 flush=True,
             )
-            time.sleep(delay)
-    else:
-        _remove_container(container_name)
-        raise RecipeLockError(
-            f"env-only install failed after {retries} attempts:\n{last_output}"
-        )
+            proc = subprocess.run(argv, **build_output())
+            if proc.returncode == 0:
+                break
+            last_output = f"exit {proc.returncode} (see the build output above or in the build log)"
+            if session is not None and session.violations:
+                # A request outside the lock fails the same way every time.
+                _remove_container(container_name)
+                session.raise_for_violations()
+            if attempt < retries:
+                print(
+                    f"[cbrun] env install failed (attempt {attempt}); "
+                    f"retrying in {delay}s",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                time.sleep(delay)
+        else:
+            _remove_container(container_name)
+            raise RecipeLockError(
+                f"env-only install failed after {retries} attempts:\n{last_output}"
+            )
 
     pre_tag = f"{tag}-prestrip"
+    # The install command (and with it the proxy settings) would otherwise
+    # become the image's default command.
+    commit_changes = ["-c", 'CMD ["/bin/bash"]'] if run is not None else []
     commit = subprocess.run(
-        ["docker", "commit", container_name, pre_tag],
+        ["docker", "commit", *commit_changes, container_name, pre_tag],
         capture_output=True,
         text=True,
     )
@@ -420,6 +452,50 @@ def _build_env_image(
         subprocess.run(["docker", "rmi", "-f", pre_tag], capture_output=True, text=True)
     print(f"[cbrun] committed env image {tag}", flush=True)
     return tag
+
+
+def _env_install_argv(
+    case_dir: Path,
+    base_image: str,
+    runner: dict[str, Any],
+    container_name: str,
+    session=None,
+) -> list[str]:
+    """``docker run`` argv of a case's environment install.
+
+    With a supply proxy *session*, the container mounts the proxy CA and the
+    install runs with the proxy settings exported inside its command, never as
+    container env, which ``docker commit`` would keep in the image.
+    """
+    install = str(runner.get("install_command") or "").strip()
+    if not install or install.lower() == "true":
+        raise RecipeLockError("runner.install_command is empty")
+    network = _docker_network()
+    if session is not None and network != "host":
+        raise RecipeLockError(
+            f"the supply proxy listens on the host's loopback; CODINGBENCH_DOCKER_NETWORK "
+            f"must be 'host', got {network!r}"
+        )
+    argv = [
+        "docker",
+        "run",
+        "--name",
+        container_name,
+        "--network",
+        network,
+        *_registry_docker_env(),
+    ]
+    gpus = _runner_docker_gpus(runner)
+    if gpus:
+        argv.extend(["--gpus", gpus])
+    argv.extend(_volume_mounts(case_dir))
+    fetch = resource_fetch_command(case_dir)
+    command = f"{fetch} && {install}" if fetch else install
+    if session is not None:
+        argv.extend(session.docker_run_args())
+        command = session.shell_exports() + command
+    argv.extend([base_image, "bash", "-lc", command])
+    return argv
 
 
 def _stage_deliverable(

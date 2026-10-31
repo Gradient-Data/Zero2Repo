@@ -6,6 +6,12 @@
 # with (the Dockerfile ARG stubs still listed China mirrors; build-args
 # overrode them). Node and Miniconda installers are checksum-pinned to the
 # versions in the golden image.
+#
+# In a full-suite run cbrun builds this through its supply proxy (Docker's
+# predefined proxy build args plus --network host). Steps that download over
+# HTTPS then fetch the proxy's CA bundle from the proxy and delete it when the
+# step ends, so the certificate never lands in a layer. Without a proxy those
+# lines do nothing.
 
 ARG FROM_IMAGE=ubuntu:24.04
 FROM ${FROM_IMAGE}
@@ -72,6 +78,13 @@ RUN set -eux; \
 # PIP_TRUSTED_HOST must stay a quoted ARG: unquoted spaces truncate to "pypi.org".
 
 RUN set -eux; \
+    if [ -n "${https_proxy:-}" ]; then \
+      trap 'rm -f /tmp/cbrun-ca-bundle.pem' EXIT; \
+      curl -fsS --max-time 30 http://cbrun-proxy.invalid/ca-bundle.pem -o /tmp/cbrun-ca-bundle.pem; \
+      export SSL_CERT_FILE=/tmp/cbrun-ca-bundle.pem REQUESTS_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem \
+        CURL_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem PIP_CERT=/tmp/cbrun-ca-bundle.pem \
+        NODE_EXTRA_CA_CERTS=/tmp/cbrun-ca-bundle.pem CONDA_SSL_VERIFY=/tmp/cbrun-ca-bundle.pem; \
+    fi; \
     if [ "${UBUNTU_VERSION}" = "24.04" ]; then \
       python3 -m pip install --no-cache-dir --break-system-packages \
         -i "${PIP_INDEX}" "pytest==${SYS_PYTEST_VERSION}"; \
@@ -81,6 +94,13 @@ RUN set -eux; \
     fi
 
 RUN set -eux; \
+    if [ -n "${https_proxy:-}" ]; then \
+      trap 'rm -f /tmp/cbrun-ca-bundle.pem' EXIT; \
+      curl -fsS --max-time 30 http://cbrun-proxy.invalid/ca-bundle.pem -o /tmp/cbrun-ca-bundle.pem; \
+      export SSL_CERT_FILE=/tmp/cbrun-ca-bundle.pem REQUESTS_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem \
+        CURL_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem PIP_CERT=/tmp/cbrun-ca-bundle.pem \
+        NODE_EXTRA_CA_CERTS=/tmp/cbrun-ca-bundle.pem CONDA_SSL_VERIFY=/tmp/cbrun-ca-bundle.pem; \
+    fi; \
     curl -fsSL \
         "${NODE_MIRROR}/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
         -o /tmp/node.tar.xz; \
@@ -93,6 +113,13 @@ RUN set -eux; \
         "@types/node@${TYPES_NODE_VERSION}"
 
 RUN set -eux; \
+    if [ -n "${https_proxy:-}" ]; then \
+      trap 'rm -f /tmp/cbrun-ca-bundle.pem' EXIT; \
+      curl -fsS --max-time 30 http://cbrun-proxy.invalid/ca-bundle.pem -o /tmp/cbrun-ca-bundle.pem; \
+      export SSL_CERT_FILE=/tmp/cbrun-ca-bundle.pem REQUESTS_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem \
+        CURL_CA_BUNDLE=/tmp/cbrun-ca-bundle.pem PIP_CERT=/tmp/cbrun-ca-bundle.pem \
+        NODE_EXTRA_CA_CERTS=/tmp/cbrun-ca-bundle.pem CONDA_SSL_VERIFY=/tmp/cbrun-ca-bundle.pem; \
+    fi; \
     curl -fsSL "${MINICONDA_URL}" -o /tmp/miniconda.sh; \
     echo "${MINICONDA_SHA256}  /tmp/miniconda.sh" | sha256sum -c -; \
     bash /tmp/miniconda.sh -b -p /opt/conda; \

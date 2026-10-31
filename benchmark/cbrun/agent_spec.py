@@ -2,7 +2,8 @@
 
 Users bring their own credentials and may supply a local AgentSpec file
 (``.json`` or ``.yaml`` when PyYAML is installed). Built-in backends
-(``codex``, ``opencode``, ``claude-code``, ``cursor``, ``openhands``) are predefined specs.
+(``codex``, ``opencode``, ``claude-code``, ``cursor``, ``openhands``, ``dsh``) are
+predefined specs.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
-from . import claude_resume, time_reminder
+from . import claude_resume
 from .agent_hooks import claude_code_env, opencode_env
 from .codex_config import (
     CODEX_GATEWAY_WEBSOCKETS_ENV,
@@ -37,12 +38,16 @@ __all__ = [
     "resolve_agent",
 ]
 
-BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands")
+BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands", "dsh")
 CODEX_REASONING_EFFORT_ENV = "CBRUN_CODEX_REASONING_EFFORT"
 CODEX_REASONING_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh"})
 # Claude Code's --effort levels. Unset leaves the CLI's own default.
 CLAUDE_EFFORT_ENV = "CBRUN_CLAUDE_EFFORT"
 CLAUDE_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
+# dsh's reasoningEffort for the session model. Unset leaves dsh's own default.
+DSH_REASONING_EFFORT_ENV = "CBRUN_DSH_REASONING_EFFORT"
+DSH_HOME = "/root/.dsh"
+DSH_MODEL_PATCH = "/tmp/cbrun/dsh-model.yml"
 
 AGENT_USER = "cbagent"
 AGENT_USER_HOME = "/home/cbagent"
@@ -378,6 +383,13 @@ def _resolve_env(
         for key in ("LLM_MODEL", "OPENHANDS_SUPPRESS_BANNER", "LLM_TIMEOUT", "LLM_REASONING_EFFORT"):
             if key not in keys and key in out:
                 keys.append(key)
+    if spec.name == "dsh":
+        # danger-full-access is dsh's mode without approval prompts, the
+        # counterpart of the other harnesses' bypass flags.
+        for key, value in (("DSH_HOME", DSH_HOME), ("DSH_PERMISSION_MODE", "danger-full-access")):
+            out[key] = value
+            if key not in keys:
+                keys.append(key)
     if spec.run_as == "nonroot":
         home = _home_for(spec)
         out.setdefault("HOME", home)
@@ -577,179 +589,33 @@ path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
 PY
 """
 
-# Agent setup writes these files into the container. The hooks and plugins
-# installed below call the time reminder; the Claude Code command runs under
-# the resume runner.
-TIME_REMINDER_SOURCE = Path(time_reminder.__file__).read_bytes()
+# Agent setup writes these files into the container; the Claude Code command
+# runs under the resume runner.
 CONTAINER_HELPERS: dict[str, bytes] = {
-    time_reminder.CONTAINER_PATH: TIME_REMINDER_SOURCE,
     claude_resume.CONTAINER_PATH: Path(claude_resume.__file__).read_bytes(),
 }
-_TIME_REMINDER_EOF = "CBRUN_TIME_REMINDER_EOF"
-_TIME_REMINDER_CMD = f"python3 {time_reminder.CONTAINER_PATH}"
-# The solve exec sets CBRUN_WALL_SEC to the round's wall budget.
-_TIME_REMINDER_INIT = f'{_TIME_REMINDER_CMD} init "$CBRUN_WALL_SEC" && '
 
 
-def _hooks_file_setup(path: str, top: dict[str, Any], entries: dict[str, dict]) -> str:
-    """Merge hook entries into a JSON config file at shell path ``path``."""
-    payload = json.dumps({"top": top, "entries": entries, "mark": _TIME_REMINDER_CMD})
-    return (
-        f'CBRUN_HOOKS_FILE="{path}" python3 - << \'PY\'\n'
-        "import json\n"
-        "import os\n"
-        "from pathlib import Path\n"
-        f"spec = json.loads({payload!r})\n"
-        'path = Path(os.environ["CBRUN_HOOKS_FILE"])\n'
-        "path.parent.mkdir(parents=True, exist_ok=True)\n"
-        'data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}\n'
-        'data.update(spec["top"])\n'
-        'hooks = data.setdefault("hooks", {})\n'
-        'for event, entry in spec["entries"].items():\n'
-        '    kept = [e for e in hooks.get(event, []) if spec["mark"] not in json.dumps(e)]\n'
-        "    hooks[event] = kept + [entry]\n"
-        'path.write_text(json.dumps(data, indent=2) + "\\n", encoding="utf-8")\n'
-        'print("time reminder hooks:", path)\n'
-        "PY\n"
-    )
-
-
-def _command_hook(fmt: str, event: str, matcher: str | None) -> dict:
-    entry: dict[str, Any] = {
-        "hooks": [{"type": "command", "command": f"{_TIME_REMINDER_CMD} hook {fmt} {event}"}],
-    }
-    if matcher is not None:
-        entry = {"matcher": matcher, **entry}
-    return entry
-
-
-def _claude_style_hooks(fmt: str, path: str) -> str:
-    return _hooks_file_setup(path, {}, {
-        "UserPromptSubmit": _command_hook(fmt, "UserPromptSubmit", None),
-        "PostToolUse": _command_hook(fmt, "PostToolUse", "*"),
-    })
-
-
-_CURSOR_TIME_HOOKS = _hooks_file_setup("$HOME/.cursor/hooks.json", {"version": 1}, {
-    event: {"command": f"{_TIME_REMINDER_CMD} hook cursor {event}"}
-    for event in ("sessionStart", "beforeSubmitPrompt", "postToolUse")
-})
-
-# OpenCode has no command hooks. Its plugin API lets chat.message edit the user
-# prompt and tool.execute.after edit the result the model is about to read, so
-# the reminder is appended there; each session (subagents run in their own)
-# counts as a separate agent.
-_OPENCODE_TIME_PLUGIN = f"""import {{ execFileSync }} from "node:child_process"
-
-const reminder = (agent, event) =>
-  execFileSync("python3", ["{time_reminder.CONTAINER_PATH}", "text", agent, event], {{ encoding: "utf8" }})
-
-export const CbrunTimeReminder = async () => ({{
-  "chat.message": async (input, output) => {{
-    const part = output.parts.find((p) => p.type === "text")
-    if (!part) return
-    const text = reminder(input.sessionID || "main", "chat.message")
-    if (text) part.text = `${{part.text}}\\n\\n${{text}}`
-  }},
-  "tool.execute.after": async (input, output) => {{
-    const text = reminder(input.sessionID || "main", "tool.execute.after")
-    if (text) output.output = `${{output.output ?? ""}}\\n\\n${{text}}`
-  }},
-}})
+# dsh is configured by profile patch layers. The patch picks the session model,
+# and the DeepSeek provider's endpoint and effort when they are set. The API key
+# is read by dsh itself from DEEPSEEK_API_KEY.
+_DSH_SETUP = f"""set -eu
+mkdir -p /tmp/cbrun "$DSH_HOME"
+model={{model_quoted}}
+{{
+  printf '%s\\n' '- id: agent-default-model' '  config:' '    provider: deepseek-official'
+  printf '    model: "%s"\\n' "$model"
+  if [ -n "${{{DSH_REASONING_EFFORT_ENV}:-}}" ]; then
+    printf '    reasoningEffort: "%s"\\n' "${DSH_REASONING_EFFORT_ENV}"
+  fi
+  if [ -n "${{DEEPSEEK_BASE_URL:-}}" ]; then
+    printf '%s\\n' '- id: llm-deepseek' '  config:'
+    printf '    baseURL: "%s"\\n' "$DEEPSEEK_BASE_URL"
+  fi
+}} > {DSH_MODEL_PATCH}
+cat {DSH_MODEL_PATCH}
+dsh --version
 """
-_OPENCODE_TIME_SETUP = (
-    'CBRUN_PLUGIN_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/plugin"\n'
-    'mkdir -p "$CBRUN_PLUGIN_DIR"\n'
-    f"cat > \"$CBRUN_PLUGIN_DIR/cbrun-time-reminder.js\" << '{_TIME_REMINDER_EOF}'\n"
-    f"{_OPENCODE_TIME_PLUGIN}"
-    f"{_TIME_REMINDER_EOF}\n"
-)
-
-# OpenHands runs PostToolUse hooks but drops their additionalContext, so the
-# tool result conversion is patched instead. The reminder for an observation
-# is decided the first time it is rendered and reused on every later render,
-# which keeps the replayed history (and its prompt cache) unchanged.
-_OPENHANDS_TIME_SETUP = _hooks_file_setup("$HOME/.openhands/hooks.json", {}, {
-    "UserPromptSubmit": _command_hook("openhands", "UserPromptSubmit", None),
-}) + r"""python3 - << 'PY'
-import os
-from pathlib import Path
-import_marker = "from openhands.sdk.tool.schema import Observation\n"
-helper = import_marker + (
-    "\n"
-    "_cbrun_reminders: dict = {}\n"
-    "_cbrun_module = None\n"
-    "\n"
-    "\n"
-    "def _cbrun_time_reminder(event_id):\n"
-    "    global _cbrun_module\n"
-    "    if event_id not in _cbrun_reminders:\n"
-    "        if _cbrun_module is None:\n"
-    "            import importlib.util\n"
-    "            spec = importlib.util.spec_from_file_location(\"cbrun_time_reminder\", \"/tmp/cbrun/time_reminder.py\")\n"
-    "            _cbrun_module = importlib.util.module_from_spec(spec)\n"
-    "            spec.loader.exec_module(_cbrun_module)\n"
-    "        _cbrun_reminders[event_id] = _cbrun_module.due_reminder(\"main\", event=\"observation\") or \"\"\n"
-    "    return _cbrun_reminders[event_id]\n"
-)
-render_marker = (
-    "    def to_llm_message(self) -> Message:\n"
-    "        return Message(\n"
-    "            role=\"tool\",\n"
-    "            content=self.observation.to_llm_content,\n"
-)
-render_patched = (
-    "    def to_llm_message(self) -> Message:\n"
-    "        content = list(self.observation.to_llm_content)\n"
-    "        reminder = _cbrun_time_reminder(self.id)\n"
-    "        if reminder:\n"
-    "            content.append(TextContent(text=reminder))\n"
-    "        return Message(\n"
-    "            role=\"tool\",\n"
-    "            content=content,\n"
-)
-roots = [
-    Path("/root/.local/share/uv/tools/openhands/lib"),
-    Path("/usr/local/lib"),
-]
-found = []
-for root in roots:
-    if not root.is_dir():
-        continue
-    for dirpath, _dirs, names in os.walk(root):
-        if "observation.py" in names and dirpath.endswith("openhands/sdk/event/llm_convertible"):
-            found.append(Path(dirpath) / "observation.py")
-if len(found) != 1:
-    raise SystemExit("cbrun: openhands time reminder patch matched %d files" % len(found))
-path = found[0]
-text = path.read_text(encoding="utf-8")
-if "_cbrun_time_reminder" in text:
-    raise SystemExit(0)
-for marker in (import_marker, render_marker):
-    if text.count(marker) != 1:
-        raise SystemExit("cbrun: openhands time reminder marker count %d" % text.count(marker))
-text = text.replace(import_marker, helper, 1).replace(render_marker, render_patched, 1)
-path.write_text(text, encoding="utf-8")
-print("time reminder patch:", path)
-PY
-"""
-
-_TIME_REMINDER_SETUPS = {
-    "claude-code": _claude_style_hooks("claude", "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"),
-    "codex": _claude_style_hooks("codex", "$CODEX_HOME/hooks.json"),
-    "cursor": _CURSOR_TIME_HOOKS,
-    "opencode": _OPENCODE_TIME_SETUP,
-    "openhands": _OPENHANDS_TIME_SETUP,
-}
-
-
-def _with_time_reminder(spec: AgentSpec) -> AgentSpec:
-    """Install the wall-clock reminder for ``spec`` and arm it at solve start."""
-    setup = "set -eu\n" + _TIME_REMINDER_SETUPS[spec.name]
-    if spec.setup_script:
-        setup += spec.setup_script
-    return replace(spec, setup_script=setup, command=_TIME_REMINDER_INIT + spec.command)
-
 
 _BASE_SPECS: dict[str, AgentSpec] = {
     "codex": AgentSpec(
@@ -769,9 +635,6 @@ _BASE_SPECS: dict[str, AgentSpec] = {
         command=(
             "codex exec "
             "--dangerously-bypass-approvals-and-sandbox "
-            # Codex skips hooks nobody has trusted interactively; the only
-            # hooks here are the time reminders cbrun installs during setup.
-            "--dangerously-bypass-hook-trust "
             "--skip-git-repo-check "
             "--cd {workdir_quoted} "
             "--model {model_quoted} "
@@ -855,6 +718,23 @@ _BASE_SPECS: dict[str, AgentSpec] = {
     ),
 }
 
+_BASE_SPECS["dsh"] = AgentSpec(
+    name="dsh",
+    env_passthrough=("DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", DSH_REASONING_EFFORT_ENV),
+    setup_script=_DSH_SETUP,
+    run_as="root",
+    model_prefix="keep",
+    home="/root",
+    runtime="node",
+    # Session files; token usage is read from the step_end events in agent.log.
+    usage_paths=(DSH_HOME,),
+    command=(
+        f"dsh --profile headless --patch {DSH_MODEL_PATCH} --json "
+        "< {instruction_quoted} "
+        "2>&1 | stdbuf -oL tee {log_quoted}"
+    ),
+)
+
 _BUILTIN_SPECS: dict[str, AgentSpec] = {
-    name: replace(_with_time_reminder(spec), image_backend=name) for name, spec in _BASE_SPECS.items()
+    name: replace(spec, image_backend=name) for name, spec in _BASE_SPECS.items()
 }

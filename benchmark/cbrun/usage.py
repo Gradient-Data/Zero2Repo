@@ -207,6 +207,10 @@ def parse_usage_text(text: str) -> LogUsage:
     opencode_calls: Buckets | None = None
     opencode_cost = 0.0
     saw_opencode_cost = False
+    # dsh reports each model step's usage on a status/step_end event.
+    dsh_calls: Buckets | None = None
+    dsh_steps = 0
+    dsh_reported = 0
 
     for event in _json_events(text):
         etype = event.get("type")
@@ -249,6 +253,21 @@ def parse_usage_text(text: str) -> LogUsage:
             key = str(message.get("id") or event.get("requestId") or event.get("uuid") or len(claude_msgs))
             claude_msgs[key] = (str(message.get("model") or ""), _anthropic(message["usage"]))
             process_msgs[key] = claude_msgs[key]
+            continue
+
+        if etype == "status" and event.get("phase") == "step_end":
+            dsh_steps += 1
+            if usage is not None:
+                step = Buckets(
+                    input_tokens=_int(usage.get("inputTokens")),
+                    cache_read_tokens=_int(usage.get("cacheReadTokens")),
+                    cache_write_tokens=_int(usage.get("cacheWriteTokens")),
+                    output_tokens=_int(usage.get("outputTokens")),
+                    reasoning_tokens=_int(usage.get("reasoningTokens")),
+                )
+                dsh_calls = dsh_calls or Buckets()
+                dsh_calls.add(step)
+                dsh_reported += 1
             continue
 
         part = event.get("part")
@@ -296,6 +315,9 @@ def parse_usage_text(text: str) -> LogUsage:
         out.calls, out.calls_source = opencode_calls, "opencode_step_finish"
         if saw_opencode_cost and out.harness_cost_usd is None:
             out.harness_cost_usd = opencode_cost
+    elif dsh_calls is not None:
+        out.calls = dsh_calls
+        out.calls_source = "dsh_step_end" if dsh_reported == dsh_steps else "dsh_step_end_partial"
     return out
 
 

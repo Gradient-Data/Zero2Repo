@@ -76,9 +76,13 @@ class Outcome:
         if event.get("type") == "result":
             self.result = event
         elif event.get("type") == "assistant" and isinstance(event.get("message"), dict):
-            self.last_model = str(event["message"].get("model") or "")
-            if self.last_model != SYNTHETIC_MODEL:
+            model = str(event["message"].get("model") or "")
+            if model != SYNTHETIC_MODEL:
                 self.model_messages += 1
+            # A background subagent can still speak after the main turn ended on an API
+            # error; only the main thread's last message says how the turn ended.
+            if not event.get("parent_tool_use_id"):
+                self.last_model = model
 
 
 def resumable(outcome: Outcome) -> bool:

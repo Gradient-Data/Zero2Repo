@@ -73,6 +73,9 @@ class TrialResult:
     # never changes reward; a human reviews trials with ``needs_review``.
     needs_review: bool = False
     transcript_scan: dict = field(default_factory=dict)
+    # Full-suite runs only: the solve went through the supply proxy; lists the
+    # requests it refused (code hosts) and TLS handshakes clients rejected.
+    supply_proxy: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -22,6 +22,8 @@ __all__ = [
     "OTHER_CODE_HOSTS",
     "GITHUB_MIRROR_HOSTS",
     "CODE_HOST_BLOCK_HOSTS",
+    "PACKAGE_CDN_HOSTS",
+    "upstream_pages_hosts",
     "build_fix_instruction",
     "build_access_fix_instruction",
     "CONTAINER_ACCESS_MONITOR_PATH",
@@ -126,8 +128,39 @@ GITHUB_MIRROR_HOSTS = (
     "githubfast.com",
 )
 
+# CDNs that serve any published npm package's files over plain HTTP, so a
+# package banned from installing could still be fetched and read from them.
+PACKAGE_CDN_HOSTS = (
+    "unpkg.com",
+    "app.unpkg.com",
+    "cdn.jsdelivr.net",
+    "fastly.jsdelivr.net",
+    "gcore.jsdelivr.net",
+    "testingcf.jsdelivr.net",
+    "esm.sh",
+    "esm.run",
+    "cdn.skypack.dev",
+    "ga.jspm.io",
+    "jspm.dev",
+    "cdnjs.cloudflare.com",
+)
+
 # Everything ``--block-github`` (alias ``--block-code-hosts``) blocks.
-CODE_HOST_BLOCK_HOSTS = GITHUB_BLOCK_HOSTS + OTHER_CODE_HOSTS + GITHUB_MIRROR_HOSTS
+CODE_HOST_BLOCK_HOSTS = GITHUB_BLOCK_HOSTS + OTHER_CODE_HOSTS + GITHUB_MIRROR_HOSTS + PACKAGE_CDN_HOSTS
+
+_REPO_SLUG = re.compile(r"^(?:github\.com/)?([A-Za-z0-9][A-Za-z0-9-]*)/[A-Za-z0-9._-]+$")
+
+
+def upstream_pages_hosts(spec: "DenylistSpec | None") -> tuple[str, ...]:
+    """GitHub Pages hosts of the banned upstream repositories (``owner/repo`` entries).
+
+    The upstream project's documentation site often carries its source or built
+    bundle, so it is blocked with the code hosts.
+    """
+    if spec is None:
+        return ()
+    owners = {m.group(1).lower() for entry in spec.install_ban for m in [_REPO_SLUG.match(entry.strip())] if m}
+    return tuple(sorted(f"{owner}.github.io" for owner in owners))
 
 # Scan only source-like files under /app.
 _SOURCE_SUFFIXES = {
@@ -1018,9 +1051,9 @@ def _pythons() -> list[str]:
     return found
 
 
-def _run_json(argv: list[str]) -> object | None:
+def _run_json(argv: list[str], env: dict[str, str] | None = None) -> object | None:
     try:
-        out = subprocess.check_output(argv, text=True, stderr=subprocess.DEVNULL)
+        out = subprocess.check_output(argv, text=True, stderr=subprocess.DEVNULL, env=env)
         return json.loads(out)
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
         return None
@@ -1294,7 +1327,10 @@ def main() -> int:
 
     npm = shutil.which("npm")
     if npm:
-        data = _run_json([npm, "ls", "-g", "--depth=0", "--json"])
+        # Listing is local work; without this npm also checks the registry
+        # for a newer npm, a network request in a step that downloads nothing.
+        npm_env = {**os.environ, "npm_config_update_notifier": "false"}
+        data = _run_json([npm, "ls", "-g", "--depth=0", "--json"], env=npm_env)
         deps = data.get("dependencies") if isinstance(data, dict) else None
         if isinstance(deps, dict):
             for name in deps:
@@ -1304,6 +1340,7 @@ def main() -> int:
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                         check=False,
+                        env=npm_env,
                     )
     return 0
 

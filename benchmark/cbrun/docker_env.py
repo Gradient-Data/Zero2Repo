@@ -258,10 +258,7 @@ class Container:
         The stall watchdog stops the agent when stdout and ``activity_path``
         (typically ``/app``) both stay quiet for ``stall_window_sec``.
         Setting ``abort`` stops the agent the same way (used by the access monitor).
-        The agent sees the wall budget as ``CBRUN_WALL_SEC`` (its time reminders
-        count down from it).
         """
-        env = {**(env or {}), "CBRUN_WALL_SEC": str(int(wall_timeout_sec))}
         wrapped = (
             f"timeout --signal=KILL {int(wall_timeout_sec)} "
             f"bash -o pipefail -lc {_shq(command)}"
@@ -274,6 +271,7 @@ class Container:
         last_mtime = [self._latest_mtime(activity_path) if activity_path else None]
         stall_killed = [False]
         aborted = False
+        wall_net = False
 
         proc = subprocess.Popen(
             argv,
@@ -330,6 +328,7 @@ class Container:
             # Wall clock is enforced by container-side `timeout`; this is a safety
             # net in case the client outlives it.
             if (now - start) > (wall_timeout_sec + 120):
+                wall_net = True
                 self._stop_agent(stall_marker)
                 try:
                     proc.wait(timeout=30)
@@ -339,8 +338,10 @@ class Container:
 
         pump.join(timeout=10)
         exit_code = proc.returncode if proc.returncode is not None else -1
-        # `timeout` exits 124 (TERM) / 137 (KILL) when the wall clock fires.
-        timed_out = exit_code in (124, 137) and not stall_killed[0] and not aborted
+        seconds = time.monotonic() - start
+        timed_out = not stall_killed[0] and not aborted and (
+            wall_net or _exec_hit_wall(wall_timeout_sec, exit_code, seconds)
+        )
         # Defensive sweep so no lingering agent process mutates /app during judge.
         self._stop_agent(stall_marker)
         tail = _tail(log_path.read_text(encoding="utf-8", errors="replace")) if log_path.is_file() else ""
@@ -349,7 +350,7 @@ class Container:
             timed_out=timed_out,
             stall_killed=stall_killed[0],
             aborted=aborted,
-            seconds=time.monotonic() - start,
+            seconds=seconds,
             tail=tail,
         )
 

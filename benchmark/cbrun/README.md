@@ -70,35 +70,30 @@ wall-clock budgets:
 A conservative stall watchdog stops a wedged CLI when both stdout and `/app`
 stay quiet, without treating a long compile or a long model turn as a hang.
 
-The shared instruction says only that a wall-clock budget exists. During the
-solve, every built-in agent is also told how much of that budget remains: at
-the start, then hourly; every 30 minutes in the last hour; every 10 minutes in
-the last 30 minutes; every 5 minutes in the last 10 minutes; every minute in
-the last 5 minutes; every 30 seconds in the last minute. The reminder is
-delivered at the agent's next hook point, so a turn or a command that has not
-returned yet delays it. It states the time left, that expiry kills the session
-and records a timeout, and that scoring requires writing `/logs/agent/submit`
-with the single line `CODINGBENCH_SUBMIT` and then finishing the session.
+The shared instruction states the solve wall-clock budget once, and that a
+session still unsubmitted when it runs out is stopped and judged on `/app` as
+it stands. Nothing reminds the agent of the time left during the solve.
 
 ## Termination and submit
 
 The agent submits by writing `/logs/agent/submit` with the single line
 `CODINGBENCH_SUBMIT`. Ending the CLI session is **not** a submission. The
 isolated judge runs only after that file is valid **and** the denylist scan
-is clean. Missing submit or an unfixed denylist hit scores `reward=0` and
-does not run hidden tests. A declared judge substrate that cannot be
+is clean, or after the wall clock expires (submitted or not) and the scan is
+clean. A session that ends before the wall clock without a submit, or an
+unfixed denylist hit, scores `reward=0` and does not run hidden tests. A declared judge substrate that cannot be
 prepared on the host is `judge_error` / `substrates_missing` and does not
 count as a scored fail.
 
 The solve terminal status is recorded as one of:
 
 * `completed` — valid submit file and the CLI exited 0.
-* `timeout` — the wall clock was hit.
+* `timeout` — the wall clock was hit; the workspace is still judged.
 * `error` — stall-killed, a non-zero CLI exit, setup failure, or no submit.
 
 ## Built-in backends
 
-Five backends ship as built-in **AgentSpec** records:
+Six backends ship as built-in **AgentSpec** records:
 
 | Backend | CLI | Notes |
 |---------|-----|-------|
@@ -107,12 +102,41 @@ Five backends ship as built-in **AgentSpec** records:
 | `claude-code` | `@anthropic-ai/claude-code` | Runs as root with `bypassPermissions`. Claude Code refuses that mode for a real root login, so the solve process sets `IS_SANDBOX=1`. Judge still runs as root. |
 | `cursor` | Cursor CLI (`cursor-agent`) | Forwards `CURSOR_API_KEY`. Installed from the official Cursor install script into the `:agent` image. |
 | `openhands` | OpenHands CLI 1.16.0 | Forwards `LLM_API_KEY` and `LLM_BASE_URL`. Model id is passed as `LLM_MODEL` (use `openai/<id>` for an OpenAI-compatible endpoint). The CLI is copied from a local `codingbench-agent/openhands:1.16.0` image, because it requires Python 3.12. |
+| `dsh` | `@deepseek-ai/dsh` | DeepSeek's harness, run as `dsh --profile headless --json` with `DSH_PERMISSION_MODE=danger-full-access`. Forwards `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL`. |
 
 Auth/provider env is selected centrally and forwarded into the container; only
 **present** keys are injected (key names are recorded in results, never values).
 CLI versions default to latest but should be pinned for reproducibility via
 `CBRUN_CODEX_VERSION` / `CBRUN_OPENCODE_VERSION` / `CBRUN_CLAUDE_VERSION` /
-`CBRUN_CURSOR_VERSION`.
+`CBRUN_CURSOR_VERSION`. `CBRUN_DSH_VERSION` is required for dsh.
+
+### dsh
+
+dsh is an npm harness like Codex and Claude Code: its package and a private
+Node are built once into `codingbench-cli/dsh:<version>` and copied into each
+case's agent image, with `dsh` linked into `/usr/local/bin` (the default
+PATH). It runs under the same user, install shims, access monitor and usage
+archive as the other built-ins.
+
+Settings, all read from the host environment:
+
+| Setting | How |
+|---------|-----|
+| API key | `DEEPSEEK_API_KEY`, read by dsh's DeepSeek provider. |
+| Endpoint | `DEEPSEEK_BASE_URL`; when set, cbrun also writes it as the provider `baseURL` in the patch layer. |
+| Model | `--model`, written as the session model of the `deepseek-official` provider. |
+| Thinking effort | `CBRUN_DSH_REASONING_EFFORT` (passed through as `reasoningEffort`; unset keeps dsh's default). Recorded as `reasoning_effort`. |
+
+Setup writes the overlay to `/tmp/cbrun/dsh-model.yml` (passed with `--patch`)
+and prints it into `agent_setup.log`. Token usage comes from the `step_end`
+status events of `--json` (`calls_source=dsh_step_end`); `$DSH_HOME`
+(`/root/.dsh`) is archived as the session record.
+
+cbrun does not patch dsh for any provider. Known incompatibilities with
+OpenRouter's DeepSeek route (as of dsh 0.2.1-rc.2): OpenRouter rejects a
+thinking request without a thinking budget, and dsh rejects a usage report
+whose cache counters are `null`. Whether to use such an endpoint, or to run a
+modified dsh through a custom `--agent-spec`, is the operator's choice.
 
 ### Codex + OpenAI-compatible gateway
 
@@ -336,6 +360,90 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
   fail before any container starts. `--no-enforce-denylist` skips the scan
   and `summary.json` records `denylist_enforced=false` so a skipped scan is
   not mistaken for a clean scan.
+
+## Full-suite supply: local store and proxy
+
+Only `cbrun --all` (with or without `--build-images`) uses this. A run on
+selected cases (`--case`) downloads directly, as before.
+
+Rule: a file is fetched from the internet once per host and kept in a local
+store; installing it into any number of containers reads that copy. When
+several processes need the same file, one downloads and the others wait on a
+file lock.
+
+* **Manifest** `benchmark/supply/manifest.json`, three sections: `base` (the
+  system image and the fixed-URL files of `base_image/Dockerfile`), `cases`
+  (per case, fixed-URL downloads such as Go, Zig or a second Node; a case's
+  `source/env/resources.json` is included automatically) and `harnesses`
+  (package, allowed versions, private Node).
+* **Locks** `benchmark/supply/locks/`. Packages installed by name (apt, pip,
+  npm, conda) are resolved by running the real install once through the proxy
+  in record mode; every reply, package indexes included, is stored and listed.
+  Builds then replay the lock read-only, so a rebuild gets the same versions.
+  A lock carries a digest of the install it was recorded from; editing that
+  install without re-recording is an error, and `python -m cbrun.case_checks`
+  reports a case with no manifest entry or lock. Record with
+  `python -m cbrun.supply lock base`, `... lock case <id>...`,
+  `... lock harness <name>...` (harness version from its `CBRUN_*_VERSION`).
+  A case lock is recorded on the local base image and names it
+  (`recorded_on`). Record case locks on a base built from the base lock: on
+  a base with other package sources the replay asks for URLs outside the
+  lock and fails naming them. Upgrading means editing the manifest or
+  install and recording again.
+* **Store**: `CBRUN_STORE_DIR` (default `/data/cbrun-store`), group-writable,
+  by SHA-256. Writes go to a temporary file renamed only after size and digest
+  match; a download that ends before its Content-Length (or its last chunk)
+  is never stored, and preparation retries it. Reads check only the size,
+  since a stored file is never rewritten. Nothing is cleaned up
+  automatically; the size is printed when preparation ends. Frozen indexes
+  exist only in the store that recorded them, and upstream archives may drop
+  superseded files, so a host other than the recording one needs a copy of
+  that store.
+* **Order**: preparation checks every needed lock first (all problems are
+  reported together), downloads the base image's files, starts the base
+  build, downloads the case and harness files meanwhile, and only then lets
+  trials start their installs (still under `--init-slots`). Only what will be
+  built is prepared: a missing base image, cases whose environment image is
+  missing, and the selected harness when its shared image is missing.
+
+Installs keep their hard-coded public URLs. Containers reach the network
+through a proxy cbrun runs on `127.0.0.1`, one listener per container:
+
+| Where | Mode | How it is connected |
+|-------|------|---------------------|
+| Base image, shared CLI image, agent image builds | read-only lock | `docker build --network host` plus Docker's predefined proxy build args; HTTPS steps fetch the CA bundle from the proxy and delete it when the step ends |
+| Case environment install | read-only lock | CA directory mounted at `/run/cbrun-proxy`; proxy settings exported inside the command, never as container env (`docker commit` would keep it) |
+| Solve container (agent setup and solve) | solve | container env and the CA mount |
+| Judge, rejudge, probes | — | unchanged (`--network none`) |
+
+Read-only mode answers only requests in the lock; any other request fails
+the build with its URL and owner, and nothing is fetched to fill the gap. In
+the solve, code hosts are refused by the proxy itself (a client that
+resolves through a proxy never consults `/etc/hosts`); on package hosts,
+files whose URL names fixed content (wheels, tarballs, `.deb` pool files,
+conda packages, Go module zips, versioned toolchains) are fetched once and
+then served locally, while indexes pass through fresh; every other host,
+model APIs included, is a plain CONNECT tunnel, so streamed replies are not
+decrypted, cached or buffered. The installs-during-solve rule is unchanged.
+Results record `supply_proxy` with any refused requests.
+
+TLS on package hosts is read with certificates from a CA generated once in
+the store (`ca/`) and never changed. Containers get it only at run time:
+`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE`, `PIP_CERT`,
+`GIT_SSL_CAINFO`, `CONDA_SSL_VERIFY`, `CARGO_HTTP_CAINFO` point at the merged
+bundle and `NODE_EXTRA_CA_CERTS` at the CA. A client with its own fixed trust
+list that ignores these fails on package hosts during a full-suite solve. A
+proxy that cannot start fails the run with its reason; there is no direct
+fallback.
+
+Image identity: cbrun's fingerprint labels do not include the proxy, so
+images built before keep matching and are reused. A Docker image ID from a
+rebuild still differs from one built without the proxy (BuildKit keys
+`--network host` into the step; the legacy builder records the build-arg
+count in history); no proxy address or CA is stored in the image. The
+Dockerfile change for Cursor rebuilds its agent images once. The existing
+`/opt/cb-cache` mount (`CODINGBENCH_BUILD_CACHE_DIR`) is unrelated and
+unchanged.
 
 ## Step mode (architecture only)
 

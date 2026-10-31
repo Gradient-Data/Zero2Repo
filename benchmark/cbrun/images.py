@@ -27,6 +27,7 @@ than once per case, so cases can build their ``:agent`` images side by side.
 
 from __future__ import annotations
 
+import contextlib
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -174,6 +175,43 @@ def cli_image_tag(backend: str, environ: dict[str, str] | None = None) -> str:
     return f"{CLI_IMAGE_REPO}/{backend}:{version}"
 
 
+def harness_install_steps(backend: str, environ: dict[str, str] | None = None) -> str:
+    """Dockerfile steps that install *backend*'s CLI; a supply lock records them.
+
+    For an npm backend these build the shared CLI image. For Cursor they are
+    the step its agent image runs. The proxy CA step does nothing outside a
+    full-suite run, so the text is the same in both modes.
+    """
+    from .supply import CA_FETCH_SNIPPET
+
+    if backend in agents.NPM_BACKENDS:
+        return (
+            "RUN set -eux; apt-get update; "
+            "apt-get install -y --no-install-recommends curl ca-certificates xz-utils; "
+            "rm -rf /var/lib/apt/lists/*\n"
+            f"RUN set -eux; {CA_FETCH_SNIPPET}; {_node_install_snippet()}; "
+            f"{agents.cli_install_command(backend, environ)}\n"
+        )
+    if backend == "cursor":
+        return f"RUN set -eux; {CA_FETCH_SNIPPET}; {agents.cli_install_command('cursor', environ)}\n"
+    raise ValueError(f"{backend} has no recorded install steps")
+
+
+def harness_record_dockerfile(backend: str, environ: dict[str, str] | None, from_image: str) -> str:
+    """Dockerfile run once through the recording proxy to lock *backend*'s downloads."""
+    if backend in agents.NPM_BACKENDS:
+        return f"FROM {from_image}\n" + harness_install_steps(backend, environ)
+    if backend == "cursor":
+        # Agent images derive from deliverable images, which already have curl.
+        return (
+            f"FROM {from_image}\n"
+            "RUN set -eux; apt-get update; "
+            "apt-get install -y --no-install-recommends curl ca-certificates; "
+            "rm -rf /var/lib/apt/lists/*\n" + harness_install_steps(backend, environ)
+        )
+    raise ValueError(f"{backend} has no supply lock")
+
+
 def ensure_cli_image(
     backend: str,
     environ: dict[str, str] | None = None,
@@ -186,7 +224,12 @@ def ensure_cli_image(
     a per-case install would. The tag carries the pinned version, so a new pin
     builds a new image. An unpinned smoke run (``@latest``) reuses whatever
     ``:latest`` was built first unless *force* is set.
+
+    In a full-suite run the image is built FROM the system image the base
+    supply lock pins, and its downloads are served from the harness lock.
     """
+    from . import supply
+
     if backend not in agents.NPM_BACKENDS:
         raise ValueError(f"{backend} has no shared CLI image")
     tag = cli_image_tag(backend, environ)
@@ -195,18 +238,22 @@ def ensure_cli_image(
     with image_build_lock(tag):
         if not force and image_exists(tag):
             return tag
-        dockerfile = (
-            f"FROM {CLI_BASE_IMAGE}\n"
-            f"RUN set -eux; {_node_install_snippet()}; "
-            f"{agents.cli_install_command(backend, environ)}\n"
-        )
-        with tempfile.TemporaryDirectory() as ctx:
-            (Path(ctx) / "Dockerfile").write_text(dockerfile, encoding="utf-8")
-            print(f"[cbrun] building shared CLI image {tag}", flush=True)
-            build = subprocess.run(
-                ["docker", "build", "--platform", platform_name(), "-t", tag, ctx],
-                **build_output(),
-            )
+        run = supply.active()
+        from_image = run.base_from_image() if run is not None else CLI_BASE_IMAGE
+        dockerfile = f"FROM {from_image}\n" + harness_install_steps(backend, environ)
+        with contextlib.ExitStack() as stack:
+            build_args: list[str] = []
+            if run is not None:
+                lock = run.harness_lock(backend)
+                session = stack.enter_context(run.locked(f"shared CLI image {tag}", lock.entries))
+                build_args = session.build_args()
+            with tempfile.TemporaryDirectory() as ctx:
+                (Path(ctx) / "Dockerfile").write_text(dockerfile, encoding="utf-8")
+                print(f"[cbrun] building shared CLI image {tag}", flush=True)
+                build = subprocess.run(
+                    ["docker", "build", "--platform", platform_name(), *build_args, "-t", tag, ctx],
+                    **build_output(),
+                )
         if build.returncode != 0:
             raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")
     return tag
@@ -260,8 +307,7 @@ def _build_dockerfile(
             )
         install += f"\nRUN set -eux; {_agent_user_snippet()}\n"
     elif backend == "cursor":
-        cli = agents.cli_install_command("cursor", environ)
-        install = f"RUN set -eux; {cli}; {_agent_user_snippet()}\n"
+        install = harness_install_steps("cursor", environ) + f"RUN set -eux; {_agent_user_snippet()}\n"
     elif cli_image is not None:
         prefix = agents.NODE_RUNTIME_PREFIX
         install = (
@@ -298,7 +344,34 @@ def ensure_agent_image(
 
     Idempotent: when the ``:agent`` image and the tests cache already exist and
     ``force`` is False, returns immediately.
+
+    Trials of one case with different backends share its ``:deliverable`` image
+    and hidden-tests cache, so they prepare one at a time.
     """
+    with image_build_lock(f"case-{case_id}"):
+        return _ensure_agent_image(
+            case_id,
+            cache_root=cache_root,
+            case_dir=case_dir,
+            deliverable_image=deliverable_image,
+            force=force,
+            environ=environ,
+            backend=backend,
+            enforce_denylist=enforce_denylist,
+        )
+
+
+def _ensure_agent_image(
+    case_id: str,
+    *,
+    cache_root: Path,
+    case_dir: Path | None,
+    deliverable_image: str | None,
+    force: bool,
+    environ: dict[str, str] | None,
+    backend: str | None,
+    enforce_denylist: bool,
+) -> AgentImage:
     if enforce_denylist and case_dir is not None:
         from .denylist import require_denylist
 
@@ -384,7 +457,7 @@ def ensure_agent_image(
                 f"[cbrun] cached agent image {tag} failed denylist probe; rebuilding",
                 flush=True,
             )
-            return ensure_agent_image(
+            return _ensure_agent_image(
                 case_id,
                 cache_root=cache_root,
                 case_dir=case_dir,
@@ -403,15 +476,20 @@ def ensure_agent_image(
             f"[cbrun] building agent image {tag} (cli={backend or 'none'})",
             flush=True,
         )
-        build = subprocess.run(
-            [
-                "docker", "build", "--platform", platform_name(),
-                "--label", f"{FINGERPRINT_LABEL}={fingerprint}",
-                "--iidfile", str(iid_path),
-                "-t", tag, "-f", str(df_path), ctx,
-            ],
-            **build_output(),
-        )
+        with contextlib.ExitStack() as stack:
+            # The proxy rides on build args, which are not part of the
+            # fingerprint, so an image built before keeps matching.
+            build_args = _supply_build_args(stack, tag, backend)
+            build = subprocess.run(
+                [
+                    "docker", "build", "--platform", platform_name(),
+                    *build_args,
+                    "--label", f"{FINGERPRINT_LABEL}={fingerprint}",
+                    "--iidfile", str(iid_path),
+                    "-t", tag, "-f", str(df_path), ctx,
+                ],
+                **build_output(),
+            )
         if build.returncode != 0:
             raise RuntimeError(f"docker build of {tag} failed (exit {build.returncode})")
         built_id = iid_path.read_text(encoding="utf-8").strip()
@@ -426,6 +504,22 @@ def ensure_agent_image(
             if errors:
                 raise RuntimeError("; ".join(errors))
     return AgentImage(case_id, deliverable, tag, tests_cache, built_id)
+
+
+def _supply_build_args(stack: contextlib.ExitStack, tag: str, backend: str | None) -> list[str]:
+    """Read-only proxy for an agent image build in a full-suite run; [] otherwise.
+
+    Only Cursor downloads here; the other builds copy or link what is already
+    local, so their lock is empty and any request they make fails the build.
+    """
+    from . import supply
+
+    run = supply.active()
+    if run is None:
+        return []
+    entries = run.harness_lock("cursor").entries if backend == "cursor" else ()
+    session = stack.enter_context(run.locked(f"agent image {tag}", entries))
+    return session.build_args()
 
 
 def _runtime_leak_probe(

@@ -3,8 +3,9 @@
 A trial: derive/reuse the ``:agent`` image, start a GT-free container (GPU +
 host network only as needed, never the Docker socket), inject the instruction,
 let the agent develop freely under a wall-clock limit, require an explicit
-submit file, then copy only ``/app`` into a fresh ``:agent`` container and
-judge. Missing submit is a failed attempt and skips the hidden tests.
+submit file (or the wall clock to expire), then copy only ``/app`` into a fresh
+``:agent`` container and judge. A session that ends early without a submit is a
+failed attempt and skips the hidden tests.
 """
 
 from __future__ import annotations
@@ -24,15 +25,18 @@ from .agent_spec import (
     CONTAINER_HELPERS,
     CONTAINER_INSTRUCTION_PATH,
     CONTAINER_WORKDIR,
+    DSH_REASONING_EFFORT_ENV,
     AgentInvocation,
     load_agent_spec,
     resolve_agent,
 )
 from .access_monitor import AccessMonitor, AccessMonitorError
+from .agents import CLI_BINS
 from .assets import AdapterError, CaseSpec, load_case
 from .denylist import (
     DEFAULT_FIX_RETRIES,
     CODE_HOST_BLOCK_HOSTS,
+    upstream_pages_hosts,
     ScanResult,
     build_access_fix_instruction,
     build_fix_instruction,
@@ -44,6 +48,8 @@ from .denylist import (
 from .docker_env import Container, ExecResult
 from .images import AgentImage, ensure_agent_image
 from .infra_signals import count_infra_signals, invalid_reason
+from . import supply
+from .init_queue import DEFAULT_INIT_SLOTS, InitSlot
 from .state import (
     file_manifest,
     host_arch,
@@ -76,17 +82,15 @@ from .transcript_scan import write_report as write_transcript_report
 __all__ = ["run_trial"]
 
 
-_CLI_BIN = {
-    "codex": "codex",
-    "opencode": "opencode",
-    "claude-code": "claude",
-    "cursor": "cursor-agent",
-    "openhands": "openhands",
+# Env var holding each harness's reasoning effort, recorded with the result.
+_EFFORT_ENV = {
+    "claude-code": CLAUDE_EFFORT_ENV,
+    "dsh": DSH_REASONING_EFFORT_ENV,
 }
 
 
 def _probe_cli_version(container: Container, spec_name: str) -> str | None:
-    bin_name = _CLI_BIN.get(spec_name)
+    bin_name = CLI_BINS.get(spec_name)
     if not bin_name:
         return None
     probe = container.exec(
@@ -163,6 +167,7 @@ def run_trial(
     denylist_fix_retries: int = DEFAULT_FIX_RETRIES,
     block_github: bool = True,
     allow_emulated: bool = False,
+    init_slots: int = DEFAULT_INIT_SLOTS,
 ) -> TrialResult:
     """Run one (case, backend/spec, model) trial and return its result."""
     case_dir = Path(case_dir)
@@ -188,73 +193,99 @@ def run_trial(
     else:
         spec = None
         image_backend = backend
-    image = ensure_agent_image(
-        case.case_id,
-        cache_root=Path(cache_root),
-        case_dir=case_dir,
-        force=force_image,
-        backend=image_backend,
-        enforce_denylist=enforce_denylist,
+    # Hold a host-wide init slot from image build through agent setup so
+    # trials run side by side do not all download at once.
+    agent_name = spec.name if spec is not None else backend
+    slot = InitSlot(
+        init_slots,
+        label=f"{case.case_id}/{agent_name}" if agent_name else case.case_id,
     )
-
-    gpus = case.docker_gpus or None
-    # The spec read once above decides both the image and the command.
-    invocation = resolve_agent(
-        backend=backend if spec is None else None,
-        spec=spec,
-        model=model,
-        instruction_path=CONTAINER_INSTRUCTION_PATH,
-        log_path=CONTAINER_AGENT_LOG,
-    )
-    resolved_backend = invocation.spec.name
-
-    result = TrialResult(
-        case_id=case.case_id,
-        backend=resolved_backend,
-        model=model,
-        reward=0.0,
-        terminal_status=TerminalStatus.ERROR.value,
-        deliverable_image=image.deliverable_image,
-        agent_image=image.agent_image,
-        agent_spec_name=invocation.spec.name,
-        agent_spec_hash=invocation.spec_hash,
-        resolved_model=invocation.resolved_model,
-        run_as=invocation.run_as or "root",
-        model_prefix=invocation.spec.model_prefix,
-        env_keys=list(invocation.env_keys),
-        denylist_enforced=enforce_denylist,
-        started_at=utc_now(),
-        platform=platform_name(),
-        provenance=source_identity(case_dir),
-        test_files=file_manifest(image.tests_cache_dir / "final"),
-        reasoning_effort=(
-            os.environ.get(
-                CLAUDE_EFFORT_ENV if invocation.spec.name == "claude-code" else CODEX_REASONING_EFFORT_ENV
-            )
-            or ""
-        ).strip()
-        or None,
-        judge_timeout_sec=limits.max_test_timeout_sec,
-        agent_timeout_sec=limits.max_agent_timeout_sec,
-        host_arch=host_arch(),
-        emulated=is_emulated(),
-    )
-    result.agent_image_id = image.agent_image_id
+    slot.acquire()
     try:
-        result.deliverable_image_id = image_identity(image.deliverable_image)["id"]
-    except (RuntimeError, OSError, ValueError):
-        pass
-    result.provenance["agent_image"] = result.agent_image_id
-    result.provenance["deliverable_image"] = result.deliverable_image_id
+        image = ensure_agent_image(
+            case.case_id,
+            cache_root=Path(cache_root),
+            case_dir=case_dir,
+            force=force_image,
+            backend=image_backend,
+            enforce_denylist=enforce_denylist,
+        )
 
-    block_hosts = CODE_HOST_BLOCK_HOSTS if block_github else None
-    result.blocked_hosts = list(block_hosts or ())
-    container = Container.start(
-        image.agent_image_id,
-        gpus=gpus,
-        network="host",
-        block_hosts=block_hosts,
-    )
+        gpus = case.docker_gpus or None
+        # The spec read once above decides both the image and the command.
+        invocation = resolve_agent(
+            backend=backend if spec is None else None,
+            spec=spec,
+            model=model,
+            instruction_path=CONTAINER_INSTRUCTION_PATH,
+            log_path=CONTAINER_AGENT_LOG,
+        )
+        resolved_backend = invocation.spec.name
+
+        result = TrialResult(
+            case_id=case.case_id,
+            backend=resolved_backend,
+            model=model,
+            reward=0.0,
+            terminal_status=TerminalStatus.ERROR.value,
+            deliverable_image=image.deliverable_image,
+            agent_image=image.agent_image,
+            agent_spec_name=invocation.spec.name,
+            agent_spec_hash=invocation.spec_hash,
+            resolved_model=invocation.resolved_model,
+            run_as=invocation.run_as or "root",
+            model_prefix=invocation.spec.model_prefix,
+            env_keys=list(invocation.env_keys),
+            denylist_enforced=enforce_denylist,
+            started_at=utc_now(),
+            platform=platform_name(),
+            provenance=source_identity(case_dir),
+            test_files=file_manifest(image.tests_cache_dir / "final"),
+            reasoning_effort=(
+                os.environ.get(_EFFORT_ENV.get(invocation.spec.name, CODEX_REASONING_EFFORT_ENV))
+                or ""
+            ).strip()
+            or None,
+            judge_timeout_sec=limits.max_test_timeout_sec,
+            agent_timeout_sec=limits.max_agent_timeout_sec,
+            host_arch=host_arch(),
+            emulated=is_emulated(),
+        )
+        result.agent_image_id = image.agent_image_id
+        try:
+            result.deliverable_image_id = image_identity(image.deliverable_image)["id"]
+        except (RuntimeError, OSError, ValueError):
+            pass
+        result.provenance["agent_image"] = result.agent_image_id
+        result.provenance["deliverable_image"] = result.deliverable_image_id
+
+        block_hosts = CODE_HOST_BLOCK_HOSTS + upstream_pages_hosts(load_denylist(case_dir)) if block_github else None
+        result.blocked_hosts = list(block_hosts or ())
+        # In a full-suite run the solve reaches the network through the supply
+        # proxy, which must refuse code hosts itself: a client that resolves
+        # through a proxy never consults the container's /etc/hosts block.
+        run = supply.active()
+        proxy = (
+            run.hub.session("solve", f"{case.case_id}/{resolved_backend}", block_hosts=block_hosts or ())
+            if run is not None
+            else None
+        )
+        try:
+            container = Container.start(
+                image.agent_image_id,
+                gpus=gpus,
+                network="host",
+                block_hosts=block_hosts,
+                env=proxy.container_env() if proxy is not None else None,
+                mounts=proxy.mounts() if proxy is not None else None,
+            )
+        except BaseException:
+            if proxy is not None:
+                proxy.close()
+            raise
+    except BaseException:
+        slot.release()
+        raise
     try:
         result.cli_version = _probe_cli_version(container, invocation.spec.name)
         passed_steps: list[int] = []
@@ -271,6 +302,7 @@ def run_trial(
                 result=result,
                 denylist=denylist,
                 denylist_fix_retries=denylist_fix_retries,
+                init_slot=slot,
             )
             if step_outcome:
                 passed_steps.append(step.index)
@@ -279,7 +311,14 @@ def run_trial(
                 break
         result.passed_steps = passed_steps
     finally:
+        slot.release()
         _archive_trial(container, out_dir=out_dir, result=result, invocation=invocation)
+        if proxy is not None:
+            proxy.close()
+            result.supply_proxy = {
+                "used": True,
+                "refused_or_failed": list(dict.fromkeys(proxy.events)),
+            }
         _record_token_usage(out_dir, result)
         _record_transcript_scan(out_dir, result, case_dir)
         result.finished_at = utc_now()
@@ -587,7 +626,10 @@ def _record_submit_outcome(
     solve_start: float,
     out_dir: Path,
 ) -> bool:
-    """Apply terminal status from this CLI + submit file. False means stop (no judge)."""
+    """Apply terminal status from this CLI + submit file. False means stop (no judge).
+
+    A session the wall clock cut off is judged as it stands, submitted or not.
+    """
     submitted = is_valid_submit(_read_submit_text(container))
     result.terminal_status = classify_terminal(
         exit_code=solve.exit_code,
@@ -596,7 +638,7 @@ def _record_submit_outcome(
         submitted=submitted,
     ).value
     result.solve_seconds = round(time.monotonic() - solve_start, 2)
-    if submitted:
+    if submitted or solve.timed_out:
         return True
     result.reward = 0.0
     result.error = NO_SUBMIT_ERROR
@@ -630,11 +672,13 @@ def _run_step(
     result: TrialResult,
     denylist,
     denylist_fix_retries: int,
+    init_slot: InitSlot,
 ) -> bool:
     """Run the solve+judge for one step; return True iff its gate passed."""
     merged = merge_runner(case, step)
     base_instruction = build_instruction(
         has_hardware=bool((case.hardware_text or "").strip()),
+        agent_timeout_sec=limits.max_agent_timeout_sec,
         build_command=case.build_command,
         workdir=merged["workdir"],
         test_env=test_command_env(merged["test_command"]),
@@ -642,6 +686,8 @@ def _run_step(
     _inject_instruction(container, base_instruction, invocation)
 
     setup_outcome = _run_agent_setup(container, invocation, out_dir=out_dir)
+    # Setup is the last download-heavy part; the solve does not need the slot.
+    init_slot.release()
     result.setup_ok = setup_outcome is None or setup_outcome.exit_code == 0
     setup_log = out_dir / "agent_setup.log"
     if setup_log.is_file():
@@ -781,7 +827,7 @@ def _run_step(
         failed = final.get("failed_tests") or []
         if isinstance(failed, list):
             result.failed_tests = [str(item) for item in failed]
-    _record_infra_signals(out_dir, result, submitted=True)
+    _record_infra_signals(out_dir, result, submitted=is_valid_submit(_read_submit_text(container)))
 
     return outcome.reward >= 1.0 and not outcome.judge_error
 

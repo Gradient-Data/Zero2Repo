@@ -27,6 +27,11 @@ if kind == "submit":
 if kind in ("cut", "idle", "client"):
     status = 402 if kind == "client" else None
     emit({"type": "assistant", "message": {"id": f"e{n}", "model": "<synthetic>", "content": [{"type": "text", "text": "API Error: stream closed before completion"}]}})
+if kind == "cut_bg":
+    status = None
+    emit({"type": "assistant", "message": {"id": f"e{n}", "model": "<synthetic>", "content": [{"type": "text", "text": "API Error: stream closed before completion"}]}})
+    emit({"type": "assistant", "parent_tool_use_id": "t1", "message": {"id": f"b{n}", "model": "hy4", "content": [{"type": "text", "text": "background work"}]}})
+if kind in ("cut", "idle", "client", "cut_bg"):
     emit({"type": "result", "subtype": "success", "is_error": True, "api_error_status": status, "session_id": "s1", "result": "API Error: stream closed before completion"})
     sys.exit(1)
 emit({"type": "result", "subtype": "success", "is_error": False, "stop_reason": "end_turn", "session_id": "s1", "result": "Done."})
@@ -71,6 +76,14 @@ def test_stream_cut_resumes_the_same_session(tmp_path: Path, monkeypatch: pytest
     assert resumes[0]["error"] == "API Error: stream closed before completion"
     assert waits == [15]
     assert events[-1]["result"] == "Done."
+
+
+def test_background_subagent_after_the_error_does_not_hide_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    code, argv, _events, _waits = _run(tmp_path, ["cut_bg", "done"], monkeypatch)
+    assert code == 0
+    assert argv == [["--print"], ["--print", "--resume", "s1", cr.RESUME_PROMPT]]
 
 
 @pytest.mark.parametrize("script", [["done"], ["client"]])
