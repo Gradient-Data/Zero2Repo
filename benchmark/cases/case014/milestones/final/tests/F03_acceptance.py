@@ -252,11 +252,16 @@ def test_degenerate_local_covariance_not_fused():
     b = (a[0] + 0.70, a[1] + 0.40, a[2] + 0.15)
     epochs = local_stream(a, duration_s=HAPPY_DURATION_S)
     t_before = epochs[-1].t_us
+    # Degenerate, but not all zero: the Interface Contract gives an all-zero
+    # Python `var_ned` the built-in default, so an all-zero sample is not a
+    # degenerate one on that path. Zero east and down variances are degenerate
+    # on both paths. Most of the A-to-B offset is north, the axis with a usable
+    # variance, so fusing that axis alone (0.43 m left to B) is caught as well.
     epochs = extend_epochs(
         epochs,
         duration_s=0.6,
         local_ned=b,
-        local_std=(0.0, 0.0, 0.0),
+        local_std=(CM_STD_M, 0.0, 0.0),
     )
     t_deg = epochs[-1].t_us
     epochs = extend_local_ramp(epochs, a, b, duration_s=3.0)
