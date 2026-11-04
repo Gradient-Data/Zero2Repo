@@ -110,7 +110,8 @@ def _fake_python_world(strip, *, installed: dict[str, list[str]], mapping: dict[
     strip.__dict__["_python_owners"] = lambda py: owners
     strip.__dict__["_uninstall"] = lambda py, dists: uninstalled.append(list(dists))
     strip.__dict__["_sourceless_pass"] = lambda: None
-    strip.__dict__["_check_python"] = lambda py: None
+    strip.__dict__["_check_python"] = lambda py, before: None
+    strip.__dict__["_pip_check"] = lambda py: set()
     strip.__dict__["_scan_dir"] = lambda path: None
     strip.shutil.which = lambda name: None
 
@@ -135,7 +136,7 @@ def test_sharing_an_import_root_with_a_banned_package_is_not_being_banned(tmp_pa
         strip,
         installed={"pdm": [], "pdm-backend": [], "pip": []},
         mapping={"pdm": ["pdm", "pdm-backend"], "pip": ["pip"]},
-        owners={},
+        owners={"/s/pdm/core.py": ["pdm"], "/s/pdm/backend/base.py": ["pdm-backend"]},
         uninstalled=uninstalled,
     )
     assert strip.main() == 0
@@ -150,7 +151,7 @@ def test_a_banned_import_root_another_package_provides_stops_the_cleanup(tmp_pat
         strip,
         installed={"pdm-backend": []},
         mapping={"pdm": ["pdm-backend"]},
-        owners={},
+        owners={"/s/pdm/backend/base.py": ["pdm-backend"]},
         uninstalled=uninstalled,
     )
     assert strip.main() == 2
@@ -165,10 +166,10 @@ def test_python_packages_left_inconsistent_fail_the_cleanup(tmp_path: Path, monk
         strip,
         installed={"pdm": []},
         mapping={"pdm": ["pdm"]},
-        owners={},
+        owners={"/s/pdm/core.py": ["pdm"]},
         uninstalled=uninstalled,
     )
-    strip.__dict__["_check_python"] = lambda py: strip.CONFLICTS.append(
+    strip.__dict__["_check_python"] = lambda py, before: strip.CONFLICTS.append(
         "python packages left inconsistent: velqora 1.0 requires pdm, which is not installed"
     )
     assert strip.main() == 2
@@ -176,3 +177,36 @@ def test_python_packages_left_inconsistent_fail_the_cleanup(tmp_path: Path, monk
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+def test_without_file_ownership_nothing_is_removed(tmp_path: Path, monkeypatch) -> None:
+    """Deleting by name from here is the guess the whole mechanism exists to avoid."""
+    strip = _strip_module(tmp_path, [f"dist {_digest('pdm')}"], monkeypatch)
+    uninstalled: list[list[str]] = []
+    _fake_python_world(
+        strip,
+        installed={"pdm": [], "pip": []},
+        mapping={"pdm": ["pdm"]},
+        owners={},
+        uninstalled=uninstalled,
+    )
+    assert strip.main() == 2
+    assert uninstalled == []
+    assert any("file ownership" in message for message in strip.CONFLICTS)
+
+
+def test_breakage_the_image_already_had_is_not_blamed_on_the_cleanup(tmp_path: Path, monkeypatch) -> None:
+    strip = _strip_module(tmp_path, [f"dist {_digest('pdm')}"], monkeypatch)
+    uninstalled: list[list[str]] = []
+    _fake_python_world(
+        strip,
+        installed={"pdm": []},
+        mapping={"pdm": ["pdm"]},
+        owners={"/s/pdm/core.py": ["pdm"]},
+        uninstalled=uninstalled,
+    )
+    standing = {"velmora 2.0 requires numpy, which is not installed"}
+    strip.__dict__["_pip_check"] = lambda py: standing
+    strip.__dict__["_check_python"] = strip._check_python
+    assert strip.main() == 0
+    assert strip.CONFLICTS == []

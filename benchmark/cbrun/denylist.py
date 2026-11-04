@@ -1144,7 +1144,8 @@ python3 - "$@" <<'PY'
 import hashlib, re, sys
 from pathlib import Path
 
-ban = {ln.strip() for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.strip()}
+# Each line is "<kind> <digest>" or, from an older image, a bare digest.
+ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
 
 def norm(name: str) -> str:
     name = name.strip().lower().split("[", 1)[0].split("@", 1)[0]
@@ -1200,7 +1201,8 @@ python3 - "$@" <<'PY'
 import hashlib, re, sys
 from pathlib import Path
 
-ban = {ln.strip() for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.strip()}
+# Each line is "<kind> <digest>" or, from an older image, a bare digest.
+ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
 
 def norm(name: str) -> str:
     name = name.strip().lower().split("[", 1)[0].split("@", 1)[0]
@@ -1238,7 +1240,8 @@ python3 - "$@" <<'PY'
 import hashlib, re, sys
 from pathlib import Path
 
-ban = {ln.strip() for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.strip()}
+# Each line is "<kind> <digest>" or, from an older image, a bare digest.
+ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
 
 def norm(name: str) -> str:
     name = name.strip().lower().split("[", 1)[0]
@@ -1743,7 +1746,16 @@ def main() -> int:
                         f"import root {_digest(str(pkg))[:8]} is also provided by distribution "
                         f"{_digest(dist)[:8]}, which is not banned"
                     )
+        before_check = _pip_check(py)
         owners_index = _python_owners(py)
+        if isinstance(names, list) and names and not owners_index:
+            # Packages are installed but none of them says which files are its own. Deleting by
+            # name from here is the guess this cleanup exists to avoid.
+            CONFLICTS.append(
+                f"interpreter {_digest(py)[:8]} reports {len(names)} distribution(s) but no "
+                "file ownership, so nothing can be removed precisely"
+            )
+            continue
         _keep_surviving(owners_index, to_remove)
         if to_remove:
             _uninstall(py, sorted(to_remove))
@@ -1759,7 +1771,7 @@ def main() -> int:
         if isinstance(sites, list):
             for site_dir in sites:
                 _scan_dir(Path(str(site_dir)))
-        _check_python(py)
+        _check_python(py, before_check)
 
     extra = os.environ.get("CBRUN_STRIP_SCAN_DIRS", "")
     scan_roots = [
@@ -1815,21 +1827,26 @@ def main() -> int:
     return 0
 
 
-def _check_python(py: str) -> None:
-    """What the interpreter itself says about its packages after the removals.
-
-    A dependency the cleanup broke shows up here, in the step that caused it, instead of in a
-    build hours later with no sign of why its backend went missing.
-    """
+def _pip_check(py: str) -> set[str]:
+    """What the interpreter says is wrong with its packages right now."""
     out = subprocess.run(
         [py, "-m", "pip", "check"], capture_output=True, text=True, check=False,
     )
     if out.returncode == 0:
-        return
-    for line in (out.stdout or "").splitlines():
-        text = line.strip()
-        if text:
-            CONFLICTS.append(f"python packages left inconsistent: {text}")
+        return set()
+    return {line.strip() for line in (out.stdout or "").splitlines() if line.strip()}
+
+
+def _check_python(py: str, before: set[str]) -> None:
+    """Whether this pass broke a dependency, told by the interpreter itself.
+
+    Only what is new since *before* counts: an image that arrived with an unsatisfied
+    requirement is not this cleanup's doing, and failing on it would fail every build. A
+    dependency the cleanup broke is reported here, in the step that caused it, instead of in a
+    later build with no sign of why its backend went missing.
+    """
+    for text in sorted(_pip_check(py) - before):
+        CONFLICTS.append(f"python packages left inconsistent: {text}")
 
 
 def _check_node(npm: str, npm_env: dict) -> None:
@@ -1891,6 +1908,8 @@ def _install():
         # builtins.open and codecs are not set up this early in startup.
         fd = os.open(_HASHES, os.O_RDONLY)
         try:
+            # Lines read as "<kind> <digest>"; both words land in the set and a kind word
+            # is not 64 hex characters, so it can never match a hashed name.
             ban = frozenset(os.read(fd, 1 << 20).decode("ascii").split())
         finally:
             os.close(fd)
@@ -2486,7 +2505,7 @@ def check_orig_argv(argv=None, hashes_path=None) -> None:
     path = Path(hashes_path) if hashes_path else _HASHES
     if not path.is_file():
         return
-    ban = {ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()}
+    ban = {ln.split()[-1] for ln in path.read_text(encoding="utf-8").splitlines() if ln.split()}
     if not ban:
         return
     args = list(argv if argv is not None else getattr(sys, "orig_argv", sys.argv))
