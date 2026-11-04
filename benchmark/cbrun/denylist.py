@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
 import sys
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -161,45 +163,6 @@ def upstream_pages_hosts(spec: "DenylistSpec | None") -> tuple[str, ...]:
         return ()
     owners = {m.group(1).lower() for entry in spec.install_ban for m in [_REPO_SLUG.match(entry.strip())] if m}
     return tuple(sorted(f"{owner}.github.io" for owner in owners))
-
-# Scan only source-like files under /app.
-_SOURCE_SUFFIXES = {
-    ".py",
-    ".pyi",
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".mjs",
-    ".cjs",
-    ".cu",
-    ".cuh",
-    ".cpp",
-    ".cc",
-    ".cxx",
-    ".h",
-    ".hpp",
-    ".hh",
-    ".rs",
-    ".go",
-    ".java",
-    ".cs",
-    ".rb",
-    ".php",
-    ".dart",
-    ".swift",
-    ".kt",
-    ".scala",
-    ".zig",
-    ".sh",
-    ".bash",
-    ".zsh",
-    ".yaml",
-    ".yml",
-    ".toml",
-    ".json",
-    ".md",
-}
 
 _SKIP_DIRS = {
     ".git",
@@ -366,45 +329,108 @@ def _validate_runtime_equivalents(
     return errors
 
 
+# The static scan reads each language's own import grammar. A hit is a
+# statement or directive that loads the banned code when the file runs or is
+# compiled. Prose (Markdown) and data files (JSON, YAML, TOML) cannot load code,
+# so they are not scanned; comments and the inside of string literals never
+# count, except where the grammar itself names the module with a literal
+# (``require('x')``, ``#include <x/y.h>``, ``import "x"`` in Go).
 _PY_SUFFIXES = {".py", ".pyi"}
+# Cython is Python with its own import keyword; the host parser cannot read it, so it is
+# scanned line by line.
+_CY_SUFFIXES = {".pyx", ".pxd", ".pxi"}
+# A notebook is JSON, but its code cells run: the cell source is read as Python.
+_NOTEBOOK_SUFFIXES = {".ipynb"}
 _JS_SUFFIXES = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
-_C_SUFFIXES = {".c", ".h", ".hpp", ".hh", ".cc", ".cxx", ".cpp", ".cu", ".cuh"}
-_HASH_COMMENT_SUFFIXES = _PY_SUFFIXES | {".rb", ".sh", ".bash", ".zsh", ".yaml", ".yml", ".toml"}
-_SLASH_COMMENT_SUFFIXES = (
-    _JS_SUFFIXES | _C_SUFFIXES | {".java", ".kt", ".scala", ".cs", ".go", ".rs", ".swift", ".dart", ".zig"}
+_C_SUFFIXES = {".c", ".h", ".hpp", ".hh", ".hxx", ".cc", ".cxx", ".cpp", ".cu", ".cuh"}
+_JVM_SUFFIXES = {".java", ".kt", ".scala"}
+_SHELL_SUFFIXES = {".sh", ".bash", ".zsh"}
+_SOURCE_SUFFIXES = (
+    _PY_SUFFIXES
+    | _CY_SUFFIXES
+    | _NOTEBOOK_SUFFIXES
+    | _JS_SUFFIXES
+    | _C_SUFFIXES
+    | _JVM_SUFFIXES
+    | _SHELL_SUFFIXES
+    | {".go", ".rs", ".cs", ".rb", ".php", ".dart", ".swift", ".zig"}
 )
+# Languages where ``a::b`` (and in PHP ``a\b``) names a namespace in code, so a
+# ban token ending in that separator matches any use of the namespace.
+_COLON_NAMESPACE_SUFFIXES = _C_SUFFIXES | {".rs", ".php", ".rb"}
 
 
-def _strip_hash_or_slash_comment(line: str, *, slash: bool, hash_comment: bool) -> str:
-    """Drop trailing comments; keep string literals so import specifiers stay visible."""
-    stripped = line.strip()
-    if not stripped:
-        return ""
-    if hash_comment and stripped.startswith("#"):
-        return ""
-    if slash and stripped.startswith("//"):
-        return ""
-    out: list[str] = []
-    in_single = False
-    in_double = False
-    in_backtick = False
-    idx = 0
-    while idx < len(line):
-        ch = line[idx]
-        if ch == "'" and not in_double and not in_backtick:
-            in_single = not in_single
-        elif ch == '"' and not in_single and not in_backtick:
-            in_double = not in_double
-        elif ch == "`" and not in_single and not in_double:
-            in_backtick = not in_backtick
-        elif not in_single and not in_double and not in_backtick:
-            if hash_comment and ch == "#":
-                break
-            if slash and line.startswith("//", idx):
-                break
-        out.append(ch)
-        idx += 1
-    return "".join(out)
+def _comment_syntax(suffix: str) -> tuple[tuple[str, ...], bool, str]:
+    """(line-comment markers, has /* */ blocks, string quote characters)."""
+    if suffix in _PY_SUFFIXES or suffix in _SHELL_SUFFIXES or suffix == ".rb":
+        return ("#",), False, "'\""
+    if suffix == ".php":
+        return ("//", "#"), True, "'\""
+    if suffix == ".rs":
+        # A single quote opens a lifetime or a char literal, not a string.
+        return ("//",), True, '"'
+    if suffix in _JS_SUFFIXES or suffix == ".go":
+        return ("//",), True, "'\"`"
+    return ("//",), True, "'\""
+
+
+def _blank_comments_and_strings(text: str, suffix: str) -> tuple[str, str]:
+    """Return (code, masked), both aligned with *text* character for character.
+
+    ``code`` has comments replaced by spaces. ``masked`` additionally blanks
+    the inside of string literals while keeping their quote characters, so a
+    grammar pattern run on ``masked`` cannot match words inside a string, and
+    the literal it points at is read back from ``code`` at the same offsets.
+    Newlines are kept, so line numbers stay valid.
+    """
+    markers, block, quotes = _comment_syntax(suffix)
+    code: list[str] = []
+    masked: list[str] = []
+    i, n = 0, len(text)
+    quote = ""
+    while i < n:
+        ch = text[i]
+        if quote:
+            if ch == "\\" and i + 1 < n and text[i + 1] != "\n":
+                code.append(text[i : i + 2])
+                masked.append("  ")
+                i += 2
+                continue
+            if ch == quote or (ch == "\n" and quote != "`"):
+                quote = ""
+                code.append(ch)
+                masked.append(ch)
+            else:
+                code.append(ch)
+                masked.append("\n" if ch == "\n" else " ")
+            i += 1
+            continue
+        if ch in quotes:
+            quote = ch
+            code.append(ch)
+            masked.append(ch)
+            i += 1
+            continue
+        end = -1
+        if block and text.startswith("/*", i):
+            close = text.find("*/", i + 2)
+            end = n if close < 0 else close + 2
+        elif any(text.startswith(m, i) for m in markers) and (
+            # In a shell, ``#`` opens a comment only at the start of a word.
+            ch != "#" or suffix not in _SHELL_SUFFIXES or i == 0 or text[i - 1].isspace()
+        ):
+            close = text.find("\n", i)
+            end = n if close < 0 else close
+        if end >= 0:
+            blank = re.sub(r"[^\n]", " ", text[i:end])
+            code.append(blank)
+            masked.append(blank)
+            i = end
+            continue
+        code.append(ch)
+        masked.append(ch)
+        i += 1
+    return "".join(code), "".join(masked)
 
 
 def _strip_quoted_spans(text: str) -> str:
@@ -430,122 +456,380 @@ def _strip_quoted_spans(text: str) -> str:
     return "".join(out)
 
 
-def _comment_mode(suffix: str) -> tuple[bool, bool]:
-    hash_comment = suffix in _HASH_COMMENT_SUFFIXES
-    slash = suffix in _SLASH_COMMENT_SUFFIXES
-    if suffix in {".php"}:
-        hash_comment = True
-        slash = True
-    return hash_comment, slash
+def _literals_after(pattern: re.Pattern[str], masked: str, code: str) -> list[str]:
+    """Read the string literal that opens where each *pattern* match ends."""
+    found: list[str] = []
+    for match in pattern.finditer(masked):
+        start = match.end() - 1
+        quote = masked[start]
+        if quote not in "'\"`":
+            continue
+        close = masked.find(quote, start + 1)
+        if close > start:
+            found.append(code[start + 1 : close])
+    return found
 
 
-def _code_minus_comments(line: str, suffix: str) -> str:
-    hash_comment, slash = _comment_mode(suffix)
-    return _strip_hash_or_slash_comment(line, slash=slash, hash_comment=hash_comment)
+def _spec_matches(spec: str, token: str) -> bool:
+    """True when a module specifier or include path names *token*.
 
-
-def _python_imports_token(code: str, token: str) -> bool:
-    pattern = rf"(?:^|;)\s*(?:import|from)\s+(?:[A-Za-z_][\w]*\.)*{re.escape(token)}\b"
-    return re.search(pattern, code) is not None
-
-
-def _js_imports_token(code: str, token: str) -> bool:
-    base = token.rstrip("/")
-    quoted = rf"""['"](?:{re.escape(base)})(?:['"/]|$)"""
-    patterns = (
-        rf"(?:^|;)\s*import\s+(?:[^'\"\n]+?\s+from\s+)?{quoted}",
-        rf"(?:^|;)\s*export\s+(?:[^'\"\n]+?\s+from\s+){quoted}",
-        rf"\brequire\s*\(\s*{quoted}",
-        rf"\bimport\s*\(\s*{quoted}",
-    )
-    return any(re.search(p, code) for p in patterns)
-
-
-def _go_imports_token(code: str, token: str) -> bool:
-    base = token.rstrip("/")
-    return re.search(rf"""(?:^|;)\s*import\s+(?:\w+\s+)?["`](?:{re.escape(base)})""", code) is not None
-
-
-def _rust_imports_token(code: str, token: str) -> bool:
-    return (
-        re.search(rf"(?:^|;)\s*(?:use|extern\s+crate)\s+{re.escape(token)}\b", code) is not None
-    )
-
-
-def _jvm_imports_token(code: str, token: str) -> bool:
-    return re.search(rf"(?:^|;)\s*import\s+(?:static\s+)?{re.escape(token)}[.;]", code) is not None
-
-
-def _c_includes_token(code: str, token: str) -> bool:
-    base = token.rstrip("/")
-    return re.search(rf"""#\s*include\s*[<"]{re.escape(base)}""", code) is not None
-
-
-def _ruby_imports_token(code: str, token: str) -> bool:
-    base = token.rstrip("/")
-    quoted = rf"""['"](?:{re.escape(base)})(?:['"/]|$)"""
-    return re.search(rf"\b(?:require|require_relative)\s*\(?\s*{quoted}", code) is not None
-
-
-def _php_imports_token(code: str, token: str) -> bool:
-    if re.search(rf"(?:^|;)\s*use\s+{re.escape(token)}\b", code):
-        return True
-    return _ruby_imports_token(code, token)
-
-
-def _csharp_imports_token(code: str, token: str) -> bool:
-    return re.search(rf"(?:^|;)\s*using\s+{re.escape(token)}\b", code) is not None
-
-
-def _path_import_hit(code: str, token: str) -> bool:
-    if token not in code:
+    A token holding a ``/`` names a location, so it matches as whole path
+    segments anywhere in the specifier. Any other token names a module root,
+    so the specifier must be it, or continue from it with ``/`` or ``.``.
+    """
+    spec = spec.strip()
+    if "/" in token:
+        base = token.strip("/")
+        return bool(base) and f"/{base}/" in f"/{spec.strip('/')}/"
+    if not token or not spec.startswith(token):
         return False
-    return bool(
-        re.search(
-            rf"""(?:import|from|require|require_relative|include|use)\b.*{re.escape(token)}""",
-            code,
+    return len(spec) == len(token) or spec[len(token)] in "/."
+
+
+def _name_parts(name: str, sep: str) -> list[str]:
+    parts = name.split(sep)
+    while parts and not parts[0]:
+        parts.pop(0)
+    while parts and not parts[-1]:
+        parts.pop()
+    return parts
+
+
+def _name_matches(name: str, token: str, sep: str, *, anywhere: bool) -> bool:
+    """True when the dotted/namespaced *name* contains *token*'s parts.
+
+    ``anywhere`` lets the parts start at any component (Python: a module named
+    like the upstream root inside another package counts); otherwise the name
+    must start with them.
+    """
+    want = _name_parts(token, sep)
+    if not want or not all(want):
+        return False
+    parts = _name_parts(name, sep)
+    span = len(want)
+    last = len(parts) - span
+    if last < 0:
+        return False
+    starts = range(last + 1) if anywhere else range(1)
+    return any(parts[i : i + span] == want for i in starts)
+
+
+# A reference found in a file: (line number, kind, value). ``kind`` says how a
+# ban token is compared with ``value``; see _ref_matches.
+_Ref = tuple[int, str, str]
+
+_PY_FROM = re.compile(r"(?:^|;)\s*from\s+([A-Za-z_][\w.]*)\s+import\b")
+_CY_CIMPORT = re.compile(r"(?:^|;)\s*cimport\s+([A-Za-z_][\w.]*)")
+_CY_FROM_CIMPORT = re.compile(r"(?:^|;)\s*from\s+([A-Za-z_][\w.]*)\s+cimport\b")
+# Functions that take a module name and load it. Reaching the product through one of these is
+# importing it; only a literal name can be read here, and a computed one is reported by the
+# access monitor at run time instead.
+_PY_IMPORT_CALLS = frozenset({"__import__", "import_module", "find_spec", "find_loader",
+                              "module_from_spec", "load_module", "resolve_name"})
+_PY_IMPORT = re.compile(
+    r"(?:^|;)\s*import\s+([A-Za-z_][\w.]*(?:\s+as\s+\w+)?(?:\s*,\s*[A-Za-z_][\w.]*(?:\s+as\s+\w+)?)*)"
+)
+_JS_SPEC_OPENERS = (
+    re.compile(r"(?:^|[;{}])\s*import\s*['\"]"),
+    re.compile(r"\bfrom\s*['\"]"),
+    re.compile(r"\brequire\s*\(\s*['\"`]"),
+    re.compile(r"\bimport\s*\(\s*['\"`]"),
+)
+_C_INCLUDE = re.compile(r"^\s*(?://\s*)?#\s*(?:include|include_next|import)\s*[<\"]([^>\"]*)[>\"]")
+# ``#include MACRO(dir/sub, NAME)``: the path is built by the preprocessor.
+_C_INCLUDE_MACRO = re.compile(r"^\s*(?://\s*)?#\s*(?:include|include_next|import)\s+([A-Za-z_]\w*\s*\(.*)$")
+_GO_IMPORT_SINGLE = re.compile(r"^\s*import\s+(?:[\w.]+\s+)?[\"`]")
+_GO_IMPORT_BLOCK = re.compile(r"^\s*import\s*\(")
+_GO_BLOCK_ENTRY = re.compile(r"^\s*(?:[\w.]+\s+)?[\"`]")
+_RUST_USE = re.compile(r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:use|extern\s+crate)\s+((?:::)?[\w:]+)")
+_RUST_PATH_USE = re.compile(r"(?<![\w:])(?:::)?([A-Za-z_]\w*(?:::[A-Za-z_]\w*)+)")
+_RUST_PATH_LITERAL = (
+    re.compile(r"#\s*\[\s*path\s*=\s*\""),
+    re.compile(r"\binclude(?:_str|_bytes)?!\s*\(\s*\""),
+)
+_JVM_IMPORT = re.compile(r"^\s*import\s+(?:static\s+)?([\w.]+)")
+_CS_USING = re.compile(r"^\s*(?:global\s+)?using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;")
+_SWIFT_IMPORT = re.compile(
+    r"^\s*(?:@\w+\s+)*import\s+(?:(?:typealias|struct|class|enum|protocol|let|var|func)\s+)?([\w.]+)"
+)
+_PHP_USE = re.compile(r"^\s*use\s+(?:function\s+|const\s+)?(\\?[\w\\]+)")
+_PHP_REQUIRE = re.compile(r"\b(?:require|include)(?:_once)?\b\s*\(?\s*['\"]")
+_RUBY_REQUIRE = (
+    re.compile(r"\b(?:require|require_relative|load)\b\s*\(?\s*['\"]"),
+    re.compile(r"\bautoload\s*\(?\s*:\w+\s*,\s*['\"]"),
+)
+_DART_DIRECTIVE = re.compile(r"^\s*(?:import|export|part)\s+['\"]")
+_ZIG_IMPORT = re.compile(r"@import\s*\(\s*\"")
+_SHELL_QUOTED = re.compile(r"\"((?:[^\"\\]|\\.)*)\"|'([^']*)'")
+_SHELL_SOURCE = re.compile(r"(?:^|[;&|])\s*(?:source|\.)\s+['\"]?([^\s'\";|&]+)")
+
+
+def _python_line_names(line: str) -> list[str]:
+    names = [m.group(1) for m in _PY_FROM.finditer(line)]
+    names.extend(m.group(1) for m in _CY_FROM_CIMPORT.finditer(line))
+    names.extend(m.group(1) for m in _CY_CIMPORT.finditer(line))
+    for match in _PY_IMPORT.finditer(line):
+        names.extend(part.split()[0] for part in match.group(1).split(",") if part.strip())
+    return names
+
+
+def _python_call_name(node) -> str | None:
+    """The module a call loads by name, when the call is one of the import functions."""
+    function = node.func
+    if isinstance(function, ast.Attribute):
+        called = function.attr
+    elif isinstance(function, ast.Name):
+        called = function.id
+    else:
+        return None
+    if called not in _PY_IMPORT_CALLS:
+        return None
+    for argument in list(node.args) + [kw.value for kw in node.keywords]:
+        if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+            return argument.value
+        break
+    return None
+
+
+def _python_refs(text: str) -> list[_Ref]:
+    try:
+        with warnings.catch_warnings():
+            # Warnings about the scanned file (e.g. invalid escapes) are not ours.
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(text)
+    except (SyntaxError, ValueError, RecursionError):
+        tree = None
+    if tree is None:
+        # The host cannot parse the file (syntax newer than the host Python,
+        # a broken file, or nesting deeper than the parser allows). Read import statements line by line instead,
+        # with comments and string contents blanked.
+        _code, masked = _blank_comments_and_strings(text, ".py")
+        return [
+            (line_no, "py", name)
+            for line_no, line in enumerate(masked.splitlines(), start=1)
+            for name in _python_line_names(line)
+        ]
+    refs: list[_Ref] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            refs.extend((node.lineno, "py", alias.name) for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+            refs.append((node.lineno, "py", node.module))
+        elif isinstance(node, ast.Call):
+            name = _python_call_name(node)
+            if name:
+                refs.append((node.lineno, "py", name))
+    return refs
+
+
+def _python_line_refs(text: str) -> list[_Ref]:
+    """Import statements read line by line, for a file the host parser cannot read."""
+    _code, masked = _blank_comments_and_strings(text, ".py")
+    return [
+        (line_no, "py", name)
+        for line_no, line in enumerate(masked.splitlines(), start=1)
+        for name in _python_line_names(line)
+    ]
+
+
+def _notebook_python(text: str) -> str:
+    """The notebook's code cells as Python, each line on the file line that holds it.
+
+    A hit then points at a line of the notebook file, the line a reader opens.
+    """
+    try:
+        document = json.loads(text)
+    except (ValueError, RecursionError):
+        return ""
+    if not isinstance(document, dict):
+        return ""
+    sources: list[str] = []
+    for cell in document.get("cells") or []:
+        if not isinstance(cell, dict) or cell.get("cell_type") != "code":
+            continue
+        source = cell.get("source")
+        if isinstance(source, str):
+            sources.extend(source.splitlines(keepends=True))
+        elif isinstance(source, list):
+            sources.extend(str(line) for line in source)
+    lines = text.split("\n")
+    out = [""] * len(lines)
+    at = 0
+    for source in sources:
+        encoded = json.dumps(source)[1:-1]
+        if not encoded.strip():
+            continue
+        while at < len(lines) and encoded not in lines[at]:
+            at += 1
+        if at >= len(lines):
+            break
+        out[at] = (out[at] + "; " if out[at] else "") + source.rstrip("\r\n")
+    return "\n".join(out)
+
+
+def _js_specs(masked: str, code: str) -> list[str]:
+    specs: list[str] = []
+    for opener in _JS_SPEC_OPENERS:
+        specs.extend(_literals_after(opener, masked, code))
+    return specs
+
+
+def _go_refs(code_lines: list[str], masked_lines: list[str], raw_lines: list[str]) -> list[_Ref]:
+    refs: list[_Ref] = []
+    in_block = False
+    for line_no, (code, masked) in enumerate(zip(code_lines, masked_lines), start=1):
+        if in_block:
+            if masked.lstrip().startswith(")"):
+                in_block = False
+                continue
+            refs.extend((line_no, "spec", s) for s in _literals_after(_GO_BLOCK_ENTRY, masked, code))
+            continue
+        block = _GO_IMPORT_BLOCK.match(masked)
+        if block:
+            rest = masked[block.end() :]
+            in_block = ")" not in rest
+            refs.extend(
+                (line_no, "spec", s)
+                for s in _literals_after(re.compile(r"[\"`]"), rest, code[block.end() :])
+            )
+            continue
+        refs.extend((line_no, "spec", s) for s in _literals_after(_GO_IMPORT_SINGLE, masked, code))
+    # cgo preamble: C includes live in the comment right above ``import "C"``.
+    for line_no, raw in enumerate(raw_lines, start=1):
+        refs.extend(_c_include_refs(line_no, raw))
+    return refs
+
+
+def _c_include_refs(line_no: int, line: str) -> list[_Ref]:
+    match = _C_INCLUDE.match(line)
+    if match:
+        return [(line_no, "spec", match.group(1))]
+    match = _C_INCLUDE_MACRO.match(line)
+    if match:
+        return [(line_no, "macro_include", match.group(1))]
+    return []
+
+
+def _shell_refs(code_lines: list[str]) -> list[_Ref]:
+    """Inline Python/JS run from a script (``python -c``, heredocs) and sourced files."""
+    refs: list[_Ref] = []
+    for line_no, line in enumerate(code_lines, start=1):
+        segments = [line]
+        segments.extend(m.group(1) if m.group(1) is not None else m.group(2) for m in _SHELL_QUOTED.finditer(line))
+        for segment in segments:
+            refs.extend((line_no, "py", name) for name in _python_line_names(segment))
+            seg_code, seg_masked = _blank_comments_and_strings(segment, ".js")
+            refs.extend((line_no, "spec", s) for s in _js_specs(seg_masked, seg_code))
+        refs.extend((line_no, "source", m.group(1)) for m in _SHELL_SOURCE.finditer(line))
+    return refs
+
+
+def _file_refs(text: str, suffix: str) -> list[_Ref]:
+    if suffix in _PY_SUFFIXES:
+        return _python_refs(text)
+    if suffix in _CY_SUFFIXES:
+        return _python_line_refs(text)
+    if suffix in _NOTEBOOK_SUFFIXES:
+        return _python_refs(_notebook_python(text))
+    code, masked = _blank_comments_and_strings(text, suffix)
+    code_lines = code.split("\n")
+    masked_lines = masked.split("\n")
+    if suffix == ".go":
+        return _go_refs(code_lines, masked_lines, text.split("\n"))
+    if suffix in _SHELL_SUFFIXES:
+        return _shell_refs(code_lines)
+    refs: list[_Ref] = []
+    for line_no, (cl, ml) in enumerate(zip(code_lines, masked_lines), start=1):
+        if suffix in _COLON_NAMESPACE_SUFFIXES:
+            refs.append((line_no, "symbol", ml))
+        if suffix in _JS_SUFFIXES:
+            refs.extend((line_no, "spec", s) for s in _js_specs(ml, cl))
+        elif suffix in _C_SUFFIXES:
+            refs.extend(_c_include_refs(line_no, cl))
+        elif suffix == ".rs":
+            refs.extend((line_no, "rust", m.group(1)) for m in _RUST_USE.finditer(ml))
+            # A crate of the 2018 edition onwards needs no use statement: naming it in a path
+            # calls it. Only a path says so; a module declared here is this workspace's own.
+            refs.extend((line_no, "rust", m.group(1)) for m in _RUST_PATH_USE.finditer(ml))
+            for opener in _RUST_PATH_LITERAL:
+                refs.extend((line_no, "path", s) for s in _literals_after(opener, ml, cl))
+        elif suffix in _JVM_SUFFIXES:
+            refs.extend((line_no, "dotted", m.group(1)) for m in _JVM_IMPORT.finditer(ml))
+        elif suffix == ".cs":
+            refs.extend((line_no, "dotted", m.group(1)) for m in _CS_USING.finditer(ml))
+        elif suffix == ".swift":
+            refs.extend((line_no, "dotted", m.group(1)) for m in _SWIFT_IMPORT.finditer(ml))
+        elif suffix == ".php":
+            refs.extend((line_no, "php", m.group(1)) for m in _PHP_USE.finditer(ml))
+            refs.extend((line_no, "spec", s) for s in _literals_after(_PHP_REQUIRE, ml, cl))
+        elif suffix == ".rb":
+            for opener in _RUBY_REQUIRE:
+                refs.extend((line_no, "spec", s) for s in _literals_after(opener, ml, cl))
+        elif suffix == ".dart":
+            refs.extend(
+                (line_no, "spec", s.removeprefix("package:"))
+                for s in _literals_after(_DART_DIRECTIVE, ml, cl)
+            )
+        elif suffix == ".zig":
+            refs.extend((line_no, "spec", s) for s in _literals_after(_ZIG_IMPORT, ml, cl))
+    return refs
+
+
+def _ref_matches(kind: str, value: str, token: str, suffix: str) -> bool:
+    if kind == "py":
+        return _name_matches(value, token, ".", anywhere=True)
+    if kind == "dotted":
+        return _name_matches(value, token, ".", anywhere=False)
+    if kind == "rust":
+        return _name_matches(value, token, "::", anywhere=False)
+    if kind == "php":
+        return _name_matches(value, token, "\\", anywhere=False)
+    if kind == "spec":
+        return _spec_matches(value, token)
+    if kind == "macro_include":
+        # Only a location can be read from macro arguments: a token holding
+        # ``/`` must appear there as whole path segments.
+        base = token.strip("/")
+        return "/" in token and bool(base) and (
+            re.search(rf"(?<![\w.@-]){re.escape(base)}(?:/|(?![\w.@-]))", value) is not None
         )
-    )
+    if kind in ("path", "source"):
+        # A file pulled in by path only names a banned location, not a module.
+        return "/" in token and _spec_matches(value, token)
+    if kind == "symbol":
+        if token.endswith("::"):
+            if re.search(rf"(?<!\w){re.escape(token)}", value):
+                return True
+            base = re.escape(token[:-2])
+            return suffix in _C_SUFFIXES and bool(
+                re.search(rf"\busing\s+namespace\s+(?:::)?{base}\b", value)
+                or re.search(rf"\bnamespace\s+\w+\s*=\s*(?:::)?{base}\b", value)
+            )
+        if token.endswith("\\") and suffix == ".php":
+            return re.search(rf"(?<![\w\\])\\?{re.escape(token)}", value) is not None
+        return False
+    raise ValueError(f"unknown import reference kind {kind!r}")
+
+
+def scan_text_imports(text: str, suffix: str, tokens: tuple[str, ...] | list[str]) -> list[tuple[int, str]]:
+    """(line, token) for each line of *text* that loads a banned token; first token per line."""
+    suffix = suffix.lower()
+    if suffix not in _SOURCE_SUFFIXES or not tokens:
+        return []
+    hits: dict[int, str] = {}
+    for line_no, kind, value in _file_refs(text, suffix):
+        if line_no in hits:
+            continue
+        for token in tokens:
+            if _ref_matches(kind, value, token, suffix):
+                hits[line_no] = token
+                break
+    return sorted(hits.items())
 
 
 def line_imports_token(line: str, token: str, suffix: str = ".py") -> bool:
-    """True when *line* is a real import/require/use of *token*, not prose."""
-    code = _code_minus_comments(line, suffix)
-    if not code.strip():
-        return False
-    if token.endswith("::"):
-        return token in _strip_quoted_spans(code)
-    if token.endswith("/") or "\\" in token:
-        return _path_import_hit(code, token)
-    ext = suffix.lower()
-    if ext in _PY_SUFFIXES:
-        return _python_imports_token(code, token)
-    if ext in _JS_SUFFIXES:
-        return _js_imports_token(code, token)
-    if ext == ".go":
-        return _go_imports_token(code, token)
-    if ext == ".rs":
-        return _rust_imports_token(code, token)
-    if ext in {".java", ".kt", ".scala"}:
-        return _jvm_imports_token(code, token)
-    if ext in _C_SUFFIXES:
-        return _c_includes_token(code, token)
-    if ext == ".zig":
-        return _js_imports_token(code, token)
-    if ext == ".rb":
-        return _ruby_imports_token(code, token)
-    if ext == ".php":
-        return _php_imports_token(code, token)
-    if ext == ".cs":
-        return _csharp_imports_token(code, token)
-    if ext in {".dart", ".swift"}:
-        return _jvm_imports_token(code, token) or _js_imports_token(code, token)
-    # Unknown / data files: only structured import forms, never a bare word.
-    return (
-        _python_imports_token(code, token)
-        or _js_imports_token(code, token)
-        or _path_import_hit(code, token)
-    )
+    """True when *line*, read as a whole file of that language, loads *token*."""
+    return bool(scan_text_imports(line, suffix, (token,)))
 
 
 @dataclass(frozen=True)
@@ -585,18 +869,8 @@ class ScanResult:
 
 
 def install_ban_hashes(install_ban: tuple[str, ...] | list[str]) -> list[str]:
-    """SHA-256 hex digests of normalized install-ban package names (for image baking)."""
-    seen: set[str] = set()
-    out: list[str] = []
-    for raw in install_ban:
-        norm = normalize_pkg_name(str(raw))
-        if not norm:
-            continue
-        digest = hashlib.sha256(norm.encode("utf-8")).hexdigest()
-        if digest not in seen:
-            seen.add(digest)
-            out.append(digest)
-    return out
+    """``dist <digest>`` lines for normalized install-ban package names (for image baking)."""
+    return denylist_hashes_from_payload({"install_ban": list(install_ban)})
 
 
 def install_ban_hashes_from_file(denylist_path: Path) -> list[str]:
@@ -640,36 +914,49 @@ def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+# What a banned name names. A distribution is a package a package manager installed and can
+# uninstall by that name; an import root is a name code imports, which several distributions may
+# contribute to (a namespace). Keeping them apart is what stops a ban on one distribution from
+# taking out another that shares its namespace.
+KIND_DIST = "dist"
+KIND_IMPORT = "import"
+
+
 def denylist_hashes_from_payload(payload: dict) -> list[str]:
-    """Hashes for install_ban names plus probeable import roots / raw filenames."""
-    seen: set[str] = set()
+    """``<kind> <digest>`` lines: install_ban names as distributions, import_ban as import roots.
+
+    The kind travels with the hash because the hashes are all the image gets: the plaintext name
+    stays out of the image, and without the kind a cleanup cannot tell a package it may uninstall
+    from a namespace it must not delete wholesale.
+    """
+    seen: set[tuple[str, str]] = set()
     out: list[str] = []
 
-    def add(text: str) -> None:
+    def add(kind: str, text: str) -> None:
         value = str(text or "").strip()
         if not value:
             return
-        digest = _hash_text(value)
-        if digest not in seen:
-            seen.add(digest)
-            out.append(digest)
+        key = (kind, _hash_text(value))
+        if key not in seen:
+            seen.add(key)
+            out.append(f"{kind} {key[1]}")
 
     for raw in payload.get("install_ban") or []:
         norm = normalize_pkg_name(str(raw))
         if norm:
-            add(norm)
+            add(KIND_DIST, norm)
     for raw in payload.get("import_ban") or []:
         token = str(raw).strip()
         if not token:
             continue
-        add(token.lower().rstrip("/"))
+        add(KIND_IMPORT, token.lower().rstrip("/"))
         base = Path(token).name.lower()
         if base:
-            add(base)
+            add(KIND_IMPORT, base)
         root = import_root_from_ban_token(token)
         if root and is_probeable_import_root(root):
-            add(root.lower())
-            add(normalize_pkg_name(root))
+            add(KIND_IMPORT, root.lower())
+            add(KIND_IMPORT, normalize_pkg_name(root))
     return out
 
 
@@ -734,7 +1021,7 @@ def _iter_source_files(root: Path) -> list[Path]:
     for path in root.rglob("*"):
         if not path.is_file():
             continue
-        if any(part in _SKIP_DIRS for part in path.parts):
+        if any(part in _SKIP_DIRS for part in path.relative_to(root).parts):
             continue
         if path.suffix.lower() not in _SOURCE_SUFFIXES:
             continue
@@ -751,19 +1038,16 @@ def scan_workspace_imports(workspace: Path, spec: DenylistSpec) -> list[ImportHi
             lines = file_path.read_text(encoding="utf-8", errors="replace").splitlines()
         except OSError:
             continue
-        suffix = file_path.suffix.lower()
-        for line_no, line in enumerate(lines, start=1):
-            for token in spec.import_ban:
-                if line_imports_token(line, token, suffix):
-                    hits.append(
-                        ImportHit(
-                            token=token,
-                            path=str(file_path),
-                            line=line_no,
-                            line_text=line.strip()[:200],
-                        )
-                    )
-                    break
+        text = "\n".join(lines)
+        for line_no, token in scan_text_imports(text, file_path.suffix, spec.import_ban):
+            hits.append(
+                ImportHit(
+                    token=token,
+                    path=str(file_path),
+                    line=line_no,
+                    line_text=lines[line_no - 1].strip()[:200],
+                )
+            )
     return hits
 
 
@@ -1025,20 +1309,60 @@ def _digest(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _load_ban() -> set[str]:
+def _load_ban() -> tuple[set[str], set[str], set[str]]:
+    """(every digest, the ones naming a distribution, the ones naming an import root).
+
+    A line is "<kind> <digest>"; a bare digest from an older image counts as both kinds.
+    """
     if not HASHES.is_file():
-        return set()
-    return {ln.strip() for ln in HASHES.read_text(encoding="utf-8").splitlines() if ln.strip()}
+        return set(), set(), set()
+    every: set[str] = set()
+    dists: set[str] = set()
+    roots: set[str] = set()
+    for line in HASHES.read_text(encoding="utf-8").splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        if len(parts) == 1:
+            every.add(parts[0])
+            dists.add(parts[0])
+            roots.add(parts[0])
+            continue
+        kind, digest = parts[0], parts[1]
+        every.add(digest)
+        if kind == "dist":
+            dists.add(digest)
+        elif kind == "import":
+            roots.add(digest)
+        else:
+            dists.add(digest)
+            roots.add(digest)
+    return every, dists, roots
 
 
-BAN = _load_ban()
+BAN, BAN_DIST, BAN_IMPORT = _load_ban()
 
 
-def _banned(name: str) -> bool:
+def _in(name: str, bans: set[str]) -> bool:
     raw = str(name or "").strip().lower()
     if not raw:
         return False
-    return _digest(raw) in BAN or _digest(_norm(raw)) in BAN
+    return _digest(raw) in bans or _digest(_norm(raw)) in bans
+
+
+def _banned(name: str) -> bool:
+    """Banned under any kind. For finding candidates; what to do with one depends on the kind."""
+    return _in(name, BAN)
+
+
+def _banned_dist(name: str) -> bool:
+    """A distribution a package manager may uninstall by this name."""
+    return _in(name, BAN_DIST)
+
+
+def _banned_import(name: str) -> bool:
+    """An import root the agent must not be able to import."""
+    return _in(name, BAN_IMPORT)
 
 
 def _pythons() -> list[str]:
@@ -1171,33 +1495,150 @@ def _uninstall(py: str, dists: list[str]) -> None:
     )
 
 
-def _maybe_rm(path: Path) -> None:
-    name = path.name
+# Files the cleanup must not delete: another package installed them and still needs them.
+# Filled per interpreter from the package managers' own records, and from the system package
+# database. A path absent from it belongs to nobody that can still be broken.
+KEPT: set[str] = set()
+CONFLICTS: list[str] = []
+
+
+def _real(path) -> str:
+    try:
+        return os.path.realpath(str(path))
+    except OSError:
+        return str(path)
+
+
+_OWNERS_SCRIPT = (
+    "import importlib.metadata as m, json, os\n"
+    "out = {}\n"
+    "for d in m.distributions():\n"
+    "    name = (d.metadata or {}).get('Name')\n"
+    "    if not name:\n"
+    "        continue\n"
+    "    try:\n"
+    "        files = d.files or []\n"
+    "    except Exception:\n"
+    "        files = []\n"
+    "    for f in files:\n"
+    "        try:\n"
+    "            p = os.path.realpath(str(d.locate_file(f)))\n"
+    "        except Exception:\n"
+    "            continue\n"
+    "        out.setdefault(p, [])\n"
+    "        if name not in out[p]:\n"
+    "            out[p].append(name)\n"
+    "print(json.dumps(out))\n"
+)
+
+
+def _python_owners(py: str) -> dict:
+    """path -> the distributions that installed it, as this interpreter records them."""
+    rows = _run_json([py, "-c", _OWNERS_SCRIPT])
+    return rows if isinstance(rows, dict) else {}
+
+
+def _keep_surviving(owners: dict, removed: set[str]) -> None:
+    """Protect every file a distribution that stays installed put on disk."""
+    for path, dists in owners.items():
+        if any(str(dist) not in removed for dist in dists or []):
+            KEPT.add(_real(path))
+
+
+def _dpkg_owner(path: Path) -> str | None:
+    """The system package that installed this file, when the system records one."""
+    dpkg = shutil.which("dpkg")
+    if not dpkg:
+        return None
+    try:
+        out = subprocess.run([dpkg, "-S", str(path)], capture_output=True, text=True, check=False)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    line = (out.stdout or "").splitlines()[:1]
+    if not line:
+        return None
+    owner = line[0].split(":", 1)[0].strip()
+    return owner or None
+
+
+def _remove_unowned(path: Path) -> bool:
+    """Remove what this path holds, except files another package still needs.
+
+    Returns whether anything is left. A directory two packages share (a namespace, a bin
+    directory, a library directory) loses only the entries nobody keeps, so banning one package
+    never takes a neighbour's files with it.
+    """
+    if path.is_symlink():
+        try:
+            path.unlink()
+        except OSError:
+            return True
+        return False
+    if _real(path) in KEPT:
+        return True
+    if path.is_dir():
+        left = False
+        try:
+            children = sorted(path.iterdir())
+        except OSError:
+            return True
+        for child in children:
+            if _remove_unowned(child):
+                left = True
+        if left:
+            return True
+        try:
+            path.rmdir()
+        except OSError:
+            return True
+        return False
+    owner = _dpkg_owner(path)
+    if owner is not None and not _banned_dist(owner):
+        # The system installed it and its database would still claim it. Deleting it would
+        # break that package and leave the database wrong, so it is reported, not removed.
+        CONFLICTS.append(f"system package {_digest(owner)[:8]} owns {_digest(str(path))[:8]}")
+        KEPT.add(_real(path))
+        return True
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        return True
+    print(f"[cbrun] removed leftover {_digest(path.name)[:8]}", flush=True)
+    return False
+
+
+def _name_candidates(name: str) -> set[str]:
+    """The names a file could carry, each a whole name.
+
+    Only a version suffix is taken off. The part before a hyphen is never a candidate: a package
+    name carries hyphens of its own, and matching on the first segment deletes every neighbour
+    that shares it (a plugin of a banned tool, a derive macro, a backend of a banned product).
+    """
     stem = name
-    for suf in (".dist-info", ".egg-info", ".json", ".so"):
-        if stem.endswith(suf):
-            stem = stem[: -len(suf)]
+    for suffix in (".dist-info", ".egg-info", ".json", ".so"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
     candidates = {name.lower(), stem.lower()}
-    head = re.match(r"^([A-Za-z0-9_.]+)", stem)
-    if head:
-        candidates.add(head.group(1).lower())
-    named = re.match(r"^([A-Za-z0-9_.]+(?:-[A-Za-z][A-Za-z0-9_.]+)*)-\d", stem)
-    if named:
-        candidates.add(named.group(1).lower())
+    versioned = re.match(r"^([A-Za-z0-9_.]+(?:-[A-Za-z][A-Za-z0-9_.]+)*)-\d", stem)
+    if versioned:
+        candidates.add(versioned.group(1).lower())
     if name.startswith("lib") and ".so" in name:
         core = name[3:].split(".so", 1)[0]
         candidates.add(core.lower())
         candidates.add(("lib" + core).lower())
-    if not any(_banned(item) for item in candidates):
+        bare = re.match(r"^([A-Za-z0-9_.]+(?:-[A-Za-z][A-Za-z0-9_.]+)*)-\d", core)
+        if bare:
+            candidates.add(bare.group(1).lower())
+            candidates.add(("lib" + bare.group(1)).lower())
+    return {item for item in candidates if item}
+
+
+def _maybe_rm(path: Path) -> None:
+    if not any(_banned(item) for item in _name_candidates(path.name)):
         return
-    try:
-        if path.is_dir() and not path.is_symlink():
-            shutil.rmtree(path, ignore_errors=True)
-        else:
-            path.unlink(missing_ok=True)
-        print(f"[cbrun] removed leftover {_digest(name)[:8]}", flush=True)
-    except OSError:
-        pass
+    _remove_unowned(path)
 
 
 def _scan_dir(path: Path) -> None:
@@ -1277,18 +1718,33 @@ def main() -> int:
                 "print(json.dumps({k: list(v) for k, v in m.packages_distributions().items()}))",
             ]
         )
+        # Only a distribution banned by its own name is uninstalled. Sharing an import root
+        # with a banned one is not being banned: pdm-backend provides pdm.backend beside the
+        # pdm product, and uninstalling it took away a build backend the project needs.
         to_remove: set[str] = set()
         if isinstance(names, list):
             for dist in names:
-                if _banned(str(dist)):
+                if _banned_dist(str(dist)):
                     to_remove.add(str(dist))
         if isinstance(mapping, dict):
             for pkg, dists in mapping.items():
-                if _banned(str(pkg)):
-                    to_remove.update(str(x) for x in (dists or []))
-                for dist in dists or []:
-                    if _banned(str(dist)):
-                        to_remove.add(str(dist))
+                owners = [str(x) for x in (dists or [])]
+                for dist in owners:
+                    if _banned_dist(dist):
+                        to_remove.add(dist)
+                if not _banned_import(str(pkg)):
+                    continue
+                # A banned import root. Its own distributions go; one that stays would leave the
+                # root importable, which the ban asked to prevent and no deletion may decide.
+                for dist in owners:
+                    if _banned_dist(dist):
+                        continue
+                    CONFLICTS.append(
+                        f"import root {_digest(str(pkg))[:8]} is also provided by distribution "
+                        f"{_digest(dist)[:8]}, which is not banned"
+                    )
+        owners_index = _python_owners(py)
+        _keep_surviving(owners_index, to_remove)
         if to_remove:
             _uninstall(py, sorted(to_remove))
             print(f"[cbrun] stripped {len(to_remove)} dist(s)", flush=True)
@@ -1303,6 +1759,7 @@ def main() -> int:
         if isinstance(sites, list):
             for site_dir in sites:
                 _scan_dir(Path(str(site_dir)))
+        _check_python(py)
 
     extra = os.environ.get("CBRUN_STRIP_SCAN_DIRS", "")
     scan_roots = [
@@ -1334,7 +1791,9 @@ def main() -> int:
         deps = data.get("dependencies") if isinstance(data, dict) else None
         if isinstance(deps, dict):
             for name in deps:
-                if _banned(str(name)):
+                # The name npm installed it under, whole: a plugin of a banned tool carries
+                # the tool's name as a prefix and is a different package.
+                if _banned_dist(str(name)) or _banned_import(str(name)):
                     subprocess.run(
                         [npm, "uninstall", "-g", str(name)],
                         stdout=subprocess.DEVNULL,
@@ -1342,7 +1801,47 @@ def main() -> int:
                         check=False,
                         env=npm_env,
                     )
+        _check_node(npm, npm_env)
+
+    for message in CONFLICTS:
+        print(f"[cbrun] denylist conflict: {message}", file=sys.stderr, flush=True)
+    if CONFLICTS:
+        print(
+            "[cbrun] the denylist cannot be applied without breaking a package that is not "
+            "banned; name the distribution to ban, or drop the ban. Nothing shared was deleted.",
+            file=sys.stderr, flush=True,
+        )
+        return 2
     return 0
+
+
+def _check_python(py: str) -> None:
+    """What the interpreter itself says about its packages after the removals.
+
+    A dependency the cleanup broke shows up here, in the step that caused it, instead of in a
+    build hours later with no sign of why its backend went missing.
+    """
+    out = subprocess.run(
+        [py, "-m", "pip", "check"], capture_output=True, text=True, check=False,
+    )
+    if out.returncode == 0:
+        return
+    for line in (out.stdout or "").splitlines():
+        text = line.strip()
+        if text:
+            CONFLICTS.append(f"python packages left inconsistent: {text}")
+
+
+def _check_node(npm: str, npm_env: dict) -> None:
+    out = subprocess.run(
+        [npm, "ls", "-g", "--depth=0"], capture_output=True, text=True, check=False, env=npm_env,
+    )
+    if out.returncode == 0:
+        return
+    for line in ((out.stderr or "") + (out.stdout or "")).splitlines():
+        text = line.strip()
+        if text.startswith("npm error") or "missing" in text.lower():
+            CONFLICTS.append(f"node packages left inconsistent: {text}")
 
 
 if __name__ == "__main__":

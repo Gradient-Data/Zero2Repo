@@ -7,9 +7,11 @@ not imported here so unit tests can use synthetic fixtures.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
+import tokenize
 from pathlib import Path
 
 from coding_bench_harbor._leakage import scan_leakage
@@ -163,6 +165,42 @@ def _check_undeclared_tests(cid: str, names: list, tests_dir: Path) -> list[str]
     return errors
 
 
+def _python_code_text(text: str) -> str:
+    """*text* with comments and docstrings blanked; other strings stay.
+
+    A privileged call is code: a marker in prose (a comment, or a docstring
+    describing a helper) needs no substrate, while a string argument such as
+    ``["unshare", "--net"]`` does. Text the tokenizer cannot read is returned
+    unchanged, so it is still scanned in full.
+    """
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        return text
+    lines = text.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+    blank: list[tuple[int, int]] = []
+    statement_start = True
+    for tok in tokens:
+        kind = tok.type
+        if kind == tokenize.COMMENT or (kind == tokenize.STRING and statement_start):
+            start = offsets[tok.start[0] - 1] + tok.start[1]
+            end = offsets[tok.end[0] - 1] + tok.end[1]
+            blank.append((start, end))
+        if kind in (tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT, tokenize.ENCODING):
+            statement_start = True
+        elif kind not in (tokenize.NL, tokenize.COMMENT):
+            statement_start = False
+    chars = list(text)
+    for start, end in blank:
+        for i in range(start, end):
+            if chars[i] != "\n":
+                chars[i] = " "
+    return "".join(chars)
+
+
 def _privilege_hits(tests_dir: Path) -> list[str]:
     if not tests_dir.is_dir():
         return []
@@ -180,6 +218,8 @@ def _privilege_hits(tests_dir: Path) -> list[str]:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
+        if path.suffix == ".py":
+            text = _python_code_text(text)
         if pattern.search(text):
             hits.append(path.relative_to(tests_dir).as_posix())
     return hits

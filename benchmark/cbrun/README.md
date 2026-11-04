@@ -245,11 +245,35 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
   scan and in the judge container after the agent has exited. pip/conda
   install shims in the `:agent` image reject those packages inline (warning
   only, no scoring).
-* After a valid submit, cbrun statically scans `/app` for real
-  import/require/use of banned tokens (docstrings and string literals do not
-  count). If found, the agent gets one fix retry (`--denylist-fix-retries`,
-  default 1) and must write the submit file again; if violations remain, the
-  trial scores `reward=0` without judging. `rejudge` (and therefore
+* Building an image removes the upstream product from it by what the package
+  managers say it owns, never by matching names against files. Each hash the
+  image carries says whether it names a distribution (a package a manager can
+  uninstall) or an import root (a name code imports, which several
+  distributions may fill). A banned distribution is uninstalled through its
+  manager and loses only the files it registered, so a namespace it shares
+  keeps its neighbours' files. A name matches whole: the part before a hyphen
+  is never a match on its own, or a ban on a tool would take its plugins, a
+  crate's derive macro or a product's build backend with it. A file the system
+  package database owns is reported, not deleted, and a banned import root
+  another installed distribution also provides stops the build with that
+  conflict named: nothing shared is removed on a guess. The pass ends by asking
+  each package manager whether anything is now missing a dependency, and fails
+  the build if so, rather than leaving a broken image for a later step.
+* After a valid submit, cbrun statically scans the source files in `/app`
+  for real imports of banned tokens. Each language is read with its own
+  import grammar: Python through its syntax tree; JS/TS `import`/`export
+  from`/`require()`/`import()`; Go `import` lines and blocks plus cgo
+  `#include`; C/C++/CUDA `#include`; Rust `use`/`extern crate`/`#[path]`/
+  `include!`; Java/Kotlin/Scala, C#, Swift, PHP, Ruby, Dart and Zig
+  imports; inline Python/JS and `source` in shell scripts. Comments and
+  the inside of string literals never count, except the literal that an
+  import names. A token holding `/` matches whole path segments of the
+  specifier; a token ending in `::` (or `\` in PHP) also matches any use of
+  that namespace in C-family, Rust, PHP and Ruby code. Prose and data files
+  (Markdown, JSON, YAML, TOML) cannot load code and are not scanned. If found,
+  the agent gets one fix retry (`--denylist-fix-retries`, default 1) and must
+  write the submit file again; if violations remain, the trial scores
+  `reward=0` without judging. `rejudge` (and therefore
   `run_controls`) applies the same scan to the host workspace before it
   starts a judge container and writes `denylist_scan.json` next to the judge
   artifacts, so a control or a re-scored trial is never judged more leniently

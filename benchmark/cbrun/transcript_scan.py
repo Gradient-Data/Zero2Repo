@@ -521,9 +521,18 @@ def _host_path(url: str) -> tuple[str, str]:
         return "", "/"
 
 
+_PATH_SCOPED_HOSTS = frozenset(h for h, _p in _CODE_HOST_PATH_PREFIXES)
+
+
 def is_code_host(host: str, path: str = "/") -> bool:
     if not host:
         return False
+    if host in _PATH_SCOPED_HOSTS:
+        # A host that serves both: a content CDN mirrors repositories under one path prefix and
+        # package releases under another. Only the repository paths carry code to copy, so the
+        # path decides. The host stays blocked during a solve either way.
+        return any(host == known and path.startswith(prefix)
+                   for known, prefix in _CODE_HOST_PATH_PREFIXES)
     if host in _BLOCKED or host in _CODE_HOSTS_EXTRA:
         return True
     if host.startswith(("gitlab.", "gitea.", "forgejo.")):
