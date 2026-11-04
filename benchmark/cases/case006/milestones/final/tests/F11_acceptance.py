@@ -1129,7 +1129,13 @@ def test_progress_bar_on_terminal_snapshots_differ_as_it_advances():
             lambda: (session.cwd / "READY1").is_file(),
             message="progress snapshot gate",
         )
-        snap1 = session.accumulated_text()
+        # The gate says the child has advanced the bar twice; it does not say the
+        # bar's bytes have reached this buffer yet. Snapshot on the bar's own
+        # output, which is what the assertions below compare.
+        snap1 = session.snapshot_when(
+            lambda text: _remainder(text, greeting, label, *items).strip() != "",
+            message="the bar's output at the snapshot gate",
+        )
         (session.cwd / "GO1").write_text("1")
         finished = session.wait()
         snap2 = finished.stdout_text
@@ -1224,7 +1230,14 @@ def test_progress_bar_known_length_terminal_includes_remaining_time_estimate():
                 lambda: (session.cwd / "READY1").is_file(),
                 message="remaining-time snapshot gate",
             )
-            snap = session.accumulated_text()
+            # Snapshot on the bar's own output, not on the gate alone: the two
+            # snapshots are compared with each other, and a snapshot taken
+            # before the bytes arrive is empty for a reason that is not the
+            # product's.
+            snap = session.snapshot_when(
+                lambda text: _remainder(text, greeting, label, *items).strip() != "",
+                message=f"the bar's output at the snapshot gate (delay={delay})",
+            )
             (session.cwd / "GO1").write_text("1")
             finished = session.wait()
         except Exception:

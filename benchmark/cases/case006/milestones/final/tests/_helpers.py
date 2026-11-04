@@ -1626,6 +1626,33 @@ class TtySession:
         except OSError as exc:
             raise RuntimeError(f"failed to feed tty: {exc}") from exc
 
+    def line_buffered(self) -> bool:
+        """Is the terminal still in canonical (line) mode?
+
+        A pty's line discipline belongs to the pair, so the master's termios
+        reports what the child set on the slave.
+        """
+        if self._master < 0:
+            raise RuntimeError("tty master is closed; cannot read its mode")
+        try:
+            attrs = termios.tcgetattr(self._master)
+        except termios.error as exc:
+            raise RuntimeError(f"failed to read tty mode: {exc}") from exc
+        return bool(attrs[3] & termios.ICANON)
+
+    def wait_until_reading_single_keys(self, *, message: str = "single-key mode") -> None:
+        """Block until the child has taken the terminal out of canonical mode.
+
+        Reading one keypress needs canonical mode off, so this is the moment the
+        child is ready for a key -- and it is the moment that makes the key safe
+        to send. ``tty.setraw`` and ``tty.setcbreak`` apply the new mode with
+        ``TCSAFLUSH``, which discards input received but not yet read, so a key
+        written before that call is thrown away and the child then waits for one
+        that never comes. Waiting for the mode is exact where waiting for output
+        is not: the child prints its prompt before it switches the mode.
+        """
+        self.wait_until(lambda: not self.line_buffered(), message=message)
+
     def wait_until(
         self,
         predicate: Callable[[], bool],
@@ -1662,6 +1689,31 @@ class TtySession:
                     f"returncode={self._proc.returncode!r}"
                 )
             time.sleep(0.05)
+
+    def snapshot_when(
+        self,
+        predicate: Callable[[str], bool],
+        *,
+        timeout: float | None = None,
+        message: str = "the output under test",
+    ) -> str:
+        """Return the accumulated text once *predicate* accepts it.
+
+        A snapshot of a running child is only worth asserting on once the
+        output it is about to be asserted on has arrived. Reaching a point in
+        the child (a gate file it writes, a mark it prints) does not put its
+        earlier writes in this buffer: they cross the pty and are picked up by
+        the reader thread afterwards, so a snapshot taken on the strength of the
+        gate alone can still be empty. Wait for the evidence itself, not for a
+        signal that stands in for it; a child that never produces the evidence
+        times out here, which is the failure the caller is testing for.
+        """
+        self.wait_until(
+            lambda: predicate(self.accumulated_text()),
+            timeout=timeout,
+            message=message,
+        )
+        return self.accumulated_text()
 
     def kill(self) -> None:
         if self._proc.poll() is None:
@@ -1817,9 +1869,16 @@ def run_python_on_tty_blocked_until_feed(
 ) -> RunResult:
     """Wait for *ready_mark* on the pty; *done_mark* must still be absent.
 
-    Then write *tty_feed* and wait for *done_mark*. A done mark that is
-    already present when the ready mark appears means the call did not
-    block. Opening the pty or a timeout raises; do not skip.
+    Then wait for the child to leave canonical mode, write *tty_feed* once and
+    wait for *done_mark*. A done mark that is already present when the ready
+    mark appears means the call did not block. Opening the pty or a timeout
+    raises; do not skip.
+
+    The ready mark is printed by the child before it reaches the blocking read,
+    so it says the child is near the call, not inside it; one key written on the
+    strength of it alone is discarded by the ``TCSAFLUSH`` of the child's own
+    mode switch about a quarter of the time. The mode is the exact signal, and
+    one key still has to be enough: the key is sent once, after the switch.
     """
     if not code:
         raise ValueError("code must be a non-empty string")
@@ -1842,6 +1901,14 @@ def run_python_on_tty_blocked_until_feed(
             raise RuntimeError(
                 f"done mark {done_mark!r} already present before feed; "
                 f"call did not block; output={seen!r}"
+            )
+        session.wait_until_reading_single_keys(
+            message=f"the terminal to leave canonical mode before {tty_feed!r}"
+        )
+        if done_mark in session.accumulated_text():
+            raise RuntimeError(
+                f"done mark {done_mark!r} appeared before any key was sent; "
+                f"call did not block; output={session.accumulated_text()!r}"
             )
         session.feed(tty_feed)
         session.wait_until(
