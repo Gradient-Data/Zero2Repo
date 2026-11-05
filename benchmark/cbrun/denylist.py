@@ -775,9 +775,32 @@ def _file_refs(text: str, suffix: str) -> list[_Ref]:
     return refs
 
 
+# Directory names under which a package keeps a private copy of another one.
+_PY_VENDOR_DIRS = frozenset({"_vendor", "vendor", "_vendored", "_vendored_packages", "extern",
+                             "third_party", "thirdparty"})
+
+
+def _python_name_matches(name: str, token: str) -> bool:
+    """True when the absolute module *name* loads *token*.
+
+    The product is loaded when the name starts with it, or when it sits right under a
+    vendoring directory (``pkg._vendor.product``). Anywhere else a component spelled like
+    the product is a module the workspace defines itself (``pkg.datatree``): the name says
+    nothing about where its code came from.
+    """
+    want = _name_parts(token, ".")
+    parts = _name_parts(name, ".")
+    if not want or not all(want) or len(parts) < len(want):
+        return False
+    if parts[: len(want)] == want:
+        return True
+    return any(parts[i : i + len(want)] == want and parts[i - 1].lower() in _PY_VENDOR_DIRS
+               for i in range(1, len(parts) - len(want) + 1))
+
+
 def _ref_matches(kind: str, value: str, token: str, suffix: str) -> bool:
     if kind == "py":
-        return _name_matches(value, token, ".", anywhere=True)
+        return _python_name_matches(value, token)
     if kind == "dotted":
         return _name_matches(value, token, ".", anywhere=False)
     if kind == "rust":

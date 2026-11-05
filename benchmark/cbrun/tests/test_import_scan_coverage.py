@@ -44,6 +44,18 @@ def test_python_a_module_of_our_own_named_like_the_product_is_not_a_hit() -> Non
     assert hits("import velqora_helpers\nfrom velqoraish import x\n", ".py") == []
 
 
+def test_python_a_submodule_of_our_own_spelled_like_the_product_is_not_a_hit() -> None:
+    """A workspace package may name its own module like a banned token (``pkg.datatree``)."""
+    assert hits("import ours.velqora\nfrom ours.velqora.core import x\n", ".py") == []
+    assert hits("m = __import__('ours.velqora', fromlist=['X'])\n", ".py") == []
+
+
+def test_python_a_vendored_copy_of_the_product_counts() -> None:
+    assert hits("from ours._vendor.velqora import core\n", ".py") == [1]
+    assert hits("import ours.third_party.velqora.core\n", ".py") == [1]
+    assert hits("import velqora.core\n", ".py") == [1]
+
+
 # Rust: a crate used by its path, with no use statement ---------------------------------------
 
 def test_rust_a_fully_qualified_crate_path_counts() -> None:
