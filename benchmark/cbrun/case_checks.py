@@ -249,6 +249,8 @@ def _check_substrates(cid: str, tests_manifest: dict, tests_dir: Path) -> list[s
 
 def _check_suite_wall_fields(cid: str, tests_manifest: dict) -> list[str]:
     errors: list[str] = []
+    if "host_exclusive" in tests_manifest and not isinstance(tests_manifest["host_exclusive"], bool):
+        errors.append(f"{cid}: host_exclusive must be true or false")
     for key in ("suite_wall_seconds", "judge_timeout_sec"):
         if key not in tests_manifest:
             continue

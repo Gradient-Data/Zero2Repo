@@ -128,3 +128,51 @@ def test_jobs_run_trials_side_by_side_and_keep_matrix_order(
     assert seen_slots == [2] * 5
     trials = json.loads((out / "summary.json").read_text())["trials"]
     assert [t["case_id"] for t in trials] == cases
+
+
+def test_host_exclusive_cases_run_last_and_alone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A case that needs the host to itself starts after every other trial ends, one at a time."""
+    import json
+
+    from cbrun import cli
+    from cbrun.results import TrialResult
+
+    lock = threading.Lock()
+    running: set[str] = set()
+    log: list[tuple[str, set[str]]] = []
+
+    def fake_trial(case_dir, *, backend, model, **_kwargs):
+        with lock:
+            log.append((case_dir.name, set(running)))
+            running.add(case_dir.name)
+        time.sleep(0.2)
+        with lock:
+            running.discard(case_dir.name)
+        return TrialResult(case_id=case_dir.name, backend=backend, model=model,
+                           reward=1.0, terminal_status="completed")
+
+    exclusive = {"case002", "case004"}
+    monkeypatch.setattr(cli, "run_trial", fake_trial)
+    monkeypatch.setattr(cli, "host_exclusive", lambda case_dir: Path(case_dir).name in exclusive)
+    monkeypatch.setenv("CBRUN_CODEX_VERSION", "0.0.1")
+    cases = ["case001", "case002", "case003", "case004", "case005"]
+    argv = [arg for case in cases for arg in ("--case", case)]
+    out = tmp_path / "out"
+    assert cli.main(argv + ["--backend", "codex", "--model", "m", "--jobs", "3", "--out", str(out)]) == 0
+    order = [name for name, _ in log]
+    assert set(order[-2:]) == exclusive
+    assert all(not others for name, others in log if name in exclusive)
+    trials = json.loads((out / "summary.json").read_text())["trials"]
+    assert [t["case_id"] for t in trials] == cases
+
+
+def test_host_exclusive_reads_the_test_manifest(tmp_path: Path) -> None:
+    from cbrun.cli import host_exclusive
+
+    final = tmp_path / "c" / "milestones" / "final"
+    final.mkdir(parents=True)
+    assert host_exclusive(tmp_path / "c") is False
+    (final / "test_manifest.json").write_text('{"host_exclusive": true}')
+    assert host_exclusive(tmp_path / "c") is True
+    (final / "test_manifest.json").write_text('{"host_exclusive": "yes"}')
+    assert host_exclusive(tmp_path / "c") is False

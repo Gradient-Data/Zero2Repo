@@ -66,6 +66,11 @@ wall-clock budgets:
   Emulated runs require `--allow-emulated`. They are counted in
   `aggregate.emulated_trials` and excluded from `reward_mean_valid`.
   `suite_wall_measured_on.arch` must match the container platform.
+* A case whose hidden tests measure the host's free CPU or memory (speed-up
+  ratios, idle-core probes, memory pressure) sets `"host_exclusive": true` in
+  `milestones/final/test_manifest.json`. With `--jobs`, such trials start only
+  after every other trial of the run has ended, and run one at a time. Other
+  processes on the host are not controlled: run on an otherwise idle host.
 
 A conservative stall watchdog stops a wedged CLI when both stdout and `/app`
 stay quiet, without treating a long compile or a long model turn as a hang.

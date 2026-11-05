@@ -14,6 +14,7 @@ Run with a custom local AgentSpec::
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import threading
@@ -292,6 +293,15 @@ def _iter_case_dirs(cases_root: Path, cases: list[str], run_all: bool) -> list[P
     return out
 
 
+def host_exclusive(case_dir: Path) -> bool:
+    """True when the case's hidden tests need the host to themselves (test_manifest host_exclusive)."""
+    try:
+        manifest = json.loads((Path(case_dir) / "milestones" / "final" / "test_manifest.json").read_text())
+    except (OSError, ValueError):
+        return False
+    return manifest.get("host_exclusive") is True
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
     if args.agent_spec is not None and args.backend:
@@ -460,12 +470,22 @@ def main(argv: list[str] | None = None) -> int:
             write_summary([finished[i] for i in sorted(finished)], args.out)
 
     write_summary([], args.out)
+    # A case whose verdict depends on the host's free CPU or memory (test_manifest
+    # host_exclusive) runs after every other trial of this run, one at a time, so no
+    # trial of this run competes with it.
+    shared = [index for index, trial in enumerate(trials) if not host_exclusive(trial[0])]
+    exclusive = [index for index, trial in enumerate(trials) if host_exclusive(trial[0])]
+    if exclusive:
+        print(f"[cbrun] {len(exclusive)} host-exclusive trial(s) run last, one at a time",
+              file=sys.stderr)
     # Each trial waits for an init slot inside run_trial, so --jobs trials run at
     # once while at most --init-slots of them set up.
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {pool.submit(run_one, *trial): index for index, trial in enumerate(trials)}
+        futures = {pool.submit(run_one, *trials[index]): index for index in shared}
         for future in as_completed(futures):
             record(futures[future], future.result())
+    for index in exclusive:
+        record(index, run_one(*trials[index]))
     results = [finished[i] for i in sorted(finished)]
 
     summary_path = write_summary(results, args.out)
