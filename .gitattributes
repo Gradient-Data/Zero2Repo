@@ -2,3 +2,13 @@ benchmark/** text eol=lf
 *.ogg binary
 *.opus binary
 *.xz binary
+
+# Binary test assets: never apply the text/eol rule above.
+*.whl binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.deb binary
+*.safetensors binary
