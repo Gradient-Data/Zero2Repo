@@ -152,7 +152,9 @@ def test_a_package_that_only_shares_the_banned_namespace_keeps_its_files(tmp_pat
         strip,
         installed={"poetry": [], "poetry-core": []},
         mapping={"poetry": ["poetry", "poetry-core"]},
-        owners={"/s/poetry/console/app.py": ["poetry"], "/s/poetry/core/factory.py": ["poetry-core"]},
+        owners={"/s/poetry/console/app.py": ["poetry"], "/s/poetry/core/factory.py": ["poetry-core"],
+                "/s/poetry/core/__pycache__/poetry.cpython-313.pyc": ["poetry-core"],
+                "/s/poetry/core/__init__.py": ["poetry-core"]},
         uninstalled=uninstalled,
     )
     assert strip.main() == 0

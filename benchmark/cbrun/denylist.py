@@ -1736,26 +1736,25 @@ def _provides_banned_module(pkg: str, dist: str, owners: dict) -> bool:
         if dist not in (dists or []):
             continue
         parts = Path(str(path)).parts
-        for at, part in enumerate(parts):
-            stem = part.split(".", 1)[0]
-            if stem != pkg:
-                continue
-            rest = list(parts[at + 1 :])
-            if not rest:
-                if part != pkg:  # pkg.py, pkg.cpython-312-x86_64-linux-gnu.so
-                    return True
-                continue
-            if part != pkg:
-                continue
-            if rest == ["__init__.py"] or (len(rest) == 1 and rest[0].startswith("__init__.")):
+        # The first component spelled like the root is where the package starts; a later one
+        # is a module inside it (poetry/core/__pycache__/poetry.cpython-313.pyc).
+        at = next((i for i, part in enumerate(parts) if part.split(".", 1)[0] == pkg), None)
+        if at is None:
+            continue
+        part, rest = parts[at], list(parts[at + 1 :])
+        if part != pkg:
+            if not rest:  # pkg.py, pkg.cpython-312-x86_64-linux-gnu.so
                 return True
-            names = [pkg]
-            for piece in rest:
-                if piece == "__pycache__":
-                    break
-                names.append(piece.split(".", 1)[0])
-                if piece.split(".", 1)[0] != "__init__" and _banned_import(".".join(names)):
-                    return True
+            continue
+        if rest and rest[0].split(".", 1)[0] == "__init__":
+            return True
+        names = [pkg]
+        for piece in rest:
+            if piece == "__pycache__":
+                break
+            names.append(piece.split(".", 1)[0])
+            if _banned_import(".".join(names)):
+                return True
     return False
 
 
