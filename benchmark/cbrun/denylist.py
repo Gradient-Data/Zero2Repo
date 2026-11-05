@@ -1723,6 +1723,42 @@ def _sourceless_pass() -> None:
         _sourceless(py, path)
 
 
+def _provides_banned_module(pkg: str, dist: str, owners: dict) -> bool:
+    """True when *dist* ships the banned module itself, not only a part of a shared namespace.
+
+    A namespace directory several distributions fill is nobody's product: poetry-core puts
+    ``poetry/core`` beside the banned poetry's ``poetry/console``, and only the banned package's
+    own files go. A distribution that ships the root module (``pkg/__init__.py``, ``pkg.py``, an
+    extension ``pkg.*.so``) or a module under the root that is itself banned provides the banned
+    code, and no deletion may decide between it and the product.
+    """
+    for path, dists in owners.items():
+        if dist not in (dists or []):
+            continue
+        parts = Path(str(path)).parts
+        for at, part in enumerate(parts):
+            stem = part.split(".", 1)[0]
+            if stem != pkg:
+                continue
+            rest = list(parts[at + 1 :])
+            if not rest:
+                if part != pkg:  # pkg.py, pkg.cpython-312-x86_64-linux-gnu.so
+                    return True
+                continue
+            if part != pkg:
+                continue
+            if rest == ["__init__.py"] or (len(rest) == 1 and rest[0].startswith("__init__.")):
+                return True
+            names = [pkg]
+            for piece in rest:
+                if piece == "__pycache__":
+                    break
+                names.append(piece.split(".", 1)[0])
+                if piece.split(".", 1)[0] != "__init__" and _banned_import(".".join(names)):
+                    return True
+    return False
+
+
 def main() -> int:
     if not BAN:
         return 0
@@ -1744,6 +1780,7 @@ def main() -> int:
                 "print(json.dumps({k: list(v) for k, v in m.packages_distributions().items()}))",
             ]
         )
+        owners_index = _python_owners(py)
         # Only a distribution banned by its own name is uninstalled. Sharing an import root
         # with a banned one is not being banned: pdm-backend provides pdm.backend beside the
         # pdm product, and uninstalling it took away a build backend the project needs.
@@ -1760,17 +1797,17 @@ def main() -> int:
                         to_remove.add(dist)
                 if not _banned_import(str(pkg)):
                     continue
-                # A banned import root. Its own distributions go; one that stays would leave the
-                # root importable, which the ban asked to prevent and no deletion may decide.
+                # A banned import root. Its own distributions go. A distribution that stays and
+                # only fills the same namespace keeps its files; one that ships the banned module
+                # itself would leave it importable, which no deletion may decide.
                 for dist in owners:
-                    if _banned_dist(dist):
+                    if _banned_dist(dist) or not _provides_banned_module(str(pkg), dist, owners_index):
                         continue
                     CONFLICTS.append(
                         f"import root {_digest(str(pkg))[:8]} is also provided by distribution "
                         f"{_digest(dist)[:8]}, which is not banned"
                     )
         before_check = _pip_check(py)
-        owners_index = _python_owners(py)
         if isinstance(names, list) and names and not owners_index:
             # Packages are installed but none of them says which files are its own. Deleting by
             # name from here is the guess this cleanup exists to avoid.

@@ -143,8 +143,25 @@ def test_sharing_an_import_root_with_a_banned_package_is_not_being_banned(tmp_pa
     assert uninstalled == [["pdm"]]
 
 
-def test_a_banned_import_root_another_package_provides_stops_the_cleanup(tmp_path: Path, monkeypatch) -> None:
-    """Nothing shared is deleted on a guess: the run fails and names what the ban collides with."""
+def test_a_package_that_only_shares_the_banned_namespace_keeps_its_files(tmp_path: Path, monkeypatch) -> None:
+    """poetry-core fills poetry/ beside the banned poetry: the product's own files go, its stay."""
+    bans = [f"dist {_digest('poetry')}", f"import {_digest('poetry')}", f"import {_digest('poetry.console')}"]
+    strip = _strip_module(tmp_path, bans, monkeypatch)
+    uninstalled: list[list[str]] = []
+    _fake_python_world(
+        strip,
+        installed={"poetry": [], "poetry-core": []},
+        mapping={"poetry": ["poetry", "poetry-core"]},
+        owners={"/s/poetry/console/app.py": ["poetry"], "/s/poetry/core/factory.py": ["poetry-core"]},
+        uninstalled=uninstalled,
+    )
+    assert strip.main() == 0
+    assert uninstalled == [["poetry"]]
+    assert not strip.CONFLICTS
+    assert str(Path("/s/poetry/core/factory.py")) in strip.KEPT
+
+
+def test_the_namespace_alone_with_no_banned_package_installed_is_not_a_conflict(tmp_path: Path, monkeypatch) -> None:
     strip = _strip_module(tmp_path, [f"import {_digest('pdm')}"], monkeypatch)
     uninstalled: list[list[str]] = []
     _fake_python_world(
@@ -154,9 +171,26 @@ def test_a_banned_import_root_another_package_provides_stops_the_cleanup(tmp_pat
         owners={"/s/pdm/backend/base.py": ["pdm-backend"]},
         uninstalled=uninstalled,
     )
-    assert strip.main() == 2
+    assert strip.main() == 0
     assert uninstalled == []
-    assert any("import root" in message for message in strip.CONFLICTS)
+    assert not strip.CONFLICTS
+
+
+def test_a_package_that_ships_the_banned_module_itself_stops_the_cleanup(tmp_path: Path, monkeypatch) -> None:
+    """Nothing is deleted on a guess when an unbanned package provides the banned code itself."""
+    for owned in ("/s/pdm/__init__.py", "/s/pdm.py", "/s/pdm/cli/main.py"):
+        strip = _strip_module(tmp_path, [f"import {_digest('pdm')}", f"import {_digest('pdm.cli')}"], monkeypatch)
+        uninstalled: list[list[str]] = []
+        _fake_python_world(
+            strip,
+            installed={"pdm-fork": []},
+            mapping={"pdm": ["pdm-fork"]},
+            owners={owned: ["pdm-fork"]},
+            uninstalled=uninstalled,
+        )
+        assert strip.main() == 2, owned
+        assert uninstalled == []
+        assert any("import root" in message for message in strip.CONFLICTS)
 
 
 def test_python_packages_left_inconsistent_fail_the_cleanup(tmp_path: Path, monkeypatch) -> None:
