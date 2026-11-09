@@ -39,6 +39,15 @@ _COUNT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     ("retry_exhausted", re.compile(r"exceeded retry limit", re.I)),
     ("conn_refused", re.compile(r"ECONNREFUSED", re.I)),
+    # Codex gave up after its reconnect attempts: the reply stream kept breaking.
+    (
+        "stream_disconnected",
+        re.compile(r'"type"\s*:\s*"turn\.failed".{0,400}?stream disconnected before completion'),
+    ),
+    # Cursor could not reach its API, or its connection died mid-session.
+    ("cursor_unreachable", re.compile(r"Failed to reach the Cursor API")),
+    ("cursor_connection_lost", re.compile(r"RetriableError: \[internal\] HTTP/2 keepalive ping timed out")),
+    ("cursor_gave_up", re.compile(r"RetriableError: Agent turn stopped after repeated resume attempts")),
     # The CLI gave up on a server-side API failure (Claude Code stream-json).
     (
         "api_error",
@@ -46,7 +55,8 @@ _COUNT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
-_TERMINATING = frozenset({"auth", "retry_exhausted", "conn_refused", "api_error"})
+_TERMINATING = frozenset({"auth", "retry_exhausted", "conn_refused", "api_error", "stream_disconnected",
+                          "cursor_unreachable", "cursor_connection_lost", "cursor_gave_up"})
 _TAIL_LINES = 200
 # A final ``result`` with one of these stop reasons means the CLI exited while
 # the model's turn was still open (the response stream was cut off).
@@ -131,6 +141,13 @@ def _api_failure_exit(final: tuple[dict, dict]) -> bool:
     return bool(result.get("is_error")) and message.get("model") == SYNTHETIC_MODEL
 
 
+def _still_reconnecting(event: dict) -> bool:
+    """Codex's last event says it was still reconnecting a broken reply stream."""
+    message = str(event.get("message") or "")
+    return event.get("type") == "error" and message.startswith("Reconnecting...") \
+        and "stream disconnected" in message
+
+
 def _last_process(text: str) -> str:
     """Log text written by the agent process that ended the solve."""
     lines = text.splitlines()
@@ -155,7 +172,10 @@ def invalid_reason(*, submitted: bool, log_text: str) -> str | None:
             continue
         if pattern.search(tail):
             return f"infra:{name}"
-    final = _final_exit(_json_lines(tail))
+    events = _json_lines(tail)
+    if events and _still_reconnecting(events[-1]):
+        return "infra:stream_reconnecting"
+    final = _final_exit(events)
     if final is None:
         return None
     if _api_failure_exit(final):

@@ -206,7 +206,49 @@ def test_python_packages_left_inconsistent_fail_the_cleanup(tmp_path: Path, monk
         uninstalled=uninstalled,
     )
     strip.__dict__["_check_python"] = lambda py, before: strip.CONFLICTS.append(
-        "python packages left inconsistent: velqora 1.0 requires pdm, which is not installed"
+        "python packages left inconsistent: velqora 1.0 requires pdm-backend, which is not installed"
+    )
+    assert strip.main() == 2
+
+
+def _check_after_cleanup(tmp_path: Path, monkeypatch, after: set[str]) -> types.ModuleType:
+    """The real dependency check, with pip reporting *after* once the cleanup ran."""
+    strip = _strip_module(tmp_path, [f"dist {_digest('pdm')}"], monkeypatch)
+    real_check = strip._check_python
+    uninstalled: list[list[str]] = []
+    _fake_python_world(
+        strip,
+        installed={"pdm": []},
+        mapping={"pdm": ["pdm"]},
+        owners={"/s/pdm/core.py": ["pdm"]},
+        uninstalled=uninstalled,
+    )
+    reports = iter([set(), after])
+    strip.__dict__["_pip_check"] = lambda py: next(reports, after)
+    strip.__dict__["_check_python"] = real_check
+    return strip
+
+
+def test_a_dependent_of_a_banned_distribution_does_not_stop_the_cleanup(tmp_path: Path, monkeypatch) -> None:
+    """Whatever needs a banned product cannot work under the ban; that is the ban, not damage."""
+    strip = _check_after_cleanup(
+        tmp_path, monkeypatch, {"velqora-cli 0.8.2 requires pdm, which is not installed."}
+    )
+    assert strip.main() == 0
+    assert strip.CONFLICTS == []
+
+
+def test_a_missing_requirement_that_is_not_banned_still_stops_the_cleanup(tmp_path: Path, monkeypatch) -> None:
+    strip = _check_after_cleanup(
+        tmp_path, monkeypatch, {"velqora 1.0 requires pdm-backend, which is not installed."}
+    )
+    assert strip.main() == 2
+    assert any("pdm-backend" in message for message in strip.CONFLICTS)
+
+
+def test_a_version_conflict_on_a_banned_name_still_stops_the_cleanup(tmp_path: Path, monkeypatch) -> None:
+    strip = _check_after_cleanup(
+        tmp_path, monkeypatch, {"velqora 1.0 has requirement pdm>=3, but you have pdm 2.0."}
     )
     assert strip.main() == 2
 
@@ -233,6 +275,7 @@ def test_without_file_ownership_nothing_is_removed(tmp_path: Path, monkeypatch) 
 
 def test_breakage_the_image_already_had_is_not_blamed_on_the_cleanup(tmp_path: Path, monkeypatch) -> None:
     strip = _strip_module(tmp_path, [f"dist {_digest('pdm')}"], monkeypatch)
+    real_check = strip._check_python
     uninstalled: list[list[str]] = []
     _fake_python_world(
         strip,
@@ -243,6 +286,6 @@ def test_breakage_the_image_already_had_is_not_blamed_on_the_cleanup(tmp_path: P
     )
     standing = {"velmora 2.0 requires numpy, which is not installed"}
     strip.__dict__["_pip_check"] = lambda py: standing
-    strip.__dict__["_check_python"] = strip._check_python
+    strip.__dict__["_check_python"] = real_check
     assert strip.main() == 0
     assert strip.CONFLICTS == []

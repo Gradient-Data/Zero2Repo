@@ -1,7 +1,8 @@
 """Supply manifest, locks, and the preparation phase of a full-suite run.
 
-Only a full-suite run (``cbrun --all``) uses this module. A run on selected
-cases leaves it inactive and every build downloads directly, as before.
+A full-suite run (``cbrun --all``) uses this module, and so does a run on
+selected cases given ``--supply``. Without it such a run leaves the module
+inactive and every build downloads directly, as before.
 
 One manifest (``benchmark/supply/manifest.json``) has three sections:
 
@@ -289,6 +290,9 @@ def fetch_entry(store: Store, entry: Entry, hub: ProxyHub) -> bool:
     with store.lock(entry.sha256):
         if store.has(entry.sha256, entry.size):
             return False
+        if entry.method != "GET":
+            # A recorded git fetch reply exists only in the store that recorded it.
+            raise StoreError(f"{entry.method} {entry.url}: recorded reply missing from the store; record the lock again")
         parts = urlsplit(entry.url)
         tls = parts.scheme == "https"
         host = parts.hostname or ""
@@ -569,7 +573,9 @@ def _finish_record(
     if problems:
         raise SupplyError(f"{lock.label}: recording failed:\n  " + "\n  ".join(problems))
     if not session.recorded:
-        raise SupplyError(f"{lock.label}: the install made no requests through the proxy")
+        # An install that downloads nothing (it only checks the base image) has an
+        # empty lock: replaying it answers nothing and needs nothing.
+        print(f"[cbrun] {lock.label}: the install made no requests; its lock is empty", file=sys.stderr)
     path = write_lock(
         Lock(lock.segment, lock.name, lock.inputs_digest, tuple(session.recorded.values()),
              lock.from_image),
@@ -644,7 +650,10 @@ def record_case(run: SupplyRun, case_dir: Path) -> Path:
     declared = case_files(run.manifest, case_dir)
     name = f"z2r-supply-record-{case_dir.name}"
     session = run.hub.session(
-        "record", case_dir.name, declared_urls=[f.url for f in declared]
+        "record",
+        case_dir.name,
+        declared_urls=[f.url for f in declared],
+        record_code_hosts=bool(run.manifest["cases"][case_dir.name].get("record_code_hosts")),
     )
     try:
         _remove_container(name)

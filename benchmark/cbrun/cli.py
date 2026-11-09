@@ -137,11 +137,11 @@ def _tail(path: Path, lines: int = 40) -> str:
 def _prepare_supply(
     args: argparse.Namespace, case_dirs: list[Path], backends: list[str | None]
 ) -> int:
-    """Full-suite runs only: route every build and solve through the supply proxy.
+    """Route every build and solve through the supply proxy (``--all`` or ``--supply``).
 
     Downloads what the run will install into the host-wide store first, building
     the base image alongside, so installs read local files. Runs on selected
-    cases skip this and download directly.
+    cases without ``--supply`` skip this and download directly.
     """
     from .supply import SupplyError, SupplyRun, activate
     from .supply_proxy import SupplyViolation
@@ -173,6 +173,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--case", action="append", default=[], help="Case id (repeatable).")
     selection.add_argument("--all", action="store_true", help="Run every case under --cases-root.")
+    parser.add_argument(
+        "--supply",
+        action="store_true",
+        help="Use the local supply store and proxy for a run on selected cases too "
+        "(a full-suite run always does).",
+    )
 
     agent = parser.add_mutually_exclusive_group()
     agent.add_argument(
@@ -345,7 +351,7 @@ def main(argv: list[str] | None = None) -> int:
         print("error: --jobs must be at least 1", file=sys.stderr)
         return 2
     if args.build_images:
-        if args.all and _prepare_supply(args, case_dirs, backends) != 0:
+        if (args.all or args.supply) and _prepare_supply(args, case_dirs, backends) != 0:
             return 1
         return _build_images(args, case_dirs)
 
@@ -409,7 +415,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     # Every argument is checked above, so a mistake never waits for the downloads.
-    if args.all and _prepare_supply(args, case_dirs, backends) != 0:
+    if (args.all or args.supply) and _prepare_supply(args, case_dirs, backends) != 0:
         return 1
 
     trial_labels = backends if args.agent_spec is None else [Path(args.agent_spec).stem]

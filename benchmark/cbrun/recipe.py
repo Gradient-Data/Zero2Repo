@@ -13,16 +13,23 @@ belongs to the internal pipeline. Clone-and-eval rebuilds are
 from __future__ import annotations
 
 import json
+import os
+import re
 import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+from coding_bench_harbor.test_assets import Fetcher, TestAssetError
+from coding_bench_harbor.test_assets import materialize as materialize_test_assets
+
 __all__ = [
     "RECIPE_LOCK_NAME",
     "SCHEMA_VERSION",
     "RecipeLockError",
+    "IMAGE_PREFIX_ENV",
+    "image_name_prefix",
     "env_recipe_tag",
     "load_lock",
     "recipe_lock_path",
@@ -85,8 +92,27 @@ def recipe_lock_path(case_dir: Path) -> Path:
     return Path(case_dir) / "source" / RECIPE_LOCK_NAME
 
 
+IMAGE_PREFIX_ENV = "CBRUN_IMAGE_PREFIX"
+_IMAGE_PREFIX = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+
+
+def image_name_prefix() -> str:
+    """Optional prefix of every case image and build container name.
+
+    Lets a second checkout build and judge its own images on a host where
+    another checkout's images (same case ids) must stay untouched. Empty by
+    default, which keeps the historical names.
+    """
+    prefix = os.environ.get(IMAGE_PREFIX_ENV, "")
+    if prefix and not _IMAGE_PREFIX.match(prefix):
+        raise RecipeLockError(
+            f"{IMAGE_PREFIX_ENV}={prefix!r}: use lowercase letters, digits, '.', '_' or '-'"
+        )
+    return prefix
+
+
 def env_recipe_tag(case_id: str) -> str:
-    return f"codingbench-env/{case_id}:{ENV_RECIPE_TAG_SUFFIX}"
+    return f"{image_name_prefix()}codingbench-env/{case_id}:{ENV_RECIPE_TAG_SUFFIX}"
 
 
 def load_lock(case_dir: Path) -> dict[str, Any]:
@@ -176,8 +202,19 @@ def _benchmark_ignore(directory: str, names: list[str]) -> set[str]:  # noqa: AR
     return ignored
 
 
-def stage_benchmark_bundle(case_dir: Path, final_dir: Path) -> Iterator[Path]:
-    """Stage agent-visible specs and hidden final tests (no GT)."""
+def stage_benchmark_bundle(
+    case_dir: Path,
+    final_dir: Path,
+    *,
+    fetch_test_assets: Fetcher | None = None,
+) -> Iterator[Path]:
+    """Stage agent-visible specs and hidden final tests (no GT).
+
+    With *fetch_test_assets*, the files listed in the hidden tests'
+    ``test_assets.json`` are fetched into the staged tests. Without it they are
+    left out; the manifest itself is staged either way, so a fingerprint of
+    the bundle still covers them.
+    """
     case_dir = Path(case_dir).resolve()
     final_dir = Path(final_dir).resolve()
     public = case_dir / "public"
@@ -218,6 +255,11 @@ def stage_benchmark_bundle(case_dir: Path, final_dir: Path) -> Iterator[Path]:
             ignore=_benchmark_ignore,
             dirs_exist_ok=True,
         )
+        if fetch_test_assets is not None:
+            try:
+                materialize_test_assets(final_dir, bundle / "final", fetch_test_assets)
+            except TestAssetError as exc:
+                raise RecipeLockError(str(exc)) from exc
         yield bundle
     finally:
         shutil.rmtree(bundle, ignore_errors=True)

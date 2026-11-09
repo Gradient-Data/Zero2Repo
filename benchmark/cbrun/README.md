@@ -392,8 +392,9 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
 
 ## Full-suite supply: local store and proxy
 
-Only `cbrun --all` (with or without `--build-images`) uses this. A run on
-selected cases (`--case`) downloads directly, as before.
+`cbrun --all` (with or without `--build-images`) always uses this. A run on
+selected cases (`--case`) uses it with `--supply` and otherwise downloads
+directly, as before.
 
 Rule: a file is fetched from the internet once per host and kept in a local
 store; installing it into any number of containers reads that copy. When
@@ -445,13 +446,23 @@ through a proxy cbrun runs on `127.0.0.1`, one listener per container:
 | Solve container (agent setup and solve) | solve | container env and the CA mount |
 | Judge, rejudge, probes | — | unchanged (`--network none`) |
 
+While recording, a URL that the manifest or a resource file declares with its
+checksum is served from the store when an earlier recording or a seeded copy
+already holds it, like a fixed-content URL.
+
+A case whose install builds code-host URLs in code, so they cannot be declared,
+may set `"record_code_hosts": true` in its manifest entry: recording then allows
+those downloads and the lock pins their bytes. Builds still replay the lock, and
+a solve never gets this.
+
 Read-only mode answers only requests in the lock; any other request fails
 the build with its URL and owner, and nothing is fetched to fill the gap. In
 the solve, code hosts are refused by the proxy itself (a client that
 resolves through a proxy never consults `/etc/hosts`); on package hosts,
 files whose URL names fixed content (wheels, tarballs, `.deb` pool files,
-conda packages, Go module zips, versioned toolchains) are fetched once and
-then served locally, while indexes pass through fresh; every other host,
+conda packages, Go module zips, versioned toolchains, and the same kinds of
+file on the Aliyun mirror) are fetched once and then served locally, while
+indexes pass through fresh; every other host,
 model APIs included, is a plain CONNECT tunnel, so streamed replies are not
 decrypted, cached or buffered. The installs-during-solve rule is unchanged.
 Results record `supply_proxy` with any refused requests.
@@ -460,7 +471,10 @@ TLS on package hosts is read with certificates from a CA generated once in
 the store (`ca/`) and never changed. Containers get it only at run time:
 `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE`, `PIP_CERT`,
 `GIT_SSL_CAINFO`, `CONDA_SSL_VERIFY`, `CARGO_HTTP_CAINFO` point at the merged
-bundle and `NODE_EXTRA_CA_CERTS` at the CA. A client with its own fixed trust
+bundle and `NODE_EXTRA_CA_CERTS` at the CA. apt reads no certificate variable, so `APT_CONFIG`
+names an extra apt config file in the same mount that sets
+`Acquire::https::CaInfo` to the merged bundle; apt still reads the image's own
+settings. A client with its own fixed trust
 list that ignores these fails on package hosts during a full-suite solve. A
 proxy that cannot start fails the run with its reason; there is no direct
 fallback.

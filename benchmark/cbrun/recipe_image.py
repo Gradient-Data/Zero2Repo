@@ -30,6 +30,10 @@ import time
 from pathlib import Path
 from typing import Any
 
+from coding_bench_harbor.test_assets import Fetcher, TestAsset
+from coding_bench_harbor.test_assets import copy_from as copy_test_asset
+from coding_bench_harbor.test_assets import download as download_test_asset
+
 from .denylist import (
     install_ban_hashes_from_file,
     log_probe_result,
@@ -50,9 +54,10 @@ from .recipe import (
     stage_benchmark_bundle,
     staging_shell_command,
     validate_lock_env_install,
+    image_name_prefix,
 )
 
-__all__ = ["ensure_deliverable_image", "resource_fetch_command"]
+__all__ = ["ensure_deliverable_image", "resource_fetch_command", "test_asset_fetcher"]
 
 GENERIC_FETCH_SCRIPT = Path(__file__).resolve().parent / "fetch_resources.py"
 
@@ -152,6 +157,34 @@ def resource_fetch_command(case_dir: Path | str) -> str:
         "python3 /opt/cbrun/fetch_resources.py "
         f"/env-assets/resources.json {shlex.quote(dest)}"
     )
+
+
+def test_asset_fetcher() -> Fetcher:
+    """How hidden-test assets are fetched: from their URLs, via the store under supply.
+
+    The store is only a cache keyed by SHA-256; every asset still comes from
+    its declared official URL the first time.
+    """
+    from . import supply
+
+    run = supply.active()
+    if run is None:
+        return download_test_asset
+    store = run.store
+
+    def fetch(asset: TestAsset, target: Path) -> None:
+        with store.lock(asset.sha256):
+            if not store.has(asset.sha256, asset.size):
+                with tempfile.TemporaryDirectory(dir=store.root / "tmp") as tmp:
+                    part = Path(tmp) / "asset"
+                    download_test_asset(asset, part)
+                    dest = store.blob_path(asset.sha256)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    os.chmod(part, 0o664)
+                    os.replace(part, dest)
+        copy_test_asset(store.stored_path(asset.sha256, asset.size, label=asset.url), target)
+
+    return fetch
 
 
 def _volume_mounts(case_dir: Path) -> list[str]:
@@ -300,7 +333,7 @@ def _strip_env_image(
 ) -> None:
     denylist = _denylist_file(case_dir)
     hashes = install_ban_hashes_from_file(denylist) if denylist.is_file() else []
-    strip_name = f"z2r-recipe-env-strip-{case_id}"
+    strip_name = f"{image_name_prefix()}z2r-recipe-env-strip-{case_id}"
     _remove_container(strip_name)
     with tempfile.TemporaryDirectory(prefix="cbrun-strip-") as raw:
         host = Path(raw)
@@ -375,7 +408,7 @@ def _build_env_image(
     base_image = resolve_lock_base_image(lock)
     _ensure_base_image(base_image)
 
-    container_name = f"z2r-recipe-env-{case_id}"
+    container_name = f"{image_name_prefix()}z2r-recipe-env-{case_id}"
     gpus = _runner_docker_gpus(runner)
     from . import supply
 
@@ -511,8 +544,10 @@ def _stage_deliverable(
         return tag
 
     final_dir = case_dir / "milestones" / "final"
-    container_name = f"z2r-recipe-deliverable-{case_id}"
-    with stage_benchmark_bundle(case_dir, final_dir) as bundle:
+    container_name = f"{image_name_prefix()}z2r-recipe-deliverable-{case_id}"
+    with stage_benchmark_bundle(
+        case_dir, final_dir, fetch_test_assets=test_asset_fetcher()
+    ) as bundle:
         _remove_container(container_name)
         argv = [
             "docker",

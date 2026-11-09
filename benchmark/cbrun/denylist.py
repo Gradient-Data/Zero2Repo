@@ -1896,6 +1896,9 @@ def _pip_check(py: str) -> set[str]:
     return {line.strip() for line in (out.stdout or "").splitlines() if line.strip()}
 
 
+_MISSING_REQUIREMENT = re.compile(r"^(\S+) \S+ requires ([^,\s]+), which is not installed\.?$")
+
+
 def _check_python(py: str, before: set[str]) -> None:
     """Whether this pass broke a dependency, told by the interpreter itself.
 
@@ -1903,8 +1906,20 @@ def _check_python(py: str, before: set[str]) -> None:
     requirement is not this cleanup's doing, and failing on it would fail every build. A
     dependency the cleanup broke is reported here, in the step that caused it, instead of in a
     later build with no sign of why its backend went missing.
+
+    A package whose missing requirement is itself a banned distribution is not such damage:
+    nothing that needs a banned product can work once the ban holds, which is what banning it
+    means. That is logged without the banned name; any other missing or broken requirement
+    still stops the build.
     """
     for text in sorted(_pip_check(py) - before):
+        missing = _MISSING_REQUIREMENT.match(text)
+        if missing and _banned_dist(missing.group(2)):
+            print(
+                f"[cbrun] {missing.group(1)} now lacks a banned requirement (expected under the ban)",
+                flush=True,
+            )
+            continue
         CONFLICTS.append(f"python packages left inconsistent: {text}")
 
 

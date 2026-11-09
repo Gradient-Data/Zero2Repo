@@ -41,6 +41,7 @@ from .denylist import (
     write_shim_assets,
 )
 from .docker_env import build_output, image_build_lock, image_exists
+from .recipe import image_name_prefix
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_identity, image_matches, platform_name
 
 # Defense in depth when :deliverable was built before workspace sanitization existed.
@@ -60,13 +61,13 @@ CONTAINER_TESTS_FINAL = "/tests/final"
 
 
 def deliverable_tag(case_id: str) -> str:
-    return f"codingbench-benchmark/{case_id}:deliverable"
+    return f"{image_name_prefix()}codingbench-benchmark/{case_id}:deliverable"
 
 
 def agent_tag(case_id: str, backend: str | None = None) -> str:
     if backend:
-        return f"codingbench-benchmark/{case_id}:agent-{backend}"
-    return f"codingbench-benchmark/{case_id}:agent"
+        return f"{image_name_prefix()}codingbench-benchmark/{case_id}:agent-{backend}"
+    return f"{image_name_prefix()}codingbench-benchmark/{case_id}:agent"
 
 
 @dataclass(frozen=True)

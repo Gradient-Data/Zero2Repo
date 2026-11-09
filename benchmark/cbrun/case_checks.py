@@ -15,6 +15,8 @@ import tokenize
 from pathlib import Path
 
 from coding_bench_harbor._leakage import scan_leakage
+from coding_bench_harbor.test_assets import TestAssetError
+from coding_bench_harbor.test_assets import load as load_test_assets
 
 from .denylist import ALLOWED_JUDGE_BANS, validate_denylist_artifact
 from .substrates import KNOWN_PROVIDERS
@@ -117,6 +119,16 @@ def check_case_assets(case_dir: Path | str) -> list[str]:
             return errors
         names = list(tests_manifest.get("test_files") or [])
         names.extend(tests_manifest.get("support_files") or [])
+        try:
+            fetched = {a.path for a in load_test_assets(final_dir)}
+        except TestAssetError as exc:
+            errors.append(f"{cid}: {exc}")
+            fetched = set()
+        for path in sorted(fetched):
+            if (final_dir / path).exists():
+                errors.append(
+                    f"{cid}: {path} is committed although test_assets.json fetches it"
+                )
         for name in names:
             rel = Path(str(name))
             target = (final_dir / rel).resolve()
@@ -124,6 +136,8 @@ def check_case_assets(case_dir: Path | str) -> list[str]:
                 target.relative_to(final_dir.resolve())
             except ValueError:
                 errors.append(f"{cid}: test file escapes milestones/final: {name}")
+                continue
+            if str(rel.as_posix()) in fetched:
                 continue
             if not target.is_file() and not target.is_dir():
                 errors.append(f"{cid}: test_manifest references missing {name}")

@@ -27,8 +27,10 @@ HTTPS requests are read by terminating TLS with a certificate from
 
 from __future__ import annotations
 
+import hashlib
 import http.client
 import os
+import re
 import selectors
 import socket
 import socketserver
@@ -65,6 +67,10 @@ CA_HOST = "cbrun-proxy.invalid"
 CONTAINER_CA_DIR = "/run/cbrun-proxy"
 CONTAINER_CA_BUNDLE = f"{CONTAINER_CA_DIR}/ca-bundle.pem"
 CONTAINER_CA_CERT = f"{CONTAINER_CA_DIR}/ca.pem"
+# apt keeps its own trust list and reads no certificate variable; APT_CONFIG names
+# one extra config file that apt reads in addition to the image's own settings.
+APT_CONF_NAME = "apt.conf"
+APT_CONF_TEXT = f'Acquire::https::CaInfo "{CONTAINER_CA_BUNDLE}";\n'
 NO_PROXY = "localhost,127.0.0.1,::1"
 
 _HOP_BY_HOP = frozenset(
@@ -103,6 +109,21 @@ def _apt(path: str) -> bool:
     return "/pool/" in path or "/by-hash/" in path
 
 
+def _aliyun(path: str) -> bool:
+    """Fixed-content paths on the Aliyun mirror; its indexes pass through fresh."""
+    bare = path.split("?", 1)[0]
+    if bare.startswith("/pypi/packages/"):
+        return True
+    if bare.startswith(("/ubuntu/", "/debian/")):
+        return _apt(bare)
+    if bare.startswith("/crates/api/v1/crates/") and bare.endswith("/download"):
+        return True
+    # Dated toolchain directories and versioned Node releases never change.
+    if re.match(r"/rustup/dist/\d{4}-\d{2}-\d{2}/", bare):
+        return True
+    return bare.startswith("/nodejs-release/v")
+
+
 # Package hosts and the URLs on them whose content never changes once
 # published. A solve caches only these; the same host's indexes pass through.
 FIXED_CONTENT_RULES: dict[str, Callable[[str], bool]] = {
@@ -119,7 +140,48 @@ FIXED_CONTENT_RULES: dict[str, Callable[[str], bool]] = {
     "dl.google.com": _prefix("/go/"),
     "ziglang.org": _prefix("/download/0.", "/download/1."),
     "static.crates.io": _prefix("/crates/"),
+    "mirrors.aliyun.com": _aliyun,
 }
+
+
+def _byte_range(header: str, size: int) -> tuple[int, int] | str | None:
+    """The one byte range a ``Range`` header asks of a *size*-byte body.
+
+    Returns (first, last) inclusive, "unsatisfiable", or None for a header that
+    asks for no single range (absent, malformed or several ranges): the whole
+    body is served then, which HTTP allows.
+    """
+    m = re.fullmatch(r"\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*", header or "")
+    if not m or (m.group(1) == "" and m.group(2) == ""):
+        return None
+    first, last = m.group(1), m.group(2)
+    if first == "":
+        suffix = int(last)
+        if suffix == 0:
+            return "unsatisfiable"
+        return max(0, size - suffix), size - 1
+    start = int(first)
+    if start >= size:
+        return "unsatisfiable"
+    end = min(int(last), size - 1) if last else size - 1
+    if end < start:
+        return None
+    return start, end
+
+
+def _lookup_fixed(store: Store, url: str, fixed: bool) -> dict | None:
+    """The stored reply for *url*; a fixed-content file is also found without its query."""
+    for key in dict.fromkeys([url, url.split("?", 1)[0] if fixed else url]):
+        known = store.lookup_url(key)
+        if known is not None and store.has(known["sha256"], known["size"]):
+            return known
+    return None
+
+
+def _remember_fixed(store: Store, url: str, entry: "Entry", fixed: bool) -> None:
+    record = {**entry.to_dict(), "accept": ""}
+    for key in dict.fromkeys([url, url.split("?", 1)[0] if fixed else url]):
+        store.remember_url(key, {**record, "url": key})
 
 
 def is_fixed_content(host: str, path: str) -> bool:
@@ -127,10 +189,16 @@ def is_fixed_content(host: str, path: str) -> bool:
     return bool(rule and rule(path))
 
 
-def request_key(method: str, url: str, accept: str) -> str:
-    """Lock key of a request. Indexes answer differently per ``Accept``."""
+def request_key(method: str, url: str, accept: str, body_sha256: str = "") -> str:
+    """Lock key of a request. Indexes answer differently per ``Accept``; a POST per body."""
     method = "GET" if method in ("GET", "HEAD") else method
-    return f"{method} {url} accept={accept}"
+    key = f"{method} {url} accept={accept}"
+    return f"{key} body={body_sha256}" if body_sha256 else key
+
+
+def is_git_fetch(method: str, path: str) -> bool:
+    """git's smart-HTTP fetch call: a read-only POST whose reply depends only on its body."""
+    return method == "POST" and path.split("?", 1)[0].endswith("/git-upload-pack")
 
 
 @dataclass(frozen=True)
@@ -144,10 +212,12 @@ class Entry:
     sha256: str
     size: int
     headers: dict[str, str] = field(default_factory=dict)
+    # SHA-256 of the request body, for a recorded POST (git fetch); empty for GET.
+    body_sha256: str = ""
 
     @property
     def key(self) -> str:
-        return request_key(self.method, self.url, self.accept)
+        return request_key(self.method, self.url, self.accept, self.body_sha256)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -162,6 +232,7 @@ class Entry:
             sha256=str(data["sha256"]),
             size=int(data["size"]),
             headers={str(k): str(v) for k, v in (data.get("headers") or {}).items()},
+            body_sha256=str(data.get("body_sha256") or ""),
         )
 
 
@@ -190,6 +261,12 @@ class ProxyHub:
         self.store = store
         self.ca = ca or ProxyCA(store.root / "ca")
         self.connect = connect
+        apt_conf = self.ca.mount_dir / APT_CONF_NAME
+        if not apt_conf.is_file() or apt_conf.read_text() != APT_CONF_TEXT:
+            tmp = apt_conf.with_suffix(f".{os.getpid()}.tmp")
+            tmp.write_text(APT_CONF_TEXT)
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, apt_conf)
         self._contexts: dict[str, ssl.SSLContext] = {}
         self._contexts_lock = threading.Lock()
 
@@ -201,6 +278,7 @@ class ProxyHub:
         entries: Iterable[Entry] = (),
         declared_urls: Iterable[str] = (),
         block_hosts: Iterable[str] = (),
+        record_code_hosts: bool = False,
     ) -> "ProxySession":
         return ProxySession(
             self,
@@ -209,6 +287,7 @@ class ProxyHub:
             entries=entries,
             declared_urls=declared_urls,
             block_hosts=block_hosts,
+            record_code_hosts=record_code_hosts,
         )
 
     def server_context(self, host: str) -> ssl.SSLContext:
@@ -232,6 +311,7 @@ class ProxySession:
         entries: Iterable[Entry],
         declared_urls: Iterable[str],
         block_hosts: Iterable[str],
+        record_code_hosts: bool = False,
     ) -> None:
         if mode not in ("record", "locked", "solve"):
             raise ValueError(f"unknown proxy mode {mode!r}")
@@ -240,6 +320,9 @@ class ProxySession:
         self.owner = owner
         self.entries = {entry.key: entry for entry in entries}
         self.declared_urls = frozenset(declared_urls)
+        # Recording only: this install's own undeclared code-host files are allowed;
+        # the lock then pins their bytes. A solve never gets this.
+        self.record_code_hosts = record_code_hosts and mode == "record"
         self.block_hosts = frozenset(host.lower() for host in block_hosts)
         self.recorded: dict[str, Entry] = {}
         self.violations: list[str] = []
@@ -288,7 +371,8 @@ class ProxySession:
         """Proxy and trust settings for a container that mounts :meth:`mounts`.
 
         pip, requests and conda carry their own CA bundles, so each is handed
-        the merged bundle explicitly; Node adds the CA to its built-in roots.
+        the merged bundle explicitly; Node adds the CA to its built-in roots;
+        apt gets it through an extra config file.
         """
         env = self.proxy_env()
         for name in (
@@ -302,6 +386,7 @@ class ProxySession:
         ):
             env[name] = CONTAINER_CA_BUNDLE
         env["NODE_EXTRA_CA_CERTS"] = CONTAINER_CA_CERT
+        env["APT_CONFIG"] = f"{CONTAINER_CA_DIR}/{APT_CONF_NAME}"
         return env
 
     def shell_exports(self) -> str:
@@ -551,48 +636,64 @@ class _Connection:
                 return self._serve_cached_url(scheme, host, port, path, url, request, keep)
             return self._pass_through(scheme, host, port, path, request, body, keep)
 
-        if request.method not in ("GET", "HEAD"):
-            session.violation(f"{request.method} {url} (only GET is supplied)")
+        git_fetch = is_git_fetch(request.method, path)
+        if request.method not in ("GET", "HEAD") and not git_fetch:
+            session.violation(f"{request.method} {url} (only GET and git fetch are supplied)")
             self._reply_text(403, f"cbrun supply: {request.method} {url} is not supplied for {session.owner}", keep)
             return keep
 
         accept = request.header("accept")
-        key = request_key(request.method, url, accept)
+        body_sha256 = hashlib.sha256(body).hexdigest() if git_fetch else ""
+        key = request_key(request.method, url, accept, body_sha256)
         if session.mode == "locked":
             entry = session.entries.get(key)
             if entry is None:
                 session.violation(_missing_message(session, request.method, url, accept))
                 self._reply_text(403, f"cbrun supply: {url} is not in the lock for {session.owner}", keep)
                 return keep
-            return self._serve_entry(entry, request.method == "HEAD", keep)
+            return self._serve_entry(entry, request.method == "HEAD", keep, request.header("range"))
 
         # record
         from .denylist import CODE_HOST_BLOCK_HOSTS
 
-        if host in CODE_HOST_BLOCK_HOSTS and url not in session.declared_urls:
+        if host in CODE_HOST_BLOCK_HOSTS and url not in session.declared_urls and not session.record_code_hosts:
             session.violation(f"{url} is on a code host and no manifest or resource file declares it")
             self._reply_text(403, f"cbrun supply: {url} is on a code host", keep)
             return keep
         entry = session.recorded.get(key)
-        if entry is None and is_fixed_content(host, path):
-            # A file whose URL names fixed content is fetched once per host,
-            # whichever case or harness records it first.
-            store = self.hub.store
-            known = store.lookup_url(url)
-            if known is not None and store.has(known["sha256"], known["size"]):
-                entry = Entry.from_dict({**known, "accept": accept})
+        if git_fetch:
+            if entry is None:
+                entry = self._record_post(scheme, host, port, path, request, body, url, accept, body_sha256)
+                if entry is None:
+                    return False
                 session.record(entry)
+            return self._serve_entry(entry, False, keep)
+        fixed = is_fixed_content(host, path)
+        cached = fixed or url in session.declared_urls
+        store = self.hub.store
+        if entry is None and cached:
+            # A file whose URL names fixed content, or that a manifest or resource
+            # file declares with its checksum, is fetched once per host, whichever
+            # case or harness records it first.
+            known = _lookup_fixed(store, url, fixed)
+            if known is not None:
+                entry = Entry.from_dict({**known, "url": url, "accept": accept})
+                session.record(entry)
+        range_header = request.header("range")
         if entry is None:
-            store = self.hub.store
+            # A ranged request is answered from the stored copy once the whole
+            # file is in: the upstream fetch never forwards the range.
+            ranged = _byte_range(range_header, 1 << 62) is not None
             with store.lock(key):
-                entry = self._fetch_and_store(scheme, host, port, path, request, url, accept, tee=True)
+                entry = self._fetch_and_store(scheme, host, port, path, request, url, accept, tee=not ranged)
             if entry is None:
                 return False
             session.record(entry)
-            if entry.status == 200 and is_fixed_content(host, path):
-                store.remember_url(url, {**entry.to_dict(), "accept": ""})
-            return keep
-        return self._serve_entry(entry, request.method == "HEAD", keep)
+            if entry.status == 200 and cached:
+                _remember_fixed(store, url, entry, fixed)
+            if not ranged:
+                return keep
+        return self._serve_entry(entry, request.method == "HEAD", keep, range_header)
 
     def _serve_ca(self, path: str, keep: bool) -> bool:
         ca = self.hub.ca
@@ -607,37 +708,54 @@ class _Connection:
         self._write(data)
         return keep
 
-    def _serve_entry(self, entry: Entry, head_only: bool, keep: bool) -> bool:
+    def _serve_entry(self, entry: Entry, head_only: bool, keep: bool, range_header: str = "") -> bool:
         try:
             path = self.hub.store.stored_path(entry.sha256, entry.size, label=entry.url)
         except StoreError as exc:
             self.session.violation(str(exc))
             self._reply_text(502, f"cbrun supply: {exc}", keep)
             return keep
-        headers = list(entry.headers.items())
-        self._send_head(entry.status, headers, entry.size, keep)
+        headers = [(k, v) for k, v in entry.headers.items() if k.lower() not in ("content-range", "accept-ranges")]
+        status, start, length = entry.status, 0, entry.size
+        if entry.status == 200:
+            headers.append(("Accept-Ranges", "bytes"))
+            span = _byte_range(range_header, entry.size)
+            if span == "unsatisfiable":
+                self._send_head(416, [("Content-Range", f"bytes */{entry.size}")], 0, keep)
+                return keep
+            if span is not None:
+                start, end = span
+                status, length = 206, end - start + 1
+                headers.append(("Content-Range", f"bytes {start}-{end}/{entry.size}"))
+        self._send_head(status, headers, length, keep)
         if not head_only:
             with open(path, "rb") as fh:
-                while chunk := fh.read(1024 * 1024):
+                fh.seek(start)
+                left = length
+                while left > 0 and (chunk := fh.read(min(1024 * 1024, left))):
                     self._write(chunk)
+                    left -= len(chunk)
         return keep
 
     def _serve_cached_url(
         self, scheme: str, host: str, port: int, path: str, url: str, request: _Request, keep: bool
     ) -> bool:
         store = self.hub.store
+        range_header = request.header("range")
         with store.lock(url):
-            known = store.lookup_url(url)
-            if known is not None and store.has(known["sha256"], known["size"]):
-                entry = Entry.from_dict(known)
+            known = _lookup_fixed(store, url, True)
+            if known is not None:
+                entry = Entry.from_dict({**known, "url": url})
             else:
-                entry = self._fetch_and_store(scheme, host, port, path, request, url, "", tee=True)
+                ranged = _byte_range(range_header, 1 << 62) is not None
+                entry = self._fetch_and_store(scheme, host, port, path, request, url, "", tee=not ranged)
                 if entry is None:
                     return False
                 if entry.status == 200:
-                    store.remember_url(url, entry.to_dict())
-                return keep
-        return self._serve_entry(entry, False, keep)
+                    _remember_fixed(store, url, entry, True)
+                if not ranged:
+                    return keep
+        return self._serve_entry(entry, False, keep, range_header)
 
     # Upstream --------------------------------------------------------------
 
@@ -746,6 +864,47 @@ class _Connection:
             )
         finally:
             conn.close()
+
+    def _record_post(
+        self, scheme: str, host: str, port: int, path: str, request: _Request, body: bytes,
+        url: str, accept: str, body_sha256: str,
+    ) -> Entry | None:
+        """Send a git fetch POST upstream and store its whole reply; None if it failed."""
+        conn = self._upstream(scheme, host, port)
+        conn.timeout = None
+        try:
+            conn.putrequest("POST", path, skip_host=True, skip_accept_encoding=True)
+            if not request.header("host"):
+                conn.putheader("Host", host if port in (80, 443) else f"{host}:{port}")
+            for k, v in request.headers:
+                if k.lower() in _HOP_BY_HOP or k.lower() in ("content-length", "accept-encoding"):
+                    continue
+                conn.putheader(k, v)
+            conn.putheader("Accept-Encoding", "identity")
+            conn.putheader("Content-Length", str(len(body)))
+            conn.endheaders(body)
+            resp = conn.getresponse()
+            with self.session._lock:
+                self.session.upstream_requests += 1
+            if resp.status >= 400:
+                self._relay_response(resp, request, request.keep_alive)
+                return None
+            kept = [(k, v) for k, v in resp.getheaders() if k.lower() in _STORED_HEADERS]
+            with self.hub.store.writer(label=url) as writer:
+                for data in iter_body(resp, 65536):
+                    writer.write(data)
+        except (OSError, TruncatedBody) as exc:
+            self.session.event(f"git fetch {url} failed: {exc}")
+            self._reply_text(502, f"cbrun proxy cannot fetch {url}: {exc}", request.keep_alive)
+            return None
+        finally:
+            conn.close()
+        blob = writer.blob
+        assert blob is not None
+        return Entry(
+            method="POST", url=url, accept=accept, status=resp.status, sha256=blob.sha256,
+            size=blob.size, headers={k.lower(): v for k, v in kept}, body_sha256=body_sha256,
+        )
 
     def _pass_through(
         self, scheme: str, host: str, port: int, path: str, request: _Request, body: bytes, keep: bool

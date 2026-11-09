@@ -199,9 +199,14 @@ def parse_usage_text(text: str) -> LogUsage:
     """Extract usage from one log or session file."""
     out = LogUsage()
     claude_msgs: dict[str, tuple[str, Buckets]] = {}
-    # Claude Code totals each process on its own result line. A resumed session
-    # logs one result per process; a process killed before its result leaves
-    # only its messages.
+    # Claude Code's result ``modelUsage`` and ``total_cost_usd`` are running
+    # totals for the whole session: one process can print many result lines,
+    # and a resumed process starts from the session's earlier total. Each
+    # session keeps only its latest result. A process killed before its result
+    # leaves only its messages.
+    session_usage: dict[str, tuple[Buckets, dict[str, dict[str, int]]]] = {}
+    session_cost: dict[str, float] = {}
+    turn_usage: Buckets | None = None
     process_msgs: dict[str, tuple[str, Buckets]] = {}
     reported: set[str] = set()
     opencode_calls: Buckets | None = None
@@ -220,20 +225,18 @@ def parse_usage_text(text: str) -> LogUsage:
             if "inputTokens" in usage:
                 out.summary, out.summary_source = _cursor_result(usage), "cursor_result"
                 continue
+            session = str(event.get("session_id") or "")
             model_usage = event.get("modelUsage")
             if isinstance(model_usage, dict) and model_usage:
-                part, part_by_model = _claude_model_usage(model_usage)
+                session_usage[session] = _claude_model_usage(model_usage)
             else:
-                part, part_by_model = _anthropic(usage), {}
-            if out.summary_source == "claude_result" and out.summary is not None:
-                out.summary.add(part)
-                _add_by_model(out.by_model, part_by_model)
-            else:
-                out.summary, out.by_model = part, part_by_model
-            out.summary_source = "claude_result"
+                # Without modelUsage the result carries only this turn's usage.
+                turn_usage = turn_usage or Buckets()
+                turn_usage.add(_anthropic(usage))
             cost = event.get("total_cost_usd")
             if isinstance(cost, (int, float)) and not isinstance(cost, bool):
-                out.harness_cost_usd = (out.harness_cost_usd or 0.0) + float(cost)
+                session_cost[session] = float(cost)
+            out.summary_source = "claude_result"
             reported.update(process_msgs)
             process_msgs = {}
             continue
@@ -288,7 +291,18 @@ def parse_usage_text(text: str) -> LogUsage:
                 opencode_cost += float(cost)
                 saw_opencode_cost = True
 
-    if out.summary_source == "claude_result" and out.summary is not None:
+    if out.summary_source == "claude_result":
+        out.summary, out.by_model = Buckets(), {}
+        if turn_usage is not None:
+            out.summary.add(turn_usage)
+        for part, part_by_model in session_usage.values():
+            out.summary.add(part)
+            _add_by_model(out.by_model, part_by_model)
+        if turn_usage is not None:
+            # Per-model totals exist only when every result had modelUsage.
+            out.by_model = {}
+        if session_cost:
+            out.harness_cost_usd = sum(session_cost.values())
         for key, (model, b) in process_msgs.items():
             # Claude Code's synthetic error messages carry no usage and no priced model.
             if key in reported or b.total() == 0:

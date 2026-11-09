@@ -54,6 +54,19 @@ class Origin:
                     origin.counts[key] = origin.counts.get(key, 0) + 1
                 return key
 
+            def do_POST(self) -> None:  # noqa: N802 - http.server hook
+                # A git-like endpoint answers per request body; any other POST is served like a GET.
+                if not self.path.endswith("/git-upload-pack"):
+                    return self.do_GET()
+                key = self._count()
+                sent = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                body = b"pack for " + sent
+                self.send_response(200)
+                self.send_header("Content-Type", "application/x-git-upload-pack-result")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
             def do_GET(self) -> None:  # noqa: N802 - http.server hook
                 key = self._count()
                 if self.path == "/stream":
@@ -87,7 +100,6 @@ class Origin:
                     return
                 self.wfile.write(body)
 
-            do_POST = do_GET
 
         self.http = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.https = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -312,6 +324,165 @@ def test_store_rejects_a_download_whose_digest_differs(tmp_path: Path) -> None:
 
 
 # Solve mode ----------------------------------------------------------------
+
+
+def test_recording_a_declared_file_reads_the_store_and_fetches_it_once(origin, hub) -> None:
+    """A checksum-declared file on a code host is fetched once, then read from the store."""
+    path = "/repos/o/r/tarball/abc"
+    origin.files["api.github.com" + path] = b"tarball"
+    url = "https://api.github.com" + path
+    for owner in ("case001", "case002"):
+        session = hub.session("record", owner, declared_urls=[url])
+        try:
+            assert _get_https(hub, session.port, "api.github.com", path) == (200, b"tarball")
+        finally:
+            session.close()
+        assert session.violations == []
+        assert [e.url for e in session.recorded.values()] == [url]
+    assert origin.count("api.github.com", path) == 1
+
+
+def test_recording_serves_a_seeded_declared_file_without_upstream(origin, hub) -> None:
+    import hashlib
+
+    body = b"seeded artifact"
+    url = "https://api.github.com/repos/o/r/tarball/def"
+    digest = hashlib.sha256(body).hexdigest()
+    with hub.store.writer(expect_sha256=digest, expect_size=len(body)) as out:
+        out.write(body)
+    hub.store.remember_url(url, Entry("GET", url, "", 200, digest, len(body)).to_dict())
+    session = hub.session("record", "case001", declared_urls=[url])
+    try:
+        assert _get_https(hub, session.port, "api.github.com", "/repos/o/r/tarball/def") == (200, body)
+    finally:
+        session.close()
+    assert origin.counts == {}
+
+
+def test_solve_caches_aliyun_package_files_and_passes_its_indexes_fresh(origin, hub) -> None:
+    origin.files["mirrors.aliyun.com/pypi/packages/aa/numpy.whl"] = b"numpy"
+    origin.files["mirrors.aliyun.com/pypi/simple/numpy/"] = b"index"
+    for owner in ("case001/codex", "case002/codex"):
+        with hub.session("solve", owner, block_hosts=CODE_HOST_BLOCK_HOSTS) as session:
+            assert _get_https(hub, session.port, "mirrors.aliyun.com", "/pypi/packages/aa/numpy.whl") == (
+                200,
+                b"numpy",
+            )
+            assert _get_https(hub, session.port, "mirrors.aliyun.com", "/pypi/simple/numpy/") == (200, b"index")
+    assert origin.count("mirrors.aliyun.com", "/pypi/packages/aa/numpy.whl") == 1
+    assert origin.count("mirrors.aliyun.com", "/pypi/simple/numpy/") == 2
+
+
+def test_apt_gets_the_merged_bundle_through_an_extra_config_file(hub) -> None:
+    from cbrun.supply_proxy import APT_CONF_NAME, CONTAINER_CA_BUNDLE, CONTAINER_CA_DIR
+
+    with hub.session("record", "case001") as session:
+        env = session.container_env()
+    assert env["APT_CONFIG"] == f"{CONTAINER_CA_DIR}/{APT_CONF_NAME}"
+    text = (hub.ca.mount_dir / APT_CONF_NAME).read_text()
+    assert text == f'Acquire::https::CaInfo "{CONTAINER_CA_BUNDLE}";\n'
+
+
+def test_a_stored_file_is_served_by_byte_range(origin, hub) -> None:
+    """Downloaders that fetch large files in parallel ranges get 206 slices of the stored copy."""
+    import hashlib
+
+    body = bytes(range(256)) * 40
+    url = "https://static.crates.io/crates/big/big-1.0.0.crate"
+    digest = hashlib.sha256(body).hexdigest()
+    with hub.store.writer(expect_sha256=digest, expect_size=len(body)) as out:
+        out.write(body)
+    hub.store.remember_url(url, Entry("GET", url, "", 200, digest, len(body)).to_dict())
+    session = hub.session("record", "case001")
+    try:
+        ctx = ssl.create_default_context(cafile=str(hub.ca.ca_cert))
+
+        def get(range_value: str) -> tuple[int, str, bytes]:
+            conn = http.client.HTTPSConnection("127.0.0.1", session.port, timeout=10, context=ctx)
+            conn.set_tunnel("static.crates.io", 443)
+            conn.request("GET", "/crates/big/big-1.0.0.crate", headers={"Range": range_value})
+            resp = conn.getresponse()
+            return resp.status, resp.getheader("Content-Range") or "", resp.read()
+
+        assert get("bytes=100-199") == (206, f"bytes 100-199/{len(body)}", body[100:200])
+        assert get("bytes=10000-") == (206, f"bytes 10000-{len(body) - 1}/{len(body)}", body[10000:])
+        assert get("bytes=-5") == (206, f"bytes {len(body) - 5}-{len(body) - 1}/{len(body)}", body[-5:])
+        assert get("bytes=99999-") == (416, f"bytes */{len(body)}", b"")
+    finally:
+        session.close()
+    assert origin.counts == {}
+
+
+def test_a_case_flagged_for_it_records_undeclared_code_host_files_and_replays_them(origin, hub) -> None:
+    path = "/o/r/abc/src/lib.rs"
+    origin.files["raw.githubusercontent.com" + path] = b"source"
+    url = "https://raw.githubusercontent.com" + path
+    with hub.session("record", "case001") as plain:
+        assert _get_https(hub, plain.port, "raw.githubusercontent.com", path)[0] == 403
+    with hub.session("record", "case001", record_code_hosts=True) as session:
+        assert _get_https(hub, session.port, "raw.githubusercontent.com", path) == (200, b"source")
+    assert session.violations == []
+    assert [e.url for e in session.recorded.values()] == [url]
+    with hub.session("locked", "case001", entries=session.recorded.values()) as replay:
+        assert _get_https(hub, replay.port, "raw.githubusercontent.com", path) == (200, b"source")
+    assert origin.count("raw.githubusercontent.com", path) == 1
+    # The flag means nothing outside recording.
+    with hub.session("solve", "case001/codex", block_hosts=CODE_HOST_BLOCK_HOSTS, record_code_hosts=True) as solve:
+        conn = http.client.HTTPConnection("127.0.0.1", solve.port, timeout=10)
+        conn.request("CONNECT", "raw.githubusercontent.com:443")
+        assert conn.getresponse().status == 403
+
+
+def test_a_first_ranged_fetch_stores_the_whole_file_and_answers_the_range(origin, hub) -> None:
+    """Chunked downloaders (with a cache-busting query) get 206 slices; upstream is fetched once."""
+    body = bytes(range(256)) * 64
+    # Only the first chunk's URL exists upstream: the second must come from the store.
+    origin.files["files.pythonhosted.org/packages/aa/torch.whl?range=0-99"] = body
+    ctx = ssl.create_default_context(cafile=str(hub.ca.ca_cert))
+    session = hub.session("record", "case001")
+    try:
+        def get(path, rng):
+            conn = http.client.HTTPSConnection("127.0.0.1", session.port, timeout=10, context=ctx)
+            conn.set_tunnel("files.pythonhosted.org", 443)
+            conn.request("GET", path, headers={"Range": rng})
+            resp = conn.getresponse()
+            return resp.status, resp.read()
+
+        assert get("/packages/aa/torch.whl?range=0-99", "bytes=0-99") == (206, body[:100])
+        assert get("/packages/aa/torch.whl?range=100-16383", "bytes=100-16383") == (206, body[100:])
+    finally:
+        session.close()
+    assert sum(v for k, v in origin.counts.items() if "torch.whl" in k) == 1
+
+
+def test_a_git_fetch_is_recorded_by_its_body_and_replayed_without_upstream(origin, hub) -> None:
+    path = "/o/repo.git/git-upload-pack"
+    ctx = ssl.create_default_context(cafile=str(hub.ca.ca_cert))
+
+    def post(session, body: bytes, target: str = path) -> tuple[int, bytes, str]:
+        conn = http.client.HTTPSConnection("127.0.0.1", session.port, timeout=10, context=ctx)
+        conn.set_tunnel("github.com", 443)
+        conn.request("POST", target, body=body, headers={"Content-Type": "application/x-git-upload-pack-request"})
+        resp = conn.getresponse()
+        return resp.status, resp.read(), resp.getheader("Content-Type") or ""
+
+    with hub.session("record", "case037", record_code_hosts=True) as rec:
+        assert post(rec, b"want abc") == (200, b"pack for want abc", "application/x-git-upload-pack-result")
+        assert post(rec, b"want abc")[1] == b"pack for want abc"
+        # Any other POST is still refused.
+        assert post(rec, b"x", "/o/repo.git/git-receive-pack")[0] == 403
+    assert origin.count("github.com", path) == 1
+    entries = list(rec.recorded.values())
+    assert [(e.method, e.body_sha256 != "") for e in entries] == [("POST", True)]
+    with hub.session("locked", "case037", entries=[supply_entry_roundtrip(e) for e in entries]) as replay:
+        assert post(replay, b"want abc")[:2] == (200, b"pack for want abc")
+        assert post(replay, b"want other")[0] == 403
+    assert origin.count("github.com", path) == 1
+
+
+def supply_entry_roundtrip(entry: Entry) -> Entry:
+    """An entry as a lock file stores and reads it back."""
+    return Entry.from_dict(entry.to_dict())
 
 
 def test_code_hosts_are_refused_through_the_proxy(origin, hub) -> None:
