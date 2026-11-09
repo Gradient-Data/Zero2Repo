@@ -1,0 +1,12 @@
+{
+  "distribution": "velunex",
+  "version": "0.10.3.dev46+gb4cf7360",
+  "commit": "b4cf7360138985f84afe299337ef9ee6c25e9c38",
+  "tag": "0.10.2",
+  "tag_commit": "abeb0e46a3d56c98b4534f73202a5a7ef5a0af87",
+  "git_describe": "0.10.2-46-gb4cf7360",
+  "dirty": false,
+  "setuptools_scm": "8.2.0",
+  "derivation": "setuptools_scm.get_version(root=\"/baseline\") in the original image with the locked original repository mounted read-only at /baseline; default schemes from the unchanged pyproject.toml.",
+  "usage": "Both runner build commands explicitly supply this locked version using SETUPTOOLS_SCM_PRETEND_VERSION, the distribution-independent setuptools-scm override. This provisions the git-free unchanged upstream warm-build under its original distribution identity as well as the renamed velunex product build. The override is scoped to the no-deps, no-build-isolation project install, so dependencies do not inherit this version. Re-derive and update both commands and this record whenever the locked revision changes; no fallback version is used."
+}

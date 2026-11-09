@@ -1,0 +1,46 @@
+{
+  "assets": [
+    {
+      "path": "tests/F00_libssl-dev_3.0.13-0ubuntu3.16_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libssl-dev_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "2b4734df0475e305ac03abb0a2cc5659651ed37ef02d967a1c4033a154cf714b",
+      "size": 2408684
+    },
+    {
+      "path": "tests/F00_libssl3t64_3.0.13-0ubuntu3.16_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libssl3t64_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "219f43b1cd836a4da550938db5fda93160d269d39a4edcf1f1ce698a470db797",
+      "size": 1945300
+    },
+    {
+      "path": "tests/F00_numpy-2.2.6-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/19/49/4df9123aafa7b539317bf6d342cb6d227e49f7a35b99c287a6109b13dd93/numpy-2.2.6-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "1bc23a79bfabc5d056d106f9befb8d50c31ced2fbc70eedb8155aec74a45798f",
+      "size": 16526072
+    },
+    {
+      "path": "tests/F00_tokenizers-0.21.4-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/f2/90/273b6c7ec78af547694eddeea9e05de771278bd20476525ab930cecaf7d8/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "51b7eabb104f46c1c50b486520555715457ae833d5aee9ff6ae853d1130506ff",
+      "size": 3115426
+    },
+    {
+      "path": "tests/F16_fashion_test.gz",
+      "url": "https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/b2617bb6d3ffa2e429640350f613e3291e10b141/data/fashion/t10k-images-idx3-ubyte.gz",
+      "sha256": "346e55b948d973a97e58d2351dde16a484bd415d4595297633bb08f03db6a073",
+      "size": 4422102
+    },
+    {
+      "path": "tests/F16_fashion_train.gz",
+      "url": "https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/b2617bb6d3ffa2e429640350f613e3291e10b141/data/fashion/train-images-idx3-ubyte.gz",
+      "sha256": "3aede38d61863908ad78613f6a32ed271626dd12800ba2636569512369268a84",
+      "size": 26421880
+    },
+    {
+      "path": "tests/F17_model.safetensors",
+      "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/model.safetensors",
+      "sha256": "53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db",
+      "size": 90868376
+    }
+  ]
+}

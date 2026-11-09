@@ -1,0 +1,295 @@
+# Velmora SDK — Full Product Requirements
+
+Velmora SDK supports applications that combine language models, tools and specialized agents into conversational workflows, including persistent workspaces, live multimodal conversations and speech pipelines.
+
+### FP-01: Agent definition and application context
+
+- A caller can define an agent with instructions, a model selection, tools and an expected output type. Static instructions are supplied to the model unchanged; dynamic instructions receive the current agent and application context, and their returned text becomes the instructions for that request.
+
+- Application context supplied to a run is available to application callbacks and tools as the same mutable object. Changes made by one callback are visible to subsequent callbacks in that run. Context is not included in model input unless application instructions, messages or tool results explicitly include it.
+
+- Plain text is the default output. A caller can instead declare structured records, collections or scalar outputs; valid model output is returned as the declared application value. Malformed structured content or content violating the declared constraints is rejected as invalid model output. Structured output uses strict validation by default: values must satisfy the declared types without converting numeric text or truth values into numbers. Callers can explicitly permit the conversions allowed by their output declaration. In strict mode, an output declaration that explicitly permits object members beyond its declared fields is rejected as invalid configuration.
+
+- A caller can derive an agent with selected configuration replaced while retaining the other configuration. Replacement does not change the original agent's corresponding configuration; mutable configuration collections that are not replaced remain shared.
+
+- Responses-based agents can use an OpenAI prompt template, including its selected version and supplied variables, or obtain that selection from an application callback. The selected template and variables are included in the model request.
+
+### FP-02: Model access and request controls
+
+- The SDK supports OpenAI Responses and Chat Completions, OpenAI-compatible endpoints, caller-supplied model providers and caller-supplied models. Responses is the default OpenAI API. Responses requests use HTTP by default and can use WebSocket instead; a concrete model or explicit provider retains its own transport choice rather than being changed by a global transport default.
+
+- An explicit run-wide model overrides an agent's model. Otherwise the agent's choice is used, followed by the configured SDK default; without a configured default the model is gpt-5.6-luna. When that built-in default is used without explicit generation settings, requests select no reasoning effort and low verbosity. Explicit generation settings are forwarded to the selected provider, and supplied run-wide generation values override corresponding agent settings without deleting unrelated settings. Additional provider arguments are combined by argument name, and retry settings retain unspecified individual retry and delay choices.
+
+- Built-in provider routing supports OpenAI, Any-LLM and LiteLLM, and callers can register additional provider routes. Unknown routes are rejected by default; an explicit literal-model routing policy instead passes the whole model designation to the configured OpenAI-compatible endpoint. Selecting an adapter without its required optional dependency produces a dependency failure.
+
+- Callers can configure credentials and endpoints globally or for a provider. An explicitly supplied client owns those choices; supplying that client together with separate credentials, endpoint or account configuration is rejected as conflicting configuration. Explicit provider connection settings take precedence over a globally configured client.
+
+- Strict Chat Completions feature validation rejects Responses conversation continuation, Responses prompt templates and non-text tool outputs that cannot be carried by that API. Chat Completions audio output is rejected as unsupported. A response exhausted by its output budget without assistant text, a tool call or a refusal is reported as invalid model output rather than as a refusal.
+
+- A caller can set a positive finite timeout in seconds for each model-call attempt. Nonpositive or non-finite timeout selections are refused as invalid configuration. An attempt that exceeds it fails as a model timeout, including a streaming attempt; this limit does not include tool execution or delays between attempts. A permitted retry receives a new attempt timeout.
+
+- A caller can enable model-request retries by supplying a positive additional-attempt allowance and an application decision policy; omitting either enables no general run-managed retries. The allowance counts additional attempts after the first request; a zero or negative allowance permits none. For caller-selected initial retry delays up to two seconds, with random delay variation disabled and no provider delay supplied, the interval between attempts is at least that initial delay, measured between successive requests to the same model. A retry decision using provider delay advice waits at least that advised duration. Built-in decisions support no retries, provider advice, transport or timeout failures, caller-selected HTTP statuses, provider retry-delay advice, any of several decisions, or all of several decisions. Once retries are declined or exhausted, the request failure reaches the caller.
+
+- Retry decisions do not replay an aborted request or a streamed response whose output has already begun. Stateful requests with unknown replay safety require provider approval. An application can explicitly accept provider-declared replay risk for a non-streaming request, but that permission does not override a separate veto protecting local side effects.
+
+### FP-03: Application tools
+
+- Callers can expose synchronous or asynchronous application functions as tools using their declared inputs and descriptions, or supply tool definitions explicitly. A valid tool invocation delivers the supplied arguments and application context to the selected callable and returns its result. Omitted optional arguments use the callable's declared defaults.
+
+- Missing required arguments, malformed argument content and values violating declared input constraints do not invoke the application function. With error conversion disabled, these conditions fail as invalid model arguments. Application exceptions then propagate as tool failures.
+
+- For ordinary function-tool calls, the default tool failure policy returns a model-visible error result for an argument or execution failure. Callers can replace the error text using a synchronous or asynchronous formatter, or disable this conversion to receive the failure directly. The default replacement does not disclose the underlying exception details to the model or tracing destinations; an application formatter receives the failure and controls its replacement content.
+
+- A tool can be enabled unconditionally or by an application predicate using the agent and context. Disabled tools are omitted from the model's available tools. Locally configured function tools that become disabled before invocation are not executed.
+
+- Tool results can convey text, images and files, including mixed supported content, to a model that accepts those content types. Application-only tool metadata remains available in run results without being added to the model-visible result.
+
+- Asynchronous function tools can have a positive per-call timeout in seconds. Exceeding that duration produces a model-visible timeout result by default, or a tool-timeout failure under the caller's selected failure policy. A timeout on a synchronous function tool, or a nonpositive timeout, is rejected as invalid configuration.
+
+- Callers can expose a free-form text tool, optionally described by a grammar, and receive the model's raw text input in an application handler without structured-argument conversion. The handler's result is returned to the requesting model call.
+
+### FP-04: Agent execution and run results
+
+- Given a starting agent and text or conversation items, a caller can await execution or run it synchronously. Text is treated as a user message. Model-requested local tools execute and their results become available to subsequent model requests; in the absence of an overriding completion policy, output of the expected type ends the run when no tool work remains.
+
+- A run allows 10 model turns by default. Each model response requested by the agent loop counts as one turn, regardless of how many tools it requests. A caller can choose another turn limit or disable the limit. A run that needs a further turn after consuming its allowance fails as a turn-limit failure.
+
+- Function-tool completion policies support continuing with the model, finishing with the first tool result, finishing when a selected tool is called, or letting an application callback choose completion and its final value from tool results. Continuing with the model is the default.
+
+- Callers can request model-selected tool use, require tool use, prohibit tool use, or select a particular available callable tool. After a tool call, the SDK normally releases forced tool selection so the model can finish; callers can explicitly retain forced selection.
+
+- Results expose the final application output, the last active agent, the model responses and newly produced conversation items. Callers can distinguish messages, reasoning, tool calls and their corresponding outputs. Results can supply conversation input for a later run without changing the original response objects.
+
+- An application can transform instructions and conversation input for each model request. The transformed values reach the model without automatically rewriting the stored conversation history.
+
+- By default, a model call to a nonexistent tool fails as invalid model behavior. A caller can explicitly request a model-visible missing-tool error instead so the model can continue. Callers can select strict rejection of ambiguous callable names; under that policy, conflicting function-tool or handoff names fail as invalid configuration rather than dispatching a call to an arbitrary target.
+
+- As an explicit alternative to terminating on a turn limit, model refusal or invalid structured final output, an application can register a handler for each of those three conditions. A supplied replacement output is validated against the expected output type. Declining recovery retains the underlying behavior; handling invalid output does not repeat the model request or completed tool effects. For a turn-limit replacement, callers can choose whether it becomes conversation history, with inclusion enabled by default.
+
+- When a response requests both local tool work and a handoff, completed local tool results accompany the handoff. Unresolved approvals pause the run before the handoff or final-output policy can finish it. Once approvals are resolved, a requested handoff takes precedence over finishing with a function-tool result; that completion policy takes precedence over an accompanying assistant answer. Without remaining tool work or a tool-result completion, an explicit refusal in the last assistant message fails as a model refusal rather than an accepted final answer.
+
+### FP-05: Input, output and tool guardrails
+
+- For a run with input guardrails, the initial input is checked by the starting agent's guardrails and run-wide guardrails. A triggered rejection stops successful completion and identifies the guardrail responsible. Guardrails on agents reached later do not recheck that original input solely because control changes.
+
+- A caller can require input approval before any model request or tool side effect. The default input-check policy allows agent work while checks are outstanding and therefore can reject a run after work has already occurred.
+
+- Output guardrails check the final value of the finishing agent together with run-wide output checks. A rejection produces an output-guardrail failure instead of an accepted final result. Completed guardrail results remain inspectable, and a guardrail callback failure is distinguishable from a returned rejection verdict.
+
+- Function-tool input guardrails can allow execution, block execution with replacement content, or stop the run with a guardrail failure. Function-tool output guardrails can allow the output, replace it, or stop the run.
+
+- When a function tool's output is itself the final answer and an agent output guardrail rejects it, the rejected output payload is withheld from replayable state and exposed guardrail diagnostics. Earlier accepted outputs remain intact. Retained call metadata can still include the original tool arguments.
+
+### FP-06: Run observability and usage accounting
+
+- Run-wide and agent-specific observers receive notifications for agent activity, model requests and responses, tool invocation and completion, and handoffs. Notifications identify the relevant agent and operation and provide the associated inputs or results, allowing the application to associate observed work with its run. An agent-specific handoff notification is delivered to the agent that hands off.
+
+- A run reports model-request count and provider-reported input, output and total token usage across its model calls, including calls that request tools or handoffs. Per-request usage remains separately inspectable, including reported cached-input, cache-write and reasoning-token details. Separate conversation runs start new usage totals.
+
+- Tracing is enabled by default and records workflow, agent, model, tool, guardrail and handoff activity with operation identities, parent relationships, timing and success or failure information. Callers can group multiple runs in one trace, attach application metadata and add custom operations. Globally disabling tracing or disabling it for a run prevents new trace records for the affected work.
+
+- Callers can add trace destinations or replace the destinations entirely, and explicitly flush pending records. Disabling new tracing does not discard records already waiting for delivery; a later flush still delivers them to the configured processors.
+
+- Model and tool content is included in trace data by default. Disabling sensitive trace content omits that content from model and function-tool records, including custom approval rejection messages. This control does not prevent execution or remove the actual model or tool result from the caller's run result.
+
+- With raw usage preservation enabled on OpenAI Responses, OpenAI Chat Completions or a supporting Any-LLM backend, each response retains an independent snapshot of usage supplied by the provider. Omitted provider values remain distinguishable from reported zero values. No raw payload is invented when the provider omits it; LiteLLM does not provide this raw-usage preservation capability.
+
+### FP-07: Conversation sessions and continuation
+
+- A conversation session stores items in conversation order, retrieves its history, appends new items, removes and returns its most recent item, and clears its history. Removing from an empty session returns no item. Different session identities have separate histories, while agents using the same session share its history.
+
+- Running with a session adds retrieved history before the new input and persists accepted new conversation items for later runs. The caller may provide a merge callback that selects or rearranges history and new input; old history is not saved again as new input merely because the callback returns it.
+
+- History retrieval returns all available items by default. A positive retrieval limit returns the most recent requested number in conversation order; zero returns no history. A run-specific explicit numeric limit overrides the session's retrieval default without deleting older stored items.
+
+- Built-in session storage supports SQLite, asynchronous SQLite, Redis, SQLAlchemy-supported databases, MongoDB and Dapr state stores. Durable backends retain history across new session objects using the same identity and backing store. Callers can supply an equivalent application-managed session backend.
+
+- As an alternative to client-managed session history, Responses runs can continue a server conversation or a previous model response, sending new input against that server state. A run cannot combine a session with run-level server-conversation continuation, previous-response continuation or automatic previous-response tracking; conflicting ownership is rejected as invalid configuration.
+
+- When an output guardrail rejects an ordinary candidate final answer, that answer is excluded from session history while completed tool work is retained for continuation. A guardrail callback that raises instead of returning a rejection does not establish a rejection verdict; completed final-turn history is saved before its failure is reported. A failure to save that history takes precedence over the guardrail callback failure.
+
+### FP-08: Tool approval and resumable checkpoints
+
+- Function tools can require approval for every call or according to an application decision using context and parsed arguments. Free-form custom tools can also require approval, resolved manually or by an application callback. Calls requiring an unresolved approval do not execute; the run returns pending requests identifying the proposed work, without claiming a final answer.
+
+- If a callable approval rule cannot inspect arguments because they are absent, blank, malformed, not an object, or contain non-finite numeric constants, it is not invoked and manual approval is required. For function tools derived from application declarations, manual approval is also required when arguments need default insertion, value or type conversion, removal of undeclared members, or application-defined validation. In these cases neither the conditional approval callback nor application-defined validation is run to decide whether to request approval. An explicit decision is used on resume without asking that callback again; approval does not make invalid tool arguments executable.
+
+- A caller can approve or reject individual pending calls and resume the original run. Approved calls proceed; rejected calls do not execute and instead supply a rejection result. Unresolved calls remain pending if only part of the batch is decided. A per-call rejection message overrides the run-wide rejection formatter.
+
+- Callers can persist approval or rejection for future calls to the same function tool on the same agent. Such decisions survive checkpoint restoration and reuse of the approval-bearing run context; another agent's identically named function tool does not inherit them. Reusing only the application context in a fresh run does not carry those decisions forward.
+
+- Completed and paused runs can produce independent checkpoints preserving conversation progress, active agent, accumulated usage and pending work. Resuming a checkpoint continues its captured usage totals without changing the original result or another checkpoint. Resuming a completed run's checkpoint makes a new model request from its captured conversation. Trusted checkpoints can be serialized, restored with matching supplied agent and tool definitions, and resumed without repeating already-recorded completed tool work. Callers can replace restored application context or provide context conversion; strict serialization accepts an absent context or a mapping of application values directly, and otherwise requires a caller-supplied conversion to such a mapping. Strict restoration of a context requiring custom reconstruction needs a reconstruction callback or a replacement context. Missing active-agent bindings and incompatible checkpoint versions are rejected as unrestorable state.
+
+- Callers can stage additional user input for a paused or turn-stopped run that will make another model request. Staged input survives serialization, preserves submission order and is checked by the current agent's and run-wide input guardrails on resume. Terminal states, exhausted turn allowances, unprocessed accepted model responses and pending terminal tool results reject staged input.
+
+- If approved tool work completes but saving its nonterminal conversation items fails, resuming the retained checkpoint against the original session can recover the write without executing completed work again. A fully committed matching history tail is not appended twice; an absent batch is appended. Partial or conflicting history is rejected as ambiguous recovery. A checkpoint whose accepted final turn failed to persist is not resumable.
+
+### FP-09: Handoffs and agents as tools
+
+- An agent can offer specified agents as handoff destinations. A selected enabled destination receives the conversation and becomes the active agent in the same run, with its own instructions, model and output requirements. The final result identifies the agent that finishes. Disabled destinations are not offered.
+
+- Handoffs can accept declared structured arguments and pass validated values to an application callback. Malformed or invalid arguments fail as invalid model behavior. These arguments do not replace conversation history; a separate handoff input filter can select or rewrite what the destination receives. A destination-specific filter takes precedence over a run-wide filter. Handoff input filters are rejected when the run uses server-managed conversation continuation.
+
+- An agent can instead be exposed as a tool so that a manager delegates work and receives the specialist's result while retaining control. The delegated input can be text or declared structured data, and an application input builder can translate it into the specialist's conversation input. An application output extractor can choose the value returned to the manager.
+
+- A delegated agent run has its own turn allowance; its internal model turns do not consume the manager's turn allowance. An explicitly supplied delegated run configuration overrides inherited run configuration. Nested model usage contributes to the enclosing run's usage.
+
+- Approval requirements can apply to the delegated invocation itself or to tools inside the specialist. Nested pending approvals surface through the outer run; deciding them and resuming the original manager continues the paused specialist rather than starting its work over.
+
+- Handoff history is passed through by default. For locally managed conversations, callers can explicitly request a transcript representation of earlier conversation content, or supply a history mapper that chooses the destination's conversation items when transcript conversion is enabled, replacing the default transcript representation. The transcript retains conversation order and the content of earlier messages, reasoning and function calls and results; messages produced in the handoff turn remain available as messages. A destination-specific transcript choice overrides the run-wide choice. Server-managed continuation retains its server history instead of applying this transcript option. A handoff input filter overrides transcript conversion and the history mapper. Continuation preserves separately occurring identical messages and avoids appending the same already-owned history occurrence twice.
+
+- If one model response requests several handoffs, the first requested destination receives control. The other handoff calls receive correlated tool results without transferring control, and their destination callbacks do not execute.
+
+### FP-10: Incremental run delivery and cancellation
+
+- Streaming execution delivers model response updates as they arrive and complete conversation-item events as work produces them. Callers can distinguish partial model output from completed messages, reasoning, tool calls and tool outputs, and can observe a change of active agent. Finishing event consumption exposes the settled run result.
+
+- A streamed run that requires tool approval ends its event stream with pending approvals and no accepted final answer. The caller can decide those approvals through a checkpoint and resume streaming the unfinished run.
+
+- Callers can request immediate cancellation or stopping after the current turn. Immediate cancellation stops an awaiting asynchronous application tool that cooperates with cancellation, preventing its subsequent work; stopping after a turn allows that turn's work to finish and prevents the next model turn. After-turn stopping preserves the completed turn for continuation from its retained state. Cancellation does not undo tool side effects already performed.
+
+- Model, guardrail, tool and persistence failures that terminate a streamed run reach the event consumer as failures. Partial output already delivered does not turn the failed run into a successful final result.
+
+### FP-11: Conversation retention, branching and protection
+
+- A caller can compact stored conversation history through OpenAI Responses and use the returned compacted history in later runs. Automatic compaction uses a caller-supplied decision, or by default triggers at 10 candidate history items, counting items other than user messages and existing compaction items. Callers can also request compaction explicitly.
+
+- Compaction can use available stored-response continuation or explicit history input. When compaction is explicitly requested, automatic mode selection uses history input when the previous response was not stored or no response identity is available. Compaction triggered by a completed run requires a nonempty identity from its successful model response; when that response was not stored, automatic mode selection uses history input. Automatic compaction must not submit stored content omitted from the successful model exchange or replace newer history using a stale view. For session backends other than SQLite, asynchronous SQLite or SQLAlchemy-backed SQLite, PostgreSQL or MySQL, automatic compaction requires the complete stored history to have been available to that model exchange.
+
+- Advanced SQLite conversation storage lets callers create an alternative branch at a selected user turn, switch the active branch, inspect branches and delete branches. A new branch retains only conversation items before the selected user turn and becomes the active branch; later additions on either branch do not alter the other. Branch creation rejects a selection without a user message and a blank requested identity. The initial branch cannot be deleted. Deleting the active alternative branch requires explicit force and switches activity back to the initial branch; deletion leaves shared history available on other branches. Branch identities cannot be reused within a session, even after branch deletion or session clearing. Branch creation, switching and deletion reject invalid branch references. Reading conversation turns for an explicitly selected unknown branch returns no turns.
+
+- Advanced SQLite storage groups conversation items by user turn, finds user turns containing supplied literal text in their message content, and reports tool call counts by tool and turn. Operations use the current branch unless another branch is selected. Content-based branching selects the earliest matching user turn and fails when no turn matches. When callers explicitly record a run's usage against a turn, subsequent analytics report that usage for the associated branch and turn rather than treating it as automatically recorded usage.
+
+- An encryption wrapper stores conversation content encrypted in the selected backend and returns the original unexpired content when reopened with the same secret and session identity. Plaintext records, incomplete encrypted records and encrypted content that cannot be authenticated are omitted from retrieved history. A different secret or session identity does not reveal the original encrypted content; an empty secret is rejected.
+
+- Encrypted history expires after a caller-selected lifetime, defaulting to 600 seconds from encryption according to the application clock. Expired items are omitted from reads rather than returned as current history. For positive retrieval limits, expired or unreadable newer records do not prevent returning older valid records. An explicitly configured positive read-item budget causes a failure if a complete result cannot be established within that budget, rather than returning a partial result as complete.
+
+### FP-12: Hosted tools, discovery and programmatic calling
+
+- With a supporting OpenAI Responses model, callers can enable hosted web search, file search over selected vector stores, code interpretation, image generation, remote MCP tools and container shell execution. The configured hosted operation is requested from the service and its returned activity and results remain available to the run.
+
+- Hosted search forwards the caller's source filters and search settings. File-search result-count requests accept integers from 1 through 50; an omitted count or zero leaves the count to the provider. Other counts are rejected as invalid configuration. Web image search requests expose returned image results separately from the assistant's answer.
+
+- Hosted tool search allows deferred function tools, function namespaces and hosted MCP tools to be discovered and called on demand. Immediately available tools within a namespace remain callable. Deferred tools require exactly one configured search tool; forcing a deferred-only tool or bare namespace as the selected callable is rejected. Client-executed search requests are not automatically executed by the standard run and fail as unsupported work.
+
+- Programmatic Tool Calling lets a supporting Responses model coordinate permitted child tools and return the program's result. Callers can permit direct calls, program-owned calls or both; direct-only access is the default. Function tools, free-form custom tools, shell tools, patch tools, hosted MCP and code interpretation can opt in. Program and child-call relationships remain inspectable in results.
+
+- Programmatic calling requires at most one programmatic coordinator and an eligible callable surface, a searchable deferred surface, or a prompt-managed tool surface. An empty search-only setup is rejected. Declared structured child-tool outputs are validated before delivery to the program. Calls through a program retain their applicable approval, guardrail and timeout requirements, and retries require provider-confirmed replay safety when local side effects may have occurred.
+
+- For program-owned function calls with declared structured outputs, the default changes from model-visible error conversion to propagation of argument or execution failures. An explicitly supplied error formatter can return replacement content only if it satisfies the declared output constraints.
+
+- Hosted search and programmatic tool calling are rejected on Chat Completions and non-Responses backends. Hosted shell can create a container or reuse an identified container and supply referenced or inline skills. Combining a hosted shell environment with a local executor or local approval settings is rejected as conflicting configuration.
+
+- Hosted MCP approval requests can be resolved by an application callback or exposed for manual decision and checkpoint continuation. Persistent decisions are scoped to both remote server identity and tool identity; identically named tools on different hosted servers do not inherit each other's decision.
+
+- The experimental hosted multi-agent integration lets a supporting OpenAI Responses service coordinate server-side specialists while local application functions return results to the hosted caller that requested them. Only the root agent's final answer becomes the run's final message; raw streaming retains hosted-agent activity. Hosted caller identity is available to application tools.
+
+- Hosted multi-agent requests reject local handoffs and tools that require SDK approval interruptions. A hosted model connection accepts only one active response at a time and rejects overlapping use. Hosted in-flight work is continued through its live connection.
+
+### FP-13: Local execution and workspace delegation tools
+
+- A caller-provided computer controller receives model-requested clicks, double clicks, scrolling, typing, waiting, pointer movement, key presses, dragging and screenshots. For a batch of actions, actions execute in the requested order and the returned screenshot reflects the resulting display.
+
+- When computer actions carry pending safety checks, an installed review callback receives each check and all checks must be accepted before the actions or screenshot execute. A rejected check fails the call as disallowed use. Without a review callback the SDK executes the actions with those checks unacknowledged; it does not create a manual approval interruption.
+
+- Local shell tools send requested commands and execution constraints to the supplied executor and return its captured output and completion status to the model. A finite shell timeout is a positive integer measured in milliseconds; omission or zero requests no explicit timeout. Invalid timeout values are refused as invalid model arguments without invoking the executor. A requested output length of zero is preserved as a request for empty captured output.
+
+- File-edit tools deliver model-requested file creation, modification and deletion to the supplied editor, returning success or failure for the requested edit. A caller can also apply a supported textual patch to existing content and obtain the modified content; an invalid patch or unmatched edit context is rejected instead of silently returning a successful edit.
+
+- Local shell and file-edit tools execute without approval by default. With approval enabled, they support immediate application decisions or the pending-approval flow. Persistent decisions for these tool kinds follow tool type and name across agents sharing approval state; changing the executor, editor or application context does not erase those decisions.
+
+### FP-14: Local MCP connectivity and resources
+
+- Callers can connect to MCP servers through standard input/output, HTTP with Server-Sent Events or Streamable HTTP. Connected tools become callable by agents and return the server's actual results. Calling a disconnected server fails as unavailable; server-call errors follow the selected tool error policy rather than becoming successful tool output.
+
+- Tool and prompt listings collect all pages before returning a complete listing. A later-page failure, repeated cursor or continuation beyond a configured positive page limit fails the listing without exposing a partial listing as complete. There is no page limit by default. Resource and resource-template listings instead allow explicit page continuation; callers can read a selected resource and obtain its server-supplied content.
+
+- Static tool filtering first restricts to the allowed set and then removes blocked tools; a dynamic filter can decide availability from the current agent, application context and tool. Only selected tools are offered. Caller-selected server qualification can distinguish identically named tools on different servers while still invoking the original tool on its originating server.
+
+- MCP tool results preserve text and images as usable model content. Other content kinds are conveyed as textual representations of the returned content. If structured-content preference is enabled and the server returns nonempty structured content without an error, that content takes precedence over content blocks.
+
+- Local MCP servers can impose all-tool, per-tool or application-selected approvals, and can attach input and output guardrails to every exposed tool. Input rejection prevents the remote invocation. Output rejection or replacement acts on the returned tool content before it is delivered to the model. An explicit server failure formatter overrides an agent-wide MCP formatter.
+
+- A caller can enumerate server prompt templates and retrieve a selected prompt with supplied arguments. Missing prompts or server failures are reported as failed prompt retrieval rather than fabricated instructions.
+
+- A multi-server manager exposes connected servers and separately identifies failed connections and their causes. By default, failed servers are omitted from the active set; strict mode instead fails on the first connection failure. Callers can reconnect failed servers or all servers, and repeated references to one server do not create multiple owned connections.
+
+### FP-15: Sandbox workspace provisioning
+
+- A workspace manifest can create files and directories, copy local files and directories, fetch a Git repository at a selected revision, set environment values, define users and groups on backends supporting account provisioning, and attach remote storage. Unix-local workspaces reject declared users and groups. A successfully created workspace exposes the declared content to file access and command execution. Manifest entry destinations must be relative to the workspace and cannot escape it; invalid destinations are rejected.
+
+- Local source copies must stay within the SDK process's working directory or an explicitly granted source location. SDK file access outside the workspace requires an explicit path grant, and a read-only grant rejects SDK file writes. Docker can map a granted host location to another sandbox location; Unix-local execution rejects this remapping. These SDK file-access rules do not promise confinement of arbitrary Linux host commands.
+
+- Built-in sandbox backends support Unix-local workspaces on Linux and Docker containers. Callers can supply an external sandbox provider. Missing required clients, backend dependencies or creation configuration cause a provisioning failure rather than execution in a substitute environment.
+
+- Docker workspaces can explicitly disable network access; that choice is preserved on restoration that creates a replacement container. A network-disabled Docker workspace cannot also expose ports and rejects that combination.
+
+- Remote storage mounts are read-only by default and can explicitly enable writes. Unix-local and Docker workspaces both support S3, GCS, R2 and Azure Blob storage at caller-selected service endpoints. Selecting a mount configuration unsupported by the selected storage or backend is rejected.
+
+- A mount helper executing inside a model-controlled environment that requires protected credentials or ambient authority is refused without the application's explicit acknowledgement for that exact mount. Mount-scoped and broad authority require their corresponding acknowledgements; a mount using both requires both. Saved state does not carry those acknowledgements or credential-bearing mount configuration into a later run as authority.
+
+- Manifest permissions and supported selected user identities determine file access by sandbox-native file operations. By default, manifest content permits its owner to read, write and execute, and its group and others to read and execute. Unix-local command environments inherit the host environment by default; callers can instead supply an explicit allowed set of host variables. Manifest environment values override inherited values.
+
+### FP-16: Sandbox execution, snapshots and restoration
+
+- A sandbox agent can run against a newly provisioned workspace, a caller-owned live workspace or restored sandbox state. A supplied live session takes precedence, followed by sandbox state in a resumed run checkpoint, explicit sandbox session state, and fresh creation. A per-run manifest overrides the agent's default only for fresh creation; reused workspace contents remain the starting contents.
+
+- Built-in sandbox capabilities are shell execution, filesystem editing and image inspection, skills, memory and context compaction. Shell, filesystem and compaction are enabled by default; an explicitly supplied capability list replaces that default. Shell commands execute in the chosen workspace and return actual output and completion status. Backends supporting interactive processes additionally allow later input and output collection for a running process. Unix-local interactive input is supported in terminal-mode execution.
+
+- Sandbox filesystem edits create, modify or delete the requested files, and image inspection returns supported workspace images. Supported raster content is PNG, JPEG, GIF, WebP, BMP and TIFF, recognized from content regardless of extension; SVG and compressed SVG are also supported. Missing files, unsupported image content and images larger than 10 MiB of file content produce a tool error rather than an image result.
+
+- A caller can select an existing accessible workspace-relative working directory for model-facing shell, patch and image operations. Empty, absolute or parent-traversing working-directory selections are rejected. That selection changes relative-path resolution without changing the workspace boundary or direct session file access, which remains workspace-root relative.
+
+- Explicit local or application-provided remote snapshots preserve durable workspace files and restore them into a fresh workspace. Mounted paths, ephemeral entries and extra granted host paths are excluded from durable workspace contents. Serializing connection state enables reconnection where the backend supports restoring that workspace. Unix-local continuation preserves edited manifest files through an explicit restorable snapshot; connection state alone does not guarantee those edits survive startup.
+
+- The SDK cleans up a workspace it creates or resumes for a run and persists it when explicit snapshot persistence is configured. A caller-supplied live session remains available after the run for inspection or further work until the caller closes it.
+
+- Restoring host-backed grants or credential-redacted mounts requires current trusted configuration matching the saved authority-free topology. Missing or mismatched configuration fails restoration rather than granting access from serialized data.
+
+- With sandbox context compaction enabled, a received compaction item replaces earlier model context; subsequent model input retains the latest compaction item and the conversation following it. This does not itself delete workspace files.
+
+### FP-17: Sandbox skills and persistent agent memory
+
+- Sandbox agents can discover skill metadata and read skill contents supplied from local directories or Git repositories. Eager loading makes the selected skill files available in the workspace. On-demand local loading exposes the skill index and materializes the requested skill with its supporting resources when selected. An unknown skill or inaccessible source produces a loading failure.
+
+- Enabling memory reading makes an existing memory summary available to the agent and makes the corresponding memory files accessible in the preserved workspace. Reading requires shell capability; live memory editing additionally requires filesystem capability. Missing required capabilities are rejected as invalid configuration.
+
+- Enabling memory generation records run conversation material and, when the sandbox session is closed, uses the configured model to create conversation summaries and consolidated memory artifacts for future runs. Callers can independently disable memory reading or generation. Reusing the memory directory through a live workspace or snapshot makes the generated artifacts available to later runs; a fresh empty workspace has no prior memory.
+
+- Runs sharing a memory layout and conversation identity contribute to the same memory conversation. A run rejects simultaneous service-managed conversation continuation and a local conversation session. Among supported combinations, identity selection uses the explicit server conversation or local conversation session identity ahead of the run group, and otherwise creates a separate per-run identity. Distinct memory layouts keep separate artifacts even within one workspace.
+
+### FP-18: Realtime multimodal conversations
+
+- A caller can open a live Realtime session, send text, image-bearing messages or audio, and receive incremental audio, transcripts and conversation updates from the selected model. The built-in connection is a server-side WebSocket; SIP attachment can connect to an existing Realtime call. Normal server closure ends event delivery after queued events, while an unexpected connection failure remains an error.
+
+- Realtime model selection and audio settings apply to the session; the default model is gpt-realtime-2.1. Callers can use automatic audio-turn detection or explicitly commit audio and request a response. A high-level text-message submission starts a response. Realtime agents do not support structured final-output declarations.
+
+- Realtime function calls execute enabled application tools and return their results into the live conversation. Approval-gated calls emit a pending request and remain unexecuted until approved; rejection returns a rejection result. Tool input guardrails can block execution, and tool output guardrails can withhold or replace rejected output.
+
+- Realtime handoffs change the active specialist and its instructions and available tools without replacing the live conversation. Structured handoff arguments are validated and delivered to the configured callback. Ordinary text-run handoff history filters are not supported by Realtime handoffs.
+
+- Interrupting spoken output emits an audio interruption and adjusts the conversation to the amount actually played. Caller-supplied playback durations accumulate for the same audio item and content segment, taking precedence over assuming all generated audio was heard. History additions and later corrections are distinguishable through session updates.
+
+- Realtime output guardrails inspect accumulated text or transcripts. A rejection reports the responsible guardrail and interrupts the affected response rather than accepting that output. With the built-in transport, a late verdict about completed audio interrupts only that response's remaining playback, not a newer response; a rejected text-only response does not emit an audio interruption.
+
+- Provider-reported usage is available per completed Realtime response and accumulated for the live session. A new session does not inherit a previous session's totals. Callers can observe tool activity, handoffs, guardrail rejection, audio completion and model errors without confusing them with ordinary assistant messages.
+
+### FP-19: Speech transcription and synthesis workflows
+
+- A caller can supply a complete audio recording or incrementally supplied audio. The voice pipeline transcribes it, supplies recognized text to the configured workflow and delivers speech generated from the workflow's returned text. Incremental input invokes the workflow for each detected transcription turn, preserving spoken-result order. When the workflow supplies no startup speech, input ending without any detected turn completes without emitting speech.
+
+- The supplied single-agent voice workflow preserves conversation context and the current agent across transcription turns, including handoffs. Its tools and callbacks receive the caller's application context across those turns, without automatically disclosing that context to the model.
+
+- Callers can select speech models and speech settings or supply speech providers. The default OpenAI transcription model is gpt-transcribe and the default synthesis model is gpt-4o-mini-tts. Transcription language and recording context reach the transcription provider. For streamed gpt-transcribe and gpt-live-transcribe, an explicit list of expected languages takes precedence over a single-language hint, and configured keyword hints are forwarded.
+
+- Built-in synthesis voice choices are alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer, verse, marin and cedar, subject to the selected service model's support. The built-in synthesis provider selects ash when no voice is supplied. Callers with service access can select an existing custom voice. Synthesized audio uses native signed 16-bit integer samples by default and also supports 32-bit floating-point samples; other sample types or non-native byte orders are rejected as unsupported audio configuration. Floating-point playback preserves the signed PCM16 sample content using one common normalization divisor between 32767 and 32768 inclusive, with absolute rounding error no greater than one float32 epsilon per normalized sample.
+
+- Voice output distinguishes audio chunks, turn boundaries, session completion and errors. A turn ends after its audio has been dispatched. Transcription, workflow and synthesis failures reach the stream consumer; if cleanup also fails, an existing turn failure remains primary, while a cleanup failure after an otherwise successful run is reported.
+
+- Voice tracing records transcription and synthesis activity. Callers can disable tracing or independently exclude sensitive textual content and audio from trace records while still receiving the workflow's speech output. Both content and audio capture are enabled by default.
+
+### FP-20: Workflow visualization
+
+- Given an agent, callers can obtain and save a directed workflow visualization showing the starting agent, reachable handoff destinations, tools and MCP servers, with distinguishable relationship kinds. A destination with an available agent definition is expanded to include its resources and downstream handoffs; a custom destination lacking that definition remains a named destination.
+
+- Distinct agent, tool or server objects with identical display names remain distinct in the visualization and their edges connect to the corresponding object. Cyclic handoff relationships terminate graph generation while preserving the cycle's connections.

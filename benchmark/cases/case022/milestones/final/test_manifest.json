@@ -1,0 +1,133 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F00_minimal_runtime.py",
+    "tests/F01_helpers.py",
+    "tests/F01_semantics.py",
+    "tests/F02_construction.py",
+    "tests/F03_helpers.py",
+    "tests/F03_search.py",
+    "tests/F04_helpers.py",
+    "tests/F04_incremental.py",
+    "tests/F05_discovery.py",
+    "tests/F05_helpers.py",
+    "tests/F06_helpers.py",
+    "tests/F06_ingestion.py",
+    "tests/F07_helpers.py",
+    "tests/F07_media.py",
+    "tests/F08_collections.py",
+    "tests/F08_helpers.py",
+    "tests/F09_biological_timeseries.py",
+    "tests/F09_helpers.py",
+    "tests/F10_harbor.py",
+    "tests/F10_helpers.py",
+    "tests/F11_columns.py",
+    "tests/F11_helpers.py",
+    "tests/F12_helpers.py",
+    "tests/F12_transformations.py",
+    "tests/F13_helpers.py",
+    "tests/F13_rows.py",
+    "tests/F14_composition.py",
+    "tests/F14_helpers.py",
+    "tests/F15_framework_access.py",
+    "tests/F15_helpers.py",
+    "tests/F16_distributed.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_persistence.py",
+    "tests/F18_helpers.py",
+    "tests/F18_reuse.py",
+    "tests/F19_publication.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "/opt/conda/bin/python -m pytest -v -p no:cacheprovider tests/F00_minimal_runtime.py tests/F01_helpers.py tests/F01_semantics.py tests/F02_construction.py tests/F03_helpers.py tests/F03_search.py tests/F04_helpers.py tests/F04_incremental.py tests/F05_discovery.py tests/F05_helpers.py tests/F06_helpers.py tests/F06_ingestion.py tests/F07_helpers.py tests/F07_media.py tests/F08_collections.py tests/F08_helpers.py tests/F09_biological_timeseries.py tests/F09_helpers.py tests/F10_harbor.py tests/F10_helpers.py tests/F11_columns.py tests/F11_helpers.py tests/F12_helpers.py tests/F12_transformations.py tests/F13_helpers.py tests/F13_rows.py tests/F14_composition.py tests/F14_helpers.py tests/F15_framework_access.py tests/F15_helpers.py tests/F16_distributed.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_persistence.py tests/F18_helpers.py tests/F18_reuse.py tests/F19_publication.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "/opt/conda/bin/python -m pytest -v -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/F00_minimal_runtime.py",
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_semantics.py"
+    ],
+    "F02": [
+      "tests/F02_construction.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_search.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_incremental.py"
+    ],
+    "F05": [
+      "tests/F05_discovery.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_ingestion.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_media.py"
+    ],
+    "F08": [
+      "tests/F08_collections.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_biological_timeseries.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_harbor.py",
+      "tests/F10_helpers.py"
+    ],
+    "F11": [
+      "tests/F11_columns.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_transformations.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_rows.py"
+    ],
+    "F14": [
+      "tests/F14_composition.py",
+      "tests/F14_helpers.py"
+    ],
+    "F15": [
+      "tests/F15_framework_access.py",
+      "tests/F15_helpers.py"
+    ],
+    "F16": [
+      "tests/F16_distributed.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_persistence.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_reuse.py"
+    ],
+    "F19": [
+      "tests/F19_publication.py"
+    ]
+  },
+  "support_files": [
+    "tests/resources"
+  ],
+  "host_exclusive": true
+}

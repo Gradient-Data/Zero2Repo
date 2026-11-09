@@ -1,0 +1,9 @@
+{
+  "package": "tsfile",
+  "version": "2.5.0",
+  "filename": "tsfile-2.5.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+  "asset": "F09_tsfile.whl",
+  "sha256": "7bab89d68915c12c09f25f4189136126d3430e55469e262beef93892ead2b05f",
+  "source": "https://pypi.org/project/tsfile/2.5.0/",
+  "purpose": "Native TsFile fixture writer and reader dependency for offline acceptance; genuine third-party wheel, not product code."
+}

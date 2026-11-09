@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "zelvori"
+  ],
+  "console_scripts": [
+    "zelvori"
+  ]
+}

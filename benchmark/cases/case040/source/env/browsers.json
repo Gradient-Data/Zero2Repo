@@ -1,0 +1,29 @@
+[
+  {
+    "name": "chromium",
+    "version": "134.0.6998.35",
+    "revision": "1161",
+    "url": "https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1161/chromium-linux.zip",
+    "directory": "chromium-1161",
+    "size": 172886340,
+    "sha256": "25db802cce762a2c5c082b115671b8c37f8ef87c2d08e367d216d56e955e2496"
+  },
+  {
+    "name": "chromium-headless-shell",
+    "version": "134.0.6998.35",
+    "revision": "1161",
+    "url": "https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1161/chromium-headless-shell-linux.zip",
+    "directory": "chromium_headless_shell-1161",
+    "size": 105788305,
+    "sha256": "b574307be284c440e77d418cc8ca521ac1d7ce039a5ec5f13f2a5c566d96290c"
+  },
+  {
+    "name": "ffmpeg",
+    "version": "1011",
+    "revision": "1011",
+    "url": "https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip",
+    "directory": "ffmpeg-1011",
+    "size": 2376500,
+    "sha256": "ebc74fc5b94830176a3c2914ae96bd8bc7f6a91f4f33890230f84a172ee61ccc"
+  }
+]

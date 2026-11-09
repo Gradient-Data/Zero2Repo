@@ -1,0 +1,131 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_evaluation.py",
+    "tests/F01_helpers.py",
+    "tests/F02_helpers.py",
+    "tests/F02_scalars.py",
+    "tests/F03_collections.py",
+    "tests/F03_helpers.py",
+    "tests/F04_control_flow.py",
+    "tests/F05_defer_recovery.py",
+    "tests/F06_helpers.py",
+    "tests/F06_methods_interfaces.py",
+    "tests/F07_channels.py",
+    "tests/F07_helpers.py",
+    "tests/F08_generics.py",
+    "tests/F09_helpers.py",
+    "tests/F09_native_reflection.py",
+    "tests/F10_helpers.py",
+    "tests/F10_libraries.py",
+    "tests/F11_helpers.py",
+    "tests/F11_packages.py",
+    "tests/F12_helpers.py",
+    "tests/F12_remote_modules.py",
+    "tests/F13_helpers.py",
+    "tests/F13_offline_modules.py",
+    "tests/F14_helpers.py",
+    "tests/F14_runtime.py",
+    "tests/F15_execution.py",
+    "tests/F15_helpers.py",
+    "tests/F16_helpers.py",
+    "tests/F16_interactive.py",
+    "tests/F17_helpers.py",
+    "tests/F17_package_suites.py",
+    "tests/F18_helpers.py",
+    "tests/F18_observability.py",
+    "tests/F19_c_embedding.py",
+    "tests/F19_helpers.py",
+    "tests/F20_bindings.py",
+    "tests/F20_helpers.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "PATH=\"$PWD:$PATH\" GOTOOLCHAIN=local GOPROXY=off python3 -m pytest -p no:cacheprovider tests/F01_evaluation.py tests/F01_helpers.py tests/F02_helpers.py tests/F02_scalars.py tests/F03_collections.py tests/F03_helpers.py tests/F04_control_flow.py tests/F05_defer_recovery.py tests/F06_helpers.py tests/F06_methods_interfaces.py tests/F07_channels.py tests/F07_helpers.py tests/F08_generics.py tests/F09_helpers.py tests/F09_native_reflection.py tests/F10_helpers.py tests/F10_libraries.py tests/F11_helpers.py tests/F11_packages.py tests/F12_helpers.py tests/F12_remote_modules.py tests/F13_helpers.py tests/F13_offline_modules.py tests/F14_helpers.py tests/F14_runtime.py tests/F15_execution.py tests/F15_helpers.py tests/F16_helpers.py tests/F16_interactive.py tests/F17_helpers.py tests/F17_package_suites.py tests/F18_helpers.py tests/F18_observability.py tests/F19_c_embedding.py tests/F19_helpers.py tests/F20_bindings.py tests/F20_helpers.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "PATH=\"$PWD:$PATH\" GOTOOLCHAIN=local GOPROXY=off python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_evaluation.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_scalars.py"
+    ],
+    "F03": [
+      "tests/F03_collections.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_control_flow.py"
+    ],
+    "F05": [
+      "tests/F05_defer_recovery.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_methods_interfaces.py"
+    ],
+    "F07": [
+      "tests/F07_channels.py",
+      "tests/F07_helpers.py"
+    ],
+    "F08": [
+      "tests/F08_generics.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_native_reflection.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_libraries.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_packages.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_remote_modules.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_offline_modules.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_runtime.py"
+    ],
+    "F15": [
+      "tests/F15_execution.py",
+      "tests/F15_helpers.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_interactive.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_package_suites.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_observability.py"
+    ],
+    "F19": [
+      "tests/F19_c_embedding.py",
+      "tests/F19_helpers.py"
+    ],
+    "F20": [
+      "tests/F20_bindings.py",
+      "tests/F20_helpers.py"
+    ]
+  }
+}

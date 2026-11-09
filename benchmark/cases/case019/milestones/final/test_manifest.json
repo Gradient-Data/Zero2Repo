@@ -1,0 +1,134 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_dimensions_colors.py",
+    "tests/F01_helpers.py",
+    "tests/F02_helpers.py",
+    "tests/F02_pdf_production.py",
+    "tests/F03_helpers.py",
+    "tests/F03_resource_discovery.py",
+    "tests/F04_fonts_typography.py",
+    "tests/F04_helpers.py",
+    "tests/F05_helpers.py",
+    "tests/F05_style_selection.py",
+    "tests/F06_helpers.py",
+    "tests/F06_language_strings.py",
+    "tests/F07_helpers.py",
+    "tests/F07_text_blocks.py",
+    "tests/F08_helpers.py",
+    "tests/F08_page_flow.py",
+    "tests/F09_helpers.py",
+    "tests/F09_references.py",
+    "tests/F10_helpers.py",
+    "tests/F10_images_drawing.py",
+    "tests/F11_helpers.py",
+    "tests/F11_tables.py",
+    "tests/F12_helpers.py",
+    "tests/F12_notes_citations.py",
+    "tests/F13_helpers.py",
+    "tests/F13_navigation.py",
+    "tests/F14_helpers.py",
+    "tests/F14_indexes.py",
+    "tests/F15_helpers.py",
+    "tests/F15_mathematics.py",
+    "tests/F16_helpers.py",
+    "tests/F16_templates.py",
+    "tests/F17_helpers.py",
+    "tests/F17_structured_input.py",
+    "tests/F18_cli_rendering.py",
+    "tests/F18_helpers.py",
+    "tests/F19_helpers.py",
+    "tests/F19_sphinx_publishing.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "PYTHONPATH=/app/.build PATH=/opt/venv/bin:$PATH /opt/venv/bin/python -m pytest -p no:cacheprovider tests/F01_dimensions_colors.py tests/F01_helpers.py tests/F02_helpers.py tests/F02_pdf_production.py tests/F03_helpers.py tests/F03_resource_discovery.py tests/F04_fonts_typography.py tests/F04_helpers.py tests/F05_helpers.py tests/F05_style_selection.py tests/F06_helpers.py tests/F06_language_strings.py tests/F07_helpers.py tests/F07_text_blocks.py tests/F08_helpers.py tests/F08_page_flow.py tests/F09_helpers.py tests/F09_references.py tests/F10_helpers.py tests/F10_images_drawing.py tests/F11_helpers.py tests/F11_tables.py tests/F12_helpers.py tests/F12_notes_citations.py tests/F13_helpers.py tests/F13_navigation.py tests/F14_helpers.py tests/F14_indexes.py tests/F15_helpers.py tests/F15_mathematics.py tests/F16_helpers.py tests/F16_templates.py tests/F17_helpers.py tests/F17_structured_input.py tests/F18_cli_rendering.py tests/F18_helpers.py tests/F19_helpers.py tests/F19_sphinx_publishing.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "PYTHONPATH=/app/.build PATH=/opt/venv/bin:$PATH /opt/venv/bin/python -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_dimensions_colors.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_pdf_production.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_resource_discovery.py"
+    ],
+    "F04": [
+      "tests/F04_fonts_typography.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_style_selection.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_language_strings.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_text_blocks.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_page_flow.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_references.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_images_drawing.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_tables.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_notes_citations.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_navigation.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_indexes.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_mathematics.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_templates.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_structured_input.py"
+    ],
+    "F18": [
+      "tests/F18_cli_rendering.py",
+      "tests/F18_helpers.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_sphinx_publishing.py"
+    ]
+  },
+  "support_files": [
+    "tests/assets"
+  ]
+}

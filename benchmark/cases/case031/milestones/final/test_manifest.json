@@ -1,0 +1,140 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_lifecycle.py",
+    "tests/F02_axes.py",
+    "tests/F03_electrical.py",
+    "tests/F03_helpers.py",
+    "tests/F04_helpers.py",
+    "tests/F04_persistence.py",
+    "tests/F05_helpers.py",
+    "tests/F05_power_flow.py",
+    "tests/F06_dispatch.py",
+    "tests/F06_helpers.py",
+    "tests/F07_helpers.py",
+    "tests/F07_storage_coupling.py",
+    "tests/F08_helpers.py",
+    "tests/F08_investment.py",
+    "tests/F09_helpers.py",
+    "tests/F09_scheduling.py",
+    "tests/F10_global_constraints.py",
+    "tests/F10_helpers.py",
+    "tests/F11_custom_models.py",
+    "tests/F11_helpers.py",
+    "tests/F12_alternatives.py",
+    "tests/F12_helpers.py",
+    "tests/F13_helpers.py",
+    "tests/F13_piecewise.py",
+    "tests/F14_helpers.py",
+    "tests/F14_stochastic.py",
+    "tests/F15_contingencies.py",
+    "tests/F15_helpers.py",
+    "tests/F16_helpers.py",
+    "tests/F16_rolling.py",
+    "tests/F17_helpers.py",
+    "tests/F17_spatial.py",
+    "tests/F18_helpers.py",
+    "tests/F18_temporal.py",
+    "tests/F19_helpers.py",
+    "tests/F19_statistics.py",
+    "tests/F20_helpers.py",
+    "tests/F20_visualisation.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "MPLBACKEND=Agg /opt/conda/bin/python -m pytest -p no:cacheprovider tests/F01_lifecycle.py tests/F02_axes.py tests/F03_electrical.py tests/F03_helpers.py tests/F04_helpers.py tests/F04_persistence.py tests/F05_helpers.py tests/F05_power_flow.py tests/F06_dispatch.py tests/F06_helpers.py tests/F07_helpers.py tests/F07_storage_coupling.py tests/F08_helpers.py tests/F08_investment.py tests/F09_helpers.py tests/F09_scheduling.py tests/F10_global_constraints.py tests/F10_helpers.py tests/F11_custom_models.py tests/F11_helpers.py tests/F12_alternatives.py tests/F12_helpers.py tests/F13_helpers.py tests/F13_piecewise.py tests/F14_helpers.py tests/F14_stochastic.py tests/F15_contingencies.py tests/F15_helpers.py tests/F16_helpers.py tests/F16_rolling.py tests/F17_helpers.py tests/F17_spatial.py tests/F18_helpers.py tests/F18_temporal.py tests/F19_helpers.py tests/F19_statistics.py tests/F20_helpers.py tests/F20_visualisation.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "MPLBACKEND=Agg /opt/conda/bin/python -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_lifecycle.py"
+    ],
+    "F02": [
+      "tests/F02_axes.py"
+    ],
+    "F03": [
+      "tests/F03_electrical.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_persistence.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_power_flow.py"
+    ],
+    "F06": [
+      "tests/F06_dispatch.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_storage_coupling.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_investment.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_scheduling.py"
+    ],
+    "F10": [
+      "tests/F10_global_constraints.py",
+      "tests/F10_helpers.py"
+    ],
+    "F11": [
+      "tests/F11_custom_models.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_alternatives.py",
+      "tests/F12_helpers.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_piecewise.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_stochastic.py"
+    ],
+    "F15": [
+      "tests/F15_contingencies.py",
+      "tests/F15_helpers.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_rolling.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_spatial.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_temporal.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_statistics.py"
+    ],
+    "F20": [
+      "tests/F20_helpers.py",
+      "tests/F20_visualisation.py"
+    ]
+  },
+  "support_files": [
+    "tests/F04_wheels/deepdiff-8.6.1-py3-none-any.whl",
+    "tests/F04_wheels/geojson-3.2.0-py3-none-any.whl",
+    "tests/F04_wheels/lxml-6.0.2-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl",
+    "tests/F04_wheels/orderly_set-5.5.0-py3-none-any.whl",
+    "tests/F04_wheels/pandapower-3.2.1-py3-none-any.whl"
+  ]
+}

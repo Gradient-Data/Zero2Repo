@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case032",
+  "ecosystem": "pip",
+  "install_ban": [
+    "numpyro"
+  ],
+  "import_ban": [
+    "numpyro"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "numpyro",
+      "runtime": "python3",
+      "evidence": "Probed the original recipe image using casebox: Python 3.13.13 resolves numpyro to /opt/conda/lib/python3.13/site-packages/numpyro/__init__.py; installed distribution metadata reports numpyro 0.22.0."
+    }
+  ],
+  "notes": "Ban only the upstream NumPyro distribution and module root confirmed by pyproject.toml and the identity map; allow NumPy, JAX, jaxlib, SciPy, Pyro API, Funsor, TensorFlow Probability, Graphviz and build tools. Recipe-image probes found the installed upstream Python package and no additional product counterpart in system Python, Node built-ins/global packages, Perl, Tcl/Tk or the OS package inventory."
+}

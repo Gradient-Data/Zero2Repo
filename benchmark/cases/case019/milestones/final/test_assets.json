@@ -1,0 +1,328 @@
+{
+  "assets": [
+    {
+      "path": "tests/assets/F01_pymupdf.whl",
+      "url": "https://files.pythonhosted.org/packages/4f/bf/6e02e3d84b32c137c71a0a3dcdba8f2f6e9950619a3bc272245c7c06a051/pymupdf-1.26.6-cp310-abi3-manylinux_2_28_x86_64.whl",
+      "sha256": "7777d0b7124c2ebc94849536b6a1fb85d158df3b9d873935e63036559391534c",
+      "size": 24115381
+    },
+    {
+      "path": "tests/assets/F04_fonttools.whl",
+      "url": "https://files.pythonhosted.org/packages/2c/47/c99d5268f354002ce80f8d029cd9d7d872969da1de8b93d32de4dc56d6f4/fonttools-4.63.0-py3-none-any.whl",
+      "sha256": "445af2eab030a16b9171ea8bdda7ebf7d96bda2df88ee182a464252f6e05e20d",
+      "size": 1164562
+    },
+    {
+      "path": "tests/assets/F07_pyphen.whl",
+      "url": "https://files.pythonhosted.org/packages/7b/1f/c2142d2edf833a90728e5cdeb10bdbdc094dde8dbac078cee0cf33f5e11b/pyphen-0.17.2-py3-none-any.whl",
+      "sha256": "3a07fb017cb2341e1d9ff31b8634efb1ae4dc4b130468c7c39dd3d32e7c3affd",
+      "size": 2079358
+    },
+    {
+      "path": "tests/assets/F19_debs/fontconfig_2.15.0-1.1ubuntu2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/fontconfig_2.15.0-1.1ubuntu2_amd64.deb",
+      "sha256": "ddf0aace42b13a5bc38904e848b145b787ea254cddf5213d150254bd654db6e5",
+      "size": 180204
+    },
+    {
+      "path": "tests/assets/F19_debs/graphviz_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/graphviz_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "be4e5b1b036babfb1663c095bc645c2fbab79dd57b213fc3b1ab0d48e810dd85",
+      "size": 642420
+    },
+    {
+      "path": "tests/assets/F19_debs/libann0_1.1.2+doc-9build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libann0_1.1.2%2Bdoc-9build1_amd64.deb",
+      "sha256": "88347025b6292517dc591fd6a51c28b6a91a46c999505e3e54677c99038074e1",
+      "size": 25480
+    },
+    {
+      "path": "tests/assets/F19_debs/libaom3_3.8.2-2ubuntu0.2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libaom3_3.8.2-2ubuntu0.2_amd64.deb",
+      "sha256": "d1ada7141fc5eb4e3ffdcdd027da2afc1177b41c3acac40eb3a132959241cb1f",
+      "size": 1942126
+    },
+    {
+      "path": "tests/assets/F19_debs/libarchive13t64_3.7.2-2ubuntu0.9_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libarchive13t64_3.7.2-2ubuntu0.9_amd64.deb",
+      "sha256": "b4e618d2237da9b00b88947113ebad8f93134f07f670a2df59cc5201c6c4307f",
+      "size": 383406
+    },
+    {
+      "path": "tests/assets/F19_debs/libcdt5_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libcdt5_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "3c49c2624e6a895d729bff5be16c96beeb1347e3282bc40f3d210c715fba07ef",
+      "size": 21614
+    },
+    {
+      "path": "tests/assets/F19_debs/libcgraph6_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libcgraph6_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "4555e20d8cd068de6343484c5bf825d03830c5048ccf56a9baec9638ca5815b2",
+      "size": 44644
+    },
+    {
+      "path": "tests/assets/F19_debs/libdatrie1_0.2.13-3build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libdatrie1_0.2.13-3build1_amd64.deb",
+      "sha256": "1ae164e40e413eac4fbd38ce1c6ef9591f7a03278ad9076d71fa29258727f447",
+      "size": 18992
+    },
+    {
+      "path": "tests/assets/F19_debs/libdeflate0_1.19-1build1.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libdeflate0_1.19-1build1.1_amd64.deb",
+      "sha256": "8e7dfa9e63a9b5058071b84da48bb2e30dea07de169e80fbc759fe0e68639269",
+      "size": 43914
+    },
+    {
+      "path": "tests/assets/F19_debs/libfribidi0_1.0.13-3build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libfribidi0_1.0.13-3build1_amd64.deb",
+      "sha256": "6cd50259d39ce0dfafee2632c6268538e6a02590e77161a133e9683af346dd1d",
+      "size": 26150
+    },
+    {
+      "path": "tests/assets/F19_debs/libgd3_2.3.3-9ubuntu5_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgd3_2.3.3-9ubuntu5_amd64.deb",
+      "sha256": "dbef5ad99eec399fd6afeb6d0cc92d81a8b3295a7ac80ac71311ea09c49704ae",
+      "size": 127506
+    },
+    {
+      "path": "tests/assets/F19_debs/libgif7_5.2.2-1ubuntu1.2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgif7_5.2.2-1ubuntu1.2_amd64.deb",
+      "sha256": "8137945ac9167f26d0264f403ffb48a45974f096e8acab5479e33fdba6c28a36",
+      "size": 35608
+    },
+    {
+      "path": "tests/assets/F19_debs/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "sha256": "ff1b650f655b36dfe202fdbae6bb02b363c7257b6dd23e4f95ab61f716190df3",
+      "size": 1547558
+    },
+    {
+      "path": "tests/assets/F19_debs/libgraphite2-3_1.3.14-2ubuntu0.24.04.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgraphite2-3_1.3.14-2ubuntu0.24.04.1_amd64.deb",
+      "sha256": "2413ea0f6670d6610ee7c2f550551d69fa341f4b9c78e20eb397f0d1bbe914cb",
+      "size": 73352
+    },
+    {
+      "path": "tests/assets/F19_debs/libgts-0.7-5t64_0.7.6+darcs121130-5.2build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgts-0.7-5t64_0.7.6%2Bdarcs121130-5.2build1_amd64.deb",
+      "sha256": "a6741ed94f3e786eaed0a9fcb69f641327cfe288af4f043e7036b5257e87fc48",
+      "size": 160592
+    },
+    {
+      "path": "tests/assets/F19_debs/libgvc6_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgvc6_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "dc674afb98d9b64699f63be3a4e92d4f3b563435ebfc70cbaec0c91b8f41fb48",
+      "size": 716230
+    },
+    {
+      "path": "tests/assets/F19_debs/libgvpr2_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libgvpr2_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "1a560080462b80ab56e0fe09af2abd52974a256e25b4f384b9be5872c1073c82",
+      "size": 186968
+    },
+    {
+      "path": "tests/assets/F19_debs/libharfbuzz0b_8.3.0-2build2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libharfbuzz0b_8.3.0-2build2_amd64.deb",
+      "sha256": "d6f7eea2244f98aa0463a056680d4629476bf624767ede301560e24add686b5c",
+      "size": 468874
+    },
+    {
+      "path": "tests/assets/F19_debs/libheif-plugin-aomdec_1.17.6-1ubuntu4.9_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libheif-plugin-aomdec_1.17.6-1ubuntu4.9_amd64.deb",
+      "sha256": "d5494f16d0e51b897a653a1f91e6bbdce4917476d7be40867cb214462cbd4fb2",
+      "size": 11894
+    },
+    {
+      "path": "tests/assets/F19_debs/libheif1_1.17.6-1ubuntu4.9_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libheif1_1.17.6-1ubuntu4.9_amd64.deb",
+      "sha256": "1680862f44d1f15cb2a507596c268c0de30f636cd682e912859e241d7c033467",
+      "size": 277292
+    },
+    {
+      "path": "tests/assets/F19_debs/libice6_1.0.10-1build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libice6_1.0.10-1build3_amd64.deb",
+      "sha256": "ad1edb5303574fee154e487947177e5bd15363aa71b92f78f5a2a7145fdb81c5",
+      "size": 41398
+    },
+    {
+      "path": "tests/assets/F19_debs/libicu74_74.2-1ubuntu3.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libicu74_74.2-1ubuntu3.1_amd64.deb",
+      "sha256": "c9a70989678660eed9a1e904c74fa043da8bec8e2036856fc16e31ced79b04f8",
+      "size": 10860078
+    },
+    {
+      "path": "tests/assets/F19_debs/libjbig0_2.1-6.1ubuntu2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libjbig0_2.1-6.1ubuntu2_amd64.deb",
+      "sha256": "074a760a86213a1286ad60f56394c90885cf45af070626a88c480d90b78c175a",
+      "size": 29668
+    },
+    {
+      "path": "tests/assets/F19_debs/libjpeg-turbo8_2.1.5-2ubuntu2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libjpeg-turbo8_2.1.5-2ubuntu2_amd64.deb",
+      "sha256": "f68b5b23bc8a1688fb787d2aed7e2cdf895a73022f6a5025e183162dac4500b2",
+      "size": 149982
+    },
+    {
+      "path": "tests/assets/F19_debs/libjpeg8_8c-2ubuntu11_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libjpeg8_8c-2ubuntu11_amd64.deb",
+      "sha256": "4d6ed682972bddf62af158a06d68a0dda497e421423b7ca92fb450b3d9ceaac9",
+      "size": 2148
+    },
+    {
+      "path": "tests/assets/F19_debs/liblab-gamut1_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/liblab-gamut1_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "b9fa73d671d96b07360dd3b7a4d35814c8b892b5bf4b1e0945d3bc7937c9ee3d",
+      "size": 1886394
+    },
+    {
+      "path": "tests/assets/F19_debs/liblept5_1.82.0-3build4_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/liblept5_1.82.0-3build4_amd64.deb",
+      "sha256": "c2bb81d58f032b09917c0d50994cce905287a1596304a4e99681a03601456ea8",
+      "size": 1099276
+    },
+    {
+      "path": "tests/assets/F19_debs/liblerc4_4.0.0+ds-4ubuntu2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/liblerc4_4.0.0%2Bds-4ubuntu2_amd64.deb",
+      "sha256": "f1b9dbfa28c56564f6b544f3757f5f3f4d549ce9962f39e897812c23b0a5d0e7",
+      "size": 179378
+    },
+    {
+      "path": "tests/assets/F19_debs/libltdl7_2.4.7-7build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libltdl7_2.4.7-7build1_amd64.deb",
+      "sha256": "02d0d2d7e1bf73f838a92f8df7a9b07b698c837e82bd89aee6a581cf793cd966",
+      "size": 40258
+    },
+    {
+      "path": "tests/assets/F19_debs/libopenjp2-7_2.5.0-2ubuntu0.5_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libopenjp2-7_2.5.0-2ubuntu0.5_amd64.deb",
+      "sha256": "24b92ce9c4b306f5370e768024d35ec565792001678b510f0d40b6395b43524f",
+      "size": 173572
+    },
+    {
+      "path": "tests/assets/F19_debs/libpango-1.0-0_1.52.1+ds-1build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libpango-1.0-0_1.52.1%2Bds-1build1_amd64.deb",
+      "sha256": "09dfa5c881ab273ec6bc1830adcefdc407fcd619316e68fb26ca3a23d0fc9f54",
+      "size": 230606
+    },
+    {
+      "path": "tests/assets/F19_debs/libpangocairo-1.0-0_1.52.1+ds-1build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libpangocairo-1.0-0_1.52.1%2Bds-1build1_amd64.deb",
+      "sha256": "98cf5fc9076c2911fe20dfc1e41cd8f686a2bb5d539b1105fab18105b0db1376",
+      "size": 28828
+    },
+    {
+      "path": "tests/assets/F19_debs/libpangoft2-1.0-0_1.52.1+ds-1build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libpangoft2-1.0-0_1.52.1%2Bds-1build1_amd64.deb",
+      "sha256": "cc6bc9d86ef5f329edacaa4895232d8a9b8f95c5cbc77c3c460a3f64cecc213d",
+      "size": 42532
+    },
+    {
+      "path": "tests/assets/F19_debs/libpathplan4_2.42.2-9ubuntu0.1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libpathplan4_2.42.2-9ubuntu0.1_amd64.deb",
+      "sha256": "8cff70c607271662df4719d2e2848731d8f23ab9108e79404066a6f93af9fd23",
+      "size": 23992
+    },
+    {
+      "path": "tests/assets/F19_debs/libsharpyuv0_1.3.2-0.4build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libsharpyuv0_1.3.2-0.4build3_amd64.deb",
+      "sha256": "4e1763494e5b9d34192313aa88e38201fc67b3f13ea96ca268d26401a3002791",
+      "size": 15786
+    },
+    {
+      "path": "tests/assets/F19_debs/libsm6_1.2.3-1build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libsm6_1.2.3-1build3_amd64.deb",
+      "sha256": "1d27ebc381b499075a28c504be4d7d424c63b6866354736ac7f8d25813860cdf",
+      "size": 15684
+    },
+    {
+      "path": "tests/assets/F19_debs/libtesseract5_5.3.4-1build5_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libtesseract5_5.3.4-1build5_amd64.deb",
+      "sha256": "a38438115dc203b5abc1e6a6b24eb5273ba82161a11faa2f619bf5f7622efb14",
+      "size": 1291308
+    },
+    {
+      "path": "tests/assets/F19_debs/libthai-data_0.1.29-2build1_all.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libthai-data_0.1.29-2build1_all.deb",
+      "sha256": "6035d4a714290b97816bed7f3bf64921c6358ddb84d1dacdddccdc1cf39bffb7",
+      "size": 158016
+    },
+    {
+      "path": "tests/assets/F19_debs/libthai0_0.1.29-2build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libthai0_0.1.29-2build1_amd64.deb",
+      "sha256": "5ada7045c5f84a4b774e6449151800aa6470e8d01dc9d6124ef4a44ae6af5508",
+      "size": 18914
+    },
+    {
+      "path": "tests/assets/F19_debs/libtiff6_4.5.1+git230720-4ubuntu2.5_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libtiff6_4.5.1%2Bgit230720-4ubuntu2.5_amd64.deb",
+      "sha256": "564cdf59dda5e1a826c51b5868ee2785fffa26ee5a7bad95bc5e8c8224c931b8",
+      "size": 199612
+    },
+    {
+      "path": "tests/assets/F19_debs/libwebp7_1.3.2-0.4build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libwebp7_1.3.2-0.4build3_amd64.deb",
+      "sha256": "c86f6439f0bbc531f7199794654231f3b29327d6585958511b958795d51c2484",
+      "size": 230220
+    },
+    {
+      "path": "tests/assets/F19_debs/libwebpmux3_1.3.2-0.4build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libwebpmux3_1.3.2-0.4build3_amd64.deb",
+      "sha256": "0dd0f2de0fbbda7239209332ddfe512f4383d0489dd3f9fb25398f58c1621724",
+      "size": 25674
+    },
+    {
+      "path": "tests/assets/F19_debs/libxaw7_1.0.14-1build2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libxaw7_1.0.14-1build2_amd64.deb",
+      "sha256": "2a9cdc82ecf566de76e05394efc604c9cced49e12c28b10e1ca101062b47bac0",
+      "size": 186984
+    },
+    {
+      "path": "tests/assets/F19_debs/libxml2_2.9.14+dfsg-1.3ubuntu3.10_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libxml2_2.9.14%2Bdfsg-1.3ubuntu3.10_amd64.deb",
+      "sha256": "c5a065f85c1e6f605741e365e40cad71c3ceb0e85e2791400bd35b8896e12ad1",
+      "size": 763592
+    },
+    {
+      "path": "tests/assets/F19_debs/libxmu6_1.1.3-3build2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libxmu6_1.1.3-3build2_amd64.deb",
+      "sha256": "05c13bce0e9a80139dfa72cc8e7a695b4f7d58b1884423929eade62179d99853",
+      "size": 47610
+    },
+    {
+      "path": "tests/assets/F19_debs/libxpm4_3.5.17-1ubuntu0.24.04.2_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libxpm4_3.5.17-1ubuntu0.24.04.2_amd64.deb",
+      "sha256": "e14b1581dc675ded6519132f5fccb31b39d534117399d3153082e353b6fe2704",
+      "size": 36684
+    },
+    {
+      "path": "tests/assets/F19_debs/libxt6t64_1.2.1-1.2build1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libxt6t64_1.2.1-1.2build1_amd64.deb",
+      "sha256": "2e4317d5ae1a45e517771ea0b8d93519b5f915ab08983facecd480d64dbd1489",
+      "size": 170810
+    },
+    {
+      "path": "tests/assets/F19_debs/tesseract-ocr-eng_4.1.0-2_all.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/tesseract-ocr-eng_4.1.0-2_all.deb",
+      "sha256": "b1996b3113c78663f4dd16cf18aa1f288b07e9624f8d4a0ddbd7d9b52a234ba7",
+      "size": 1818236
+    },
+    {
+      "path": "tests/assets/F19_debs/tesseract-ocr-osd_4.1.0-2_all.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/tesseract-ocr-osd_4.1.0-2_all.deb",
+      "sha256": "a266496b3268134493808c1595c9d16ac92c7e1c28e3e0bf46fdb322df95ca68",
+      "size": 3840642
+    },
+    {
+      "path": "tests/assets/F19_debs/tesseract-ocr_5.3.4-1build5_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/tesseract-ocr_5.3.4-1build5_amd64.deb",
+      "sha256": "2dfac382d77215aee0c3de4a2a2205505d5f2195e72e79b54ad32154fc08da77",
+      "size": 327852
+    },
+    {
+      "path": "tests/assets/F19_debs/x11-common_7.7+23ubuntu3_all.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/x11-common_7.7%2B23ubuntu3_all.deb",
+      "sha256": "b545fa5196dd7467ba3770d6ce575abcd7941071961ea9f7535a319d9d20fd46",
+      "size": 21748
+    }
+  ]
+}

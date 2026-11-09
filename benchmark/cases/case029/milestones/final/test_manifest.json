@@ -1,0 +1,139 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_agent.py",
+    "tests/F01_helpers.py",
+    "tests/F02_helpers.py",
+    "tests/F02_models.py",
+    "tests/F03_helpers.py",
+    "tests/F03_tools.py",
+    "tests/F04_execution.py",
+    "tests/F04_helpers.py",
+    "tests/F05_guardrails.py",
+    "tests/F05_helpers.py",
+    "tests/F06_helpers.py",
+    "tests/F06_observability.py",
+    "tests/F07_helpers.py",
+    "tests/F07_sessions.py",
+    "tests/F08_approval.py",
+    "tests/F08_helpers.py",
+    "tests/F09_delegation.py",
+    "tests/F09_helpers.py",
+    "tests/F10_helpers.py",
+    "tests/F10_streaming.py",
+    "tests/F11_helpers.py",
+    "tests/F11_retention.py",
+    "tests/F12_helpers.py",
+    "tests/F12_hosted.py",
+    "tests/F13_helpers.py",
+    "tests/F13_local.py",
+    "tests/F14_helpers.py",
+    "tests/F14_mcp.py",
+    "tests/F15_helpers.py",
+    "tests/F15_provisioning.py",
+    "tests/F15_workspace.py",
+    "tests/F16_execution.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_memory.py",
+    "tests/F18_helpers.py",
+    "tests/F18_realtime.py",
+    "tests/F19_helpers.py",
+    "tests/F19_voice.py",
+    "tests/F20_helpers.py",
+    "tests/F20_visualization.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "TIKTOKEN_CACHE_DIR=/opt/tokenizer-data /opt/conda/bin/python3 -m pytest -p no:cacheprovider tests/F01_agent.py tests/F01_helpers.py tests/F02_helpers.py tests/F02_models.py tests/F03_helpers.py tests/F03_tools.py tests/F04_execution.py tests/F04_helpers.py tests/F05_guardrails.py tests/F05_helpers.py tests/F06_helpers.py tests/F06_observability.py tests/F07_helpers.py tests/F07_sessions.py tests/F08_approval.py tests/F08_helpers.py tests/F09_delegation.py tests/F09_helpers.py tests/F10_helpers.py tests/F10_streaming.py tests/F11_helpers.py tests/F11_retention.py tests/F12_helpers.py tests/F12_hosted.py tests/F13_helpers.py tests/F13_local.py tests/F14_helpers.py tests/F14_mcp.py tests/F15_helpers.py tests/F15_provisioning.py tests/F15_workspace.py tests/F16_execution.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_memory.py tests/F18_helpers.py tests/F18_realtime.py tests/F19_helpers.py tests/F19_voice.py tests/F20_helpers.py tests/F20_visualization.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "TIKTOKEN_CACHE_DIR=/opt/tokenizer-data /opt/conda/bin/python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_agent.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_models.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_tools.py"
+    ],
+    "F04": [
+      "tests/F04_execution.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_guardrails.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_observability.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_sessions.py"
+    ],
+    "F08": [
+      "tests/F08_approval.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_delegation.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_streaming.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_retention.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_hosted.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_local.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_mcp.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_provisioning.py",
+      "tests/F15_workspace.py"
+    ],
+    "F16": [
+      "tests/F16_execution.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_memory.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_realtime.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_voice.py"
+    ],
+    "F20": [
+      "tests/F20_helpers.py",
+      "tests/F20_visualization.py"
+    ]
+  }
+}

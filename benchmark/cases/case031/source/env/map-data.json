@@ -1,0 +1,77 @@
+[
+  {
+    "url": "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_boundary_lines_land.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "16ead035f539c8b6c23650c5845d86ad3556553e7456bdf9b4730210f26aacbe"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "ce1ac7036499a0edd641fbc093cd209a98f96a49d2eca8480aaacad35138a7f6"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_coastline.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "e547d749445eaa0964aba76738090ec88f5e63c4585122170f98c67a7ea922dc"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_ocean.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "db626fcd5d50b096b156c78a2cc95011b39f32a61b4e47d147e3f7a77b8b2719"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "bb2954981570498a4b4344f8e83fa54caa5858e15e800094112407d2bd2f940d"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "0f243aeac8ac6cf26f0417285b0bd33ac47f1b5bdb719fd3e0df37d03ea37110"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/110m/physical/ne_110m_coastline.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "664449b39070027e882abb295974d182afec18ca21107273d17e9e8bf6f64817"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "1926c621afd6ac67c3f36639bb1236134a48d82226dc675d3e3df53d02d2a3de"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/110m/physical/ne_110m_ocean.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "69defc462d126f2dca698f14da6771f491254b23ba81fbb7c5ae5fbe0bce3fa0"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_boundary_lines_land.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "02f369ae10578c4ce33fc4a08f8cdd69ea11eb39b44d7923e88eb7199aaff8ea"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip",
+    "directory": "shapefiles/natural_earth/cultural",
+    "sha256": "5fed433373581fa648920435f937d95f2d3c0200e067409c6478dcdf1b853139"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/50m/physical/ne_50m_coastline.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "640f805509b822f57f4840a2e18d9ff2412cf1cf6976124701c2789436166fde"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/50m/physical/ne_50m_land.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "0b8e670cf80dce9cbebe2a193bc44ba5602758c22e1fa603980553646d7ff162"
+  },
+  {
+    "url": "https://naciscdn.org/naturalearth/50m/physical/ne_50m_ocean.zip",
+    "directory": "shapefiles/natural_earth/physical",
+    "sha256": "abf268ba229f5eaab5012d7bfba340b424a4d25ed1efa085815c4a17ee0fd77d"
+  }
+]

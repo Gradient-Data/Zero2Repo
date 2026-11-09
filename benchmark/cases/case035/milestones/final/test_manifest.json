@@ -1,0 +1,150 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F00_documents.py",
+    "tests/F00_reports.py",
+    "tests/F00_transport.py",
+    "tests/F01_helpers.py",
+    "tests/F01_project_definition.py",
+    "tests/F02_helpers.py",
+    "tests/F02_plugin_extensions.py",
+    "tests/F03_configuration.py",
+    "tests/F03_helpers.py",
+    "tests/F04_dependencies.py",
+    "tests/F04_helpers.py",
+    "tests/F05_helpers.py",
+    "tests/F05_sources.py",
+    "tests/F06_helpers.py",
+    "tests/F06_resolution.py",
+    "tests/F07_locking.py",
+    "tests/F08_helpers.py",
+    "tests/F08_python_management.py",
+    "tests/F09_helpers.py",
+    "tests/F09_project_environments.py",
+    "tests/F09_windows.py",
+    "tests/F10_distribution_building.py",
+    "tests/F10_helpers.py",
+    "tests/F11_helpers.py",
+    "tests/F11_installation.py",
+    "tests/F12_helpers.py",
+    "tests/F12_project_plugins.py",
+    "tests/F13_dependency_maintenance.py",
+    "tests/F13_helpers.py",
+    "tests/F14_project_creation.py",
+    "tests/F15_dependency_inspection.py",
+    "tests/F15_helpers.py",
+    "tests/F16_command_execution.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_project_versions.py",
+    "tests/F18_distribution_publishing.py",
+    "tests/F18_helpers.py",
+    "tests/F19_helpers.py",
+    "tests/F19_runtime_management.py",
+    "tests/F20_helpers.py",
+    "tests/F20_repository_cache.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "case_python=$(command -v python3) && case_site=$(/app/.runtime/bin/python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))') && PATH=/app/.runtime/bin:$PATH PYTHONPATH=/app/src:$case_site \"$case_python\" -m pytest -o addopts= -p no:cacheprovider tests/F00_documents.py tests/F00_reports.py tests/F00_transport.py tests/F01_helpers.py tests/F01_project_definition.py tests/F02_helpers.py tests/F02_plugin_extensions.py tests/F03_configuration.py tests/F03_helpers.py tests/F04_dependencies.py tests/F04_helpers.py tests/F05_helpers.py tests/F05_sources.py tests/F06_helpers.py tests/F06_resolution.py tests/F07_locking.py tests/F08_helpers.py tests/F08_python_management.py tests/F09_helpers.py tests/F09_project_environments.py tests/F09_windows.py tests/F10_distribution_building.py tests/F10_helpers.py tests/F11_helpers.py tests/F11_installation.py tests/F12_helpers.py tests/F12_project_plugins.py tests/F13_dependency_maintenance.py tests/F13_helpers.py tests/F14_project_creation.py tests/F15_dependency_inspection.py tests/F15_helpers.py tests/F16_command_execution.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_project_versions.py tests/F18_distribution_publishing.py tests/F18_helpers.py tests/F19_helpers.py tests/F19_runtime_management.py tests/F20_helpers.py tests/F20_repository_cache.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "case_python=$(command -v python3) && case_site=$(/app/.runtime/bin/python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))') && PATH=/app/.runtime/bin:$PATH PYTHONPATH=/app/src:$case_site \"$case_python\" -m pytest -o addopts= -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/F00_documents.py",
+      "tests/F00_reports.py",
+      "tests/F00_transport.py",
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_project_definition.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_plugin_extensions.py"
+    ],
+    "F03": [
+      "tests/F03_configuration.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_dependencies.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_sources.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_resolution.py"
+    ],
+    "F07": [
+      "tests/F07_locking.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_python_management.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_project_environments.py",
+      "tests/F09_windows.py"
+    ],
+    "F10": [
+      "tests/F10_distribution_building.py",
+      "tests/F10_helpers.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_installation.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_project_plugins.py"
+    ],
+    "F13": [
+      "tests/F13_dependency_maintenance.py",
+      "tests/F13_helpers.py"
+    ],
+    "F14": [
+      "tests/F14_project_creation.py"
+    ],
+    "F15": [
+      "tests/F15_dependency_inspection.py",
+      "tests/F15_helpers.py"
+    ],
+    "F16": [
+      "tests/F16_command_execution.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_project_versions.py"
+    ],
+    "F18": [
+      "tests/F18_distribution_publishing.py",
+      "tests/F18_helpers.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_runtime_management.py"
+    ],
+    "F20": [
+      "tests/F20_helpers.py",
+      "tests/F20_repository_cache.py"
+    ]
+  },
+  "support_files": [
+    "tests/F03_assets",
+    "tests/F04_assets",
+    "tests/F08_assets",
+    "tests/F09_assets",
+    "tests/F09_windows_assets",
+    "tests/F12_assets",
+    "tests/F19_assets"
+  ]
+}

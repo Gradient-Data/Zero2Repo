@@ -1,0 +1,121 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F00_candidate.py",
+    "tests/F00_oracle.py",
+    "tests/F01_helpers.py",
+    "tests/F01_source_validation.py",
+    "tests/F02_helpers.py",
+    "tests/F02_scalar_computation.py",
+    "tests/F03_compiler_configuration.py",
+    "tests/F03_helpers.py",
+    "tests/F04_helpers.py",
+    "tests/F04_native_delivery.py",
+    "tests/F05_callable_integration.py",
+    "tests/F05_helpers.py",
+    "tests/F06_numerical_arrays.py",
+    "tests/F07_generic_elementwise.py",
+    "tests/F08_helpers.py",
+    "tests/F08_typed_containers.py",
+    "tests/F09_helpers.py",
+    "tests/F09_user_objects.py",
+    "tests/F10_helpers.py",
+    "tests/F10_scalar_mathematics.py",
+    "tests/F11_helpers.py",
+    "tests/F11_numerical_computation.py",
+    "tests/F12_helpers.py",
+    "tests/F12_native_interoperability.py",
+    "tests/F13_helpers.py",
+    "tests/F13_module_projects.py",
+    "tests/F14_symbolic_evaluation.py",
+    "tests/F15_helpers.py",
+    "tests/F15_host_computation.py",
+    "tests/F16_collective_compilation.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_python_output.py",
+    "tests/F18_artifact_cleanup.py",
+    "tests/F18_helpers.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "PATH=/opt/conda/bin:$PATH /opt/conda/bin/python -P -m pytest -v --import-mode=importlib tests/F00_candidate.py tests/F00_oracle.py tests/F01_helpers.py tests/F01_source_validation.py tests/F02_helpers.py tests/F02_scalar_computation.py tests/F03_compiler_configuration.py tests/F03_helpers.py tests/F04_helpers.py tests/F04_native_delivery.py tests/F05_callable_integration.py tests/F05_helpers.py tests/F06_numerical_arrays.py tests/F07_generic_elementwise.py tests/F08_helpers.py tests/F08_typed_containers.py tests/F09_helpers.py tests/F09_user_objects.py tests/F10_helpers.py tests/F10_scalar_mathematics.py tests/F11_helpers.py tests/F11_numerical_computation.py tests/F12_helpers.py tests/F12_native_interoperability.py tests/F13_helpers.py tests/F13_module_projects.py tests/F14_symbolic_evaluation.py tests/F15_helpers.py tests/F15_host_computation.py tests/F16_collective_compilation.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_python_output.py tests/F18_artifact_cleanup.py tests/F18_helpers.py tests/_helpers.py",
+  "test_command_template": "PATH=/opt/conda/bin:$PATH /opt/conda/bin/python -P -m pytest -v --import-mode=importlib {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/F00_candidate.py",
+      "tests/F00_oracle.py",
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_source_validation.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_scalar_computation.py"
+    ],
+    "F03": [
+      "tests/F03_compiler_configuration.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_native_delivery.py"
+    ],
+    "F05": [
+      "tests/F05_callable_integration.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_numerical_arrays.py"
+    ],
+    "F07": [
+      "tests/F07_generic_elementwise.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_typed_containers.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_user_objects.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_scalar_mathematics.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_numerical_computation.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_native_interoperability.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_module_projects.py"
+    ],
+    "F14": [
+      "tests/F14_symbolic_evaluation.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_host_computation.py"
+    ],
+    "F16": [
+      "tests/F16_collective_compilation.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_python_output.py"
+    ],
+    "F18": [
+      "tests/F18_artifact_cleanup.py",
+      "tests/F18_helpers.py"
+    ]
+  }
+}

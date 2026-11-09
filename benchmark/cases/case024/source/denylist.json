@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case024",
+  "ecosystem": "pip",
+  "install_ban": [
+    "redun"
+  ],
+  "import_ban": [
+    "redun"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "redun",
+      "runtime": "python3",
+      "evidence": "Recipe original image: /opt/runtime/bin/python resolves redun to /opt/runtime/lib/python3.12/site-packages/redun/__init__.py; installed distribution redun 0.46.0."
+    }
+  ],
+  "notes": "Ban only the upstream redun pip distribution and module root, including the copy preinstalled in the recipe image; allow standard libraries, build/test tools, database libraries, cloud SDKs, Spark, Glue, and other provided infrastructure."
+}

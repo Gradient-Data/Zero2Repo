@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "case_id": "case035",
+  "ecosystem": "pip",
+  "install_ban": [
+    "poetry"
+  ],
+  "import_ban": [
+    "poetry.__main__",
+    "poetry.__version__",
+    "poetry.config",
+    "poetry.console",
+    "poetry.exceptions",
+    "poetry.factory",
+    "poetry.inspection",
+    "poetry.installation",
+    "poetry.json",
+    "poetry.layouts",
+    "poetry.locations",
+    "poetry.masonry",
+    "poetry.mixology",
+    "poetry.packages",
+    "poetry.plugins",
+    "poetry.poetry",
+    "poetry.publishing",
+    "poetry.puzzle",
+    "poetry.pyproject",
+    "poetry.repositories",
+    "poetry.toml",
+    "poetry.utils",
+    "poetry.vcs",
+    "poetry.version"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the Poetry distribution and its implementation submodules; allow provided poetry-core (poetry.core), external plugins, Python standard libraries and general build/install dependencies. Probed both recipe images: original contains Poetry 2.5.1, while neutral contains only poetry-core 2.5.0; both Python interpreters, Node built-ins/global packages, Perl modules and OS tools expose no additional bundled equivalent in neutral. The final neutral runtime inventory printed its results but the casebox invocation subsequently timed out at 60 seconds."
+}

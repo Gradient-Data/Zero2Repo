@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "glue_version": "5.0.0",
+  "spark_version": "3.5.4",
+  "scope": "Local Glue 5.0 / Spark 3.5.4 runtime with Parquet writer and Hadoop S3A dependencies; offline product Parquet and JSON roundtrips verified.",
+  "python": {
+    "url": "https://codeload.github.com/awslabs/aws-glue-libs/tar.gz/23918d0038663555dcfc696c44c0efbe497e0705",
+    "sha256": "555fc40a58080945a14156fcd2a97d3140e9be968bae149291f78b4a7c608eb1",
+    "root": "aws-glue-libs-23918d0038663555dcfc696c44c0efbe497e0705"
+  },
+  "jars": [
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueConnectors/5.0.0/AWSGlueConnectors-5.0.0.jar",
+      "sha256": "fe6a3e05af8a4c3bb478a35293f020336f896e0a586498c53318a277b7a37ea9"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueContainerPrometheusManager/5.0.0/AWSGlueContainerPrometheusManager-5.0.0.jar",
+      "sha256": "31b95c8f37f904ee2f6a7a572947797e6e4060687af19b7ea6b2f1ccfe1de72a"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueDynamicSchema/5.0.0/AWSGlueDynamicSchema-5.0.0.jar",
+      "sha256": "0e5fdea9250fd1120eb31a6822930e4f02a9c2141d12aa837b4778c8bfd077d1"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueDynamicSchemaHiveFormat/5.0.0/AWSGlueDynamicSchemaHiveFormat-5.0.0.jar",
+      "sha256": "dc594a4bb24142681f8d4b7c4c5c8d3987e04643e284732e314c3136755d232a"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueETL/5.0.0/AWSGlueETL-5.0.0.jar",
+      "sha256": "0e2f2723094bfd520083312546385f715df1163d15528d221fd8d8a9c72e2de9"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueGrokFork/5.0.0/AWSGlueGrokFork-5.0.0.jar",
+      "sha256": "cbf278cbe90e051b3214a8a6cce5505244b1bc7988bcf2dfddef26522c37f0b0"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueJdbcCommons/5.0.0/AWSGlueJdbcCommons-5.0.0.jar",
+      "sha256": "4d718d349035448806806ea5e3b014a0f4e65d1b6f5721698df3a25c88bb31b6"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueReaders/5.0.0/AWSGlueReaders-5.0.0.jar",
+      "sha256": "258d4da73a1f485490b582c9a24967e8b68fb1d2b1729470796539c09f4c4ff0"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueServiceUtils/5.0.0/AWSGlueServiceUtils-5.0.0.jar",
+      "sha256": "f4cf310525e78832ba6dcb650d971539bd92e7646fb1b7d57ff97f1e52d62480"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/AWSGlueSimd4j/5.0.0/AWSGlueSimd4j-5.0.0.jar",
+      "sha256": "3fe73f510421f0416fd0715101849208ce5356feb96d9c8f0d7a4513674a92f6"
+    },
+    {
+      "url": "https://aws-glue-etl-artifacts.s3.amazonaws.com/release/com/amazonaws/NimbleParquet/5.0.0/NimbleParquet-5.0.0.jar",
+      "sha256": "b5d8426f77797c305250715a3bb6dabff1e92140bf02e52b65791708926d052c"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/annotations/2.29.52/annotations-2.29.52.jar",
+      "sha256": "8cd8bd8afd7eca5a367f69fd87427f6d9f3e7d359962122da24d71f1963f00cd"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/apache-client/2.29.52/apache-client-2.29.52.jar",
+      "sha256": "c96494be30ecac6f0ab7a35fdd91a4c77ca8a5daf62f3d9d84644ef0f0524dc6"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/net/sourceforge/argparse4j/argparse4j/0.9.0/argparse4j-0.9.0.jar",
+      "sha256": "9eb3b54043038bc111bf0e15a8f69895244f92e3c2bc2800158578ca711f6117"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/arns/2.29.52/arns-2.29.52.jar",
+      "sha256": "f5a4d1d9b4e4fc63c9bda49bcf1c59d23fd876b276c6b43aaca12969337303a6"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/auth/2.29.52/auth-2.29.52.jar",
+      "sha256": "4d8143b6198dc7a530c2ccdd813129c132b96736086c0d4fea85480b9bdbc5fe"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/aws-cbor-protocol/2.29.52/aws-cbor-protocol-2.29.52.jar",
+      "sha256": "4e8b44815dccf42cdaf4cd242e4d134842b7b12bd4e0d4a3fac0bac94d0fc5a4"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/aws-core/2.29.52/aws-core-2.29.52.jar",
+      "sha256": "eb560c064fbaac7e2e7f4a77ac343d3083bea0d7f6e2c69ba022d3f3e859be90"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/aws-json-protocol/2.29.52/aws-json-protocol-2.29.52.jar",
+      "sha256": "0b174a591bac933b72b701c2fc73f73ba5dde790bf7d61ce922d4ba098f62072"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/aws-query-protocol/2.29.52/aws-query-protocol-2.29.52.jar",
+      "sha256": "1b117672963ee5059c45f2aadb110f191b578d108d8f08d7c7a59e6c0b098a8e"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/aws-xml-protocol/2.29.52/aws-xml-protocol-2.29.52.jar",
+      "sha256": "daf87b429373ad586d165003b5b1d4fe498c6472eb65ec9a9e2aa7d56f3917dd"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/de/undercouch/bson4jackson/2.15.1/bson4jackson-2.15.1.jar",
+      "sha256": "f63998633f87bf076730e2f218a2314caa67df46fd8d2605d39c70c208050fbf"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/checksums/2.29.52/checksums-2.29.52.jar",
+      "sha256": "bca99ff25c9b917d6be03e5dce78ad5328e7dca485e96024fa8476e4192a800a"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/checksums-spi/2.29.52/checksums-spi-2.29.52.jar",
+      "sha256": "21193b9b648843dcaff493f0dd80abab9ee6871b203b9218120554698d8f7b8a"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/cloudformation/2.29.52/cloudformation-2.29.52.jar",
+      "sha256": "faecb3b1f46469502fb449039a6b02b32645122d269f1ef41730096c56b17364"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/cloudwatch/2.29.52/cloudwatch-2.29.52.jar",
+      "sha256": "6ac9898b3fa3294d615cd20ff58a313538751c86e8b14eeb30fec4f37261e2fc"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/cloudwatchlogs/2.29.52/cloudwatchlogs-2.29.52.jar",
+      "sha256": "d8b969419560ad23141baaa6ba0b93fd899e8962f700cf7c048784aecdde7677"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar",
+      "sha256": "1df8b9430b5c8ed143d7815e403e33ef5371b2400aadbe9bda0883762e0846d1"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/typesafe/config/1.4.3/config-1.4.3.jar",
+      "sha256": "8ada4c185ce72416712d63e0b5afdc5f009c0cdf405e5f26efecdf156aa5dfb6"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/crt-core/2.29.52/crt-core-2.29.52.jar",
+      "sha256": "4e1f33de21b688695fec91b977ddfa99e9d376edcbad06a62b0c138c60b37de4"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/dynamodb/2.29.52/dynamodb-2.29.52.jar",
+      "sha256": "4a467b6b50840132e7e842a15ba59acc5b30a4ee10d3ca3788bd649a220e7f03"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/endpoints-spi/2.29.52/endpoints-spi-2.29.52.jar",
+      "sha256": "e54f246c668d70b55cffe0c8fad18d4465e74e22db75139918bd30610093d1e6"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/eventstream/eventstream/1.0.1/eventstream-1.0.1.jar",
+      "sha256": "0c37d8e696117f02c302191b8110b0d0eb20fa412fce34c3a269ec73c16ce822"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/glue/2.29.52/glue-2.29.52.jar",
+      "sha256": "0af40b01329251e58b822efe3692b3ad1803fdc8181c5c02b95952e72c78815a"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/http-auth/2.29.52/http-auth-2.29.52.jar",
+      "sha256": "d8aa3bd376aaec7196396e65fe8755f1fdd169e51357f8128ecdc7d23a687450"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/http-auth-aws/2.29.52/http-auth-aws-2.29.52.jar",
+      "sha256": "7ae124e81ac0c2860bb61fdde34a388dbe823fef8509dd46a6bec805ada90308"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/http-auth-aws-eventstream/2.29.52/http-auth-aws-eventstream-2.29.52.jar",
+      "sha256": "565a4aacce955c5ffaed551f6faaaa958e9e92b2f8514c8482f664edb2bab576"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/http-auth-spi/2.29.52/http-auth-spi-2.29.52.jar",
+      "sha256": "7a2168c5a7baa856d7ae9f9c4f7522d2db9f1361108c38f5b6ece66f249e6a2d"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/http-client-spi/2.29.52/http-client-spi-2.29.52.jar",
+      "sha256": "8ea61ce3b527779fbfe119e0775c4b7cfdf274a979b1e50596a634685a5b6542"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/iam/2.29.52/iam-2.29.52.jar",
+      "sha256": "18991b6feafea403f3c557ed562f267d4997135090c0147ae683690176577299"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/identity-spi/2.29.52/identity-spi-2.29.52.jar",
+      "sha256": "85104635abf9e5c044aaf7f8951b63efc2ef82051b5ee303571ee2e1fd8b46d0"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/amazon/ion/ion-java/1.11.8/ion-java-1.11.8.jar",
+      "sha256": "59f4efd913def30991e7d5c5c2b6d45dbc89f5123f289cc9e3c9b8336b3a565e"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-csv/2.15.2/jackson-dataformat-csv-2.15.2.jar",
+      "sha256": "7b22cf0a481da01f8397ddd7ade8a2ff04a642e88a5a5d06e1e4fab77fe17057"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-ion/2.15.2/jackson-dataformat-ion-2.15.2.jar",
+      "sha256": "03df482d5af31f0fa684f4574265693f3e5bd7402735965cc22d555c02a53a70"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/org/msgpack/jackson-dataformat-msgpack/0.9.8/jackson-dataformat-msgpack-0.9.8.jar",
+      "sha256": "bf007903a2554b706cd8ac451d45e9103ebcab063a91cf658185ebbbfa45db23"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.2/jackson-dataformat-xml-2.15.2.jar",
+      "sha256": "dadc7526bb296c59fc0e1cd930293649fd9a035574d2593cb5d9e27af5f5f341"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/json-utils/2.29.52/json-utils-2.29.52.jar",
+      "sha256": "2652cdb3668311bcff6e643c8612b9fea266423ae1ce33743c84dd7f77904311"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/kinesis/2.29.52/kinesis-2.29.52.jar",
+      "sha256": "0738ee000f9edd6373a4983aacbdc35b0e8786d07d1d5da3babea7db8e466ed0"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/kms/2.29.52/kms-2.29.52.jar",
+      "sha256": "b16a020118d30d5ff47680c14c97990d8a7c8c203961764f9bbe1c8f402ec7b7"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/lakeformation/2.29.52/lakeformation-2.29.52.jar",
+      "sha256": "74a6cf2a462c09c67dffb9d5a2c225453ae77a37db9395737e2a18b663c6573c"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/metrics-spi/2.29.52/metrics-spi-2.29.52.jar",
+      "sha256": "1db2e3da338148ee40a716e1733c9a5b99e9e6daa4db3aa8bd7e718adafa2510"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/org/msgpack/msgpack-core/0.9.8/msgpack-core-0.9.8.jar",
+      "sha256": "1d3a616b9d392447d26f6b223ecbfbe6276bf287f81f5490b0c49ff55b686f7c"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/github/tony19/named-regexp/0.2.3/named-regexp-0.2.3.jar",
+      "sha256": "c6ebd74cd6108b8c372c95b842725ee5bd6d3303ba26cb00f18bc92f80b47956"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/netty-nio-client/2.29.52/netty-nio-client-2.29.52.jar",
+      "sha256": "07238668c9cf54531ee269fd6e2a1e2650fb75d6774d401f406c2a14f26af654"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/profiles/2.29.52/profiles-2.29.52.jar",
+      "sha256": "fef84619d101838ba45f48d0caddb09a85d9ed8bf869095bd7d2064796856cf7"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/protocol-core/2.29.52/protocol-core-2.29.52.jar",
+      "sha256": "7b32e41a3743b422d2edec1670f60b4c1e512fcd5ab7a53fef20742d6b9104d1"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/rds/2.29.52/rds-2.29.52.jar",
+      "sha256": "5e871d93720c6e0ea21cbd33ad8ae847857a0148cc19af3a34c74f2eb7d565cb"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/redshift/2.29.52/redshift-2.29.52.jar",
+      "sha256": "a87a8b3c44c7a04926a511d017423416a00f4af6c82e019021b4818d416b9e0a"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/regions/2.29.52/regions-2.29.52.jar",
+      "sha256": "5ee0e26277c679ffa70d83923b0d5f77a53066ecde8610f28be1856947d60eaf"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/retries/2.29.52/retries-2.29.52.jar",
+      "sha256": "ca3752ba31399721980c6398992921ff5aa164e084b4c14484333df58c76a353"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/retries-spi/2.29.52/retries-spi-2.29.52.jar",
+      "sha256": "a4218ea742fc9e07a620629d7a258bfd92b8ea3ef75f1b99193d0898ca3efe99"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.29.52/s3-2.29.52.jar",
+      "sha256": "abaedea7e68063e9c4ab090f80d14b9884c57b50953bfe6e5acaa23025609efa"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/s3-transfer-manager/2.29.52/s3-transfer-manager-2.29.52.jar",
+      "sha256": "0c9e654637247187a7e2494eb7a8799477a772a7d554cd3ae787cd3e3bae3c55"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/sdk-core/2.29.52/sdk-core-2.29.52.jar",
+      "sha256": "ea8e9856569f85075a8a806d0481c4bd848c98b24fd6d706fc0b5883fc4604dc"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/secretsmanager/2.29.52/secretsmanager-2.29.52.jar",
+      "sha256": "ae2356cd9434ccfc50312332616f7878e112d4df4f81ac02842852bac4fcbc92"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/io/prometheus/simpleclient/0.16.0/simpleclient-0.16.0.jar",
+      "sha256": "22c374f237f7bc4fdb1f0ec2da379c0ba00e69ad2ffe8b6ade543d73062d377f"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/sts/2.29.52/sts-2.29.52.jar",
+      "sha256": "6495d0457f4e4c3724d8c9c5fe4f6f98c9530a22f92449c4cca5fd03622e4edb"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/third-party-jackson-core/2.29.52/third-party-jackson-core-2.29.52.jar",
+      "sha256": "eaece3eb60beb8ec09d8a4f48d5bff4110010b03cc23688bdcf2af2eb075cac6"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/third-party-jackson-dataformat-cbor/2.29.52/third-party-jackson-dataformat-cbor-2.29.52.jar",
+      "sha256": "3ee858814b5514f7623a84a8115314473be878cd92f7ee77920c9a158b4079d3"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/software/amazon/awssdk/utils/2.29.52/utils-2.29.52.jar",
+      "sha256": "f150a38f2fec14ced2de6459bfe804f647c88baa573b218646ef89b436a29d42"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar",
+      "sha256": "53f9ae03c681a30a50aa17524bd9790ab596b28481858e54efd989a826ed3a4a"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.696/aws-java-sdk-bundle-1.12.696.jar",
+      "sha256": "1353842b8a1c96396af6d168cc3d21ddac2062a1f293d2c49e86cb932417c106"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar",
+      "sha256": "9f7058778978ec2ad90c7224401a4b0013d93e0dd3fa0f72b25244ffa3507ca8"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/6.5.12/fastutil-6.5.12.jar",
+      "sha256": "577f1dfbb1478f9e99964248a3c3610c7bfdd8a7f5232aeba48950505f42609a"
+    }
+  ],
+  "jackson_overrides": [
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.15.2/jackson-core-2.15.2.jar",
+      "sha256": "303c99e82b1faa91a0bae5d8fbeb56f7e2adf9b526a900dd723bf140d62bd4b4"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar",
+      "sha256": "0eb2fdad6e40ab8832a78c9b22f58196dd970594e8d3d5a26ead87847c4f3a96"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.15.2/jackson-annotations-2.15.2.jar",
+      "sha256": "04e21f94dcfee4b078fa5a5f53047b785aaba69d19de392f616e7a7fe5d3882f"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.15.2/jackson-datatype-jsr310-2.15.2.jar",
+      "sha256": "7574c81ad570476ef6aad26f419288fd466733f3315bee3012f2f29c9dc008c8"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.15.2/jackson-dataformat-yaml-2.15.2.jar",
+      "sha256": "37795cc1e8cb94b18d860dc3abd2e593617ce402149ae45aa89ed8bfb881c851"
+    },
+    {
+      "url": "https://repo1.maven.org/maven2/com/fasterxml/jackson/module/jackson-module-scala_2.12/2.15.2/jackson-module-scala_2.12-2.15.2.jar",
+      "sha256": "81259ec6730f6d4b85d5586c9eaa6e75a6885b34bfca572be03126a9179719fe"
+    }
+  ],
+  "hadoop_version": "3.3.4",
+  "aws_sdk_v1_version": "1.12.696"
+}

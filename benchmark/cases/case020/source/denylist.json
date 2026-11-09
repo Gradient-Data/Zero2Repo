@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "case020",
+  "ecosystem": "pip",
+  "install_ban": [
+    "conan",
+    "conan-server",
+    "conan_server"
+  ],
+  "import_ban": [
+    "conan",
+    "conans"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "conan",
+      "runtime": "python3",
+      "evidence": "In the original recipe image, /opt/runtime/bin/python resolves conan to /opt/runtime/lib/python3.13/site-packages/conan/__init__.py (distribution conan 2.34.0.dev0)."
+    },
+    {
+      "import_root": "conan",
+      "runtime": "system",
+      "evidence": "In the original recipe image, /opt/runtime/bin/conan is installed as the distribution console entry point conan = conans.conan:run."
+    },
+    {
+      "import_root": "conans",
+      "runtime": "python3",
+      "evidence": "In the original recipe image, /opt/runtime/bin/python resolves conans to /opt/runtime/lib/python3.13/site-packages/conans/__init__.py."
+    }
+  ],
+  "notes": "Ban the Conan Python distributions and their conans implementation roots, including the repository's separately declared conan_server distribution; Python, Node, Perl, compilers, CMake, setuptools, package managers and other recipe dependencies remain allowed."
+}

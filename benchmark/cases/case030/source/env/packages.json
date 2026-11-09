@@ -1,0 +1,122 @@
+[
+  {
+    "name": "scikit_build_core",
+    "version": "1.1.1",
+    "url": "https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl",
+    "sha256": "6f6d6cf600e2e9639fd258ecd11cfc19bd189354b968916a519c6793e7e26237"
+  },
+  {
+    "name": "meson",
+    "version": "1.12.1",
+    "url": "https://files.pythonhosted.org/packages/57/99/36cd25f9598eef70db97577440a70a360af505f6f01c2338a18d1556079c/meson-1.12.1-py3-none-any.whl",
+    "sha256": "930bc7542cbd9f57009e182fd014eba48cf1a0180a7b9006d2d32d8f168d8b02"
+  },
+  {
+    "name": "numpy",
+    "version": "2.5.4",
+    "url": "https://files.pythonhosted.org/packages/da/24/3bd070f3269dc609d8f26b2643f62ef91bb415841c0b294805aaf7fe06da/numpy-2.5.4-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0"
+  },
+  {
+    "name": "filelock",
+    "version": "4.2.4",
+    "url": "https://files.pythonhosted.org/packages/e0/1b/5e74289a1878e666bb4b65fe5805a04cafcac2aa5f519ef1ead67ef91c56/filelock-4.2.4-py3-none-any.whl",
+    "sha256": "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e"
+  },
+  {
+    "name": "sympy",
+    "version": "1.14.0",
+    "url": "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl",
+    "sha256": "e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"
+  },
+  {
+    "name": "termcolor",
+    "version": "3.3.0",
+    "url": "https://files.pythonhosted.org/packages/33/d1/8bb87d21e9aeb323cc03034f5eaf2c8f69841e40e4853c2627edf8111ed3/termcolor-3.3.0-py3-none-any.whl",
+    "sha256": "cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5"
+  },
+  {
+    "name": "textX",
+    "version": "4.4.0",
+    "url": "https://files.pythonhosted.org/packages/81/23/30bd4ceab44b547f97fd88ce95eeef3f461cf357a49a32cc1c8c582eae8e/textx-4.4.0-py3-none-any.whl",
+    "sha256": "f08071316d662d8dbecb0e8322510eeba71e89fa91c69a5278cbebfd1debde42"
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+    "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+  },
+  {
+    "name": "immutabledict",
+    "version": "4.3.1",
+    "url": "https://files.pythonhosted.org/packages/a3/ce/f9018bf69ae91b273b6391a095e7c93fa5e1617f25b6ba81ad4b20c9df10/immutabledict-4.3.1-py3-none-any.whl",
+    "sha256": "c9facdc0ff30fdb8e35bd16532026cac472a549e182c94fa201b51b25e4bf7bf"
+  },
+  {
+    "name": "pybind11",
+    "version": "3.1.0",
+    "url": "https://files.pythonhosted.org/packages/33/fd/8762f7ee3e4e4be6d1d846cffb4916dd9bb02b2f800d3603718a0efe494c/pybind11-3.1.0-py3-none-any.whl",
+    "sha256": "b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0"
+  },
+  {
+    "name": "ninja",
+    "version": "1.13.2",
+    "url": "https://files.pythonhosted.org/packages/6e/53/ebfed7b689c338dd8ebeec9c0730c8d56821292f14e2536e5f3ef1a05744/ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+    "sha256": "65a24341b5ac09fcadcc37082660be40a94174e51a937fabf6e2cae26225fa2c"
+  },
+  {
+    "name": "pluggy",
+    "version": "1.7.0",
+    "url": "https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl",
+    "sha256": "7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec"
+  },
+  {
+    "name": "pytest",
+    "version": "9.2.0",
+    "url": "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl",
+    "sha256": "07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588"
+  },
+  {
+    "name": "scipy",
+    "version": "1.18.1",
+    "url": "https://files.pythonhosted.org/packages/41/48/6450ed9243315322bbc19ac57b9b70d66a20bf1d38d124c96bc4bf6af9ea/scipy-1.18.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "fdaf5ea890a6183d0565f51a61799d67081bd5b1cf03c5f4b3fd3732108625c9"
+  },
+  {
+    "name": "mpi4py",
+    "version": "4.1.2",
+    "url": "https://files.pythonhosted.org/packages/0d/5e/493415cdb0da0c1c0b6ec9a1fb65ab57a174e8111b25c87f7507f663d0b4/mpi4py-4.1.2-cp313-cp313-manylinux1_x86_64.manylinux_2_5_x86_64.whl",
+    "sha256": "085e0cb05427398fe2281856f27a87984b9f234cd6d98a2a384a6fbfe679a56f"
+  },
+  {
+    "name": "Arpeggio",
+    "version": "2.0.3",
+    "url": "https://files.pythonhosted.org/packages/84/4d/53b8186b41842f7a5e971b1d1c28e678364dcf841e4170f5d14d38ac1e2a/Arpeggio-2.0.3-py2.py3-none-any.whl",
+    "sha256": "9374d9c531b62018b787635f37fd81c9a6ee69ef2d28c5db3cd18791b1f7db2f"
+  },
+  {
+    "name": "iniconfig",
+    "version": "2.3.1",
+    "url": "https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl",
+    "sha256": "9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7"
+  },
+  {
+    "name": "mpmath",
+    "version": "1.3.0",
+    "url": "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl",
+    "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+  },
+  {
+    "name": "pathspec",
+    "version": "1.1.1",
+    "url": "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl",
+    "sha256": "a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189"
+  },
+  {
+    "name": "Pygments",
+    "version": "2.21.0",
+    "url": "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+    "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9"
+  }
+]

@@ -1,0 +1,77 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_node_trees.py",
+    "tests/F02_datatypes.py",
+    "tests/F02_helpers.py",
+    "tests/F03_helpers.py",
+    "tests/F03_regex.py",
+    "tests/F04_context.py",
+    "tests/F04_helpers.py",
+    "tests/F05_expressions.py",
+    "tests/F06_helpers.py",
+    "tests/F06_schema.py",
+    "tests/F07_external_functions.py",
+    "tests/F08_xpath30.py",
+    "tests/F09_helpers.py",
+    "tests/F09_resources.py",
+    "tests/F10_collections_json.py",
+    "tests/F10_helpers.py",
+    "tests/F11_helpers.py",
+    "tests/F11_serialization.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "python3 -m pytest -p no:cacheprovider tests/F01_node_trees.py tests/F02_datatypes.py tests/F02_helpers.py tests/F03_helpers.py tests/F03_regex.py tests/F04_context.py tests/F04_helpers.py tests/F05_expressions.py tests/F06_helpers.py tests/F06_schema.py tests/F07_external_functions.py tests/F08_xpath30.py tests/F09_helpers.py tests/F09_resources.py tests/F10_collections_json.py tests/F10_helpers.py tests/F11_helpers.py tests/F11_serialization.py tests/_helpers.py",
+  "test_command_template": "python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_node_trees.py"
+    ],
+    "F02": [
+      "tests/F02_datatypes.py",
+      "tests/F02_helpers.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_regex.py"
+    ],
+    "F04": [
+      "tests/F04_context.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_expressions.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_schema.py"
+    ],
+    "F07": [
+      "tests/F07_external_functions.py"
+    ],
+    "F08": [
+      "tests/F08_xpath30.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_resources.py"
+    ],
+    "F10": [
+      "tests/F10_collections_json.py",
+      "tests/F10_helpers.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_serialization.py"
+    ]
+  },
+  "support_files": [
+    "tests/F03_UnicodeData-3.2.0.txt.gz",
+    "tests/F09_pyftpdlib.zip"
+  ]
+}

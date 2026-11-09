@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "case_id": "case026",
+  "ecosystem": "maven",
+  "install_ban": [
+    "io.github.kirstenali:nitromap"
+  ],
+  "import_ban": [
+    "dev.nitromap",
+    "dev/nitromap/"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban only the Maven coordinates and Java package/vendored path confirmed by the upstream POM and sources; allow Java/JDK, Maven, JUnit and general storage libraries. Base-image Python, Node, Perl and system probes found no whole-product equivalent; SQLite, dbm, shelve and DB_File provide only partial storage capabilities. Full recipe-image verification remains unavailable because the case image record is absent; recipe assets add JDK/Maven tooling and build/test dependencies."
+}

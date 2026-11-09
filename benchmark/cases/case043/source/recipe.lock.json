@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case043",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "bash /env-assets/install.sh",
+    "build_command": "zig build install static-lib -j2 -Doptimize=ReleaseSafe -Dwasi=p3 -Dcompiler-rt=true && chmod -R a+rX zig-out"
+  }
+}

@@ -1,0 +1,331 @@
+[
+  {
+    "asset": "F09_wine64_9.0~repack-4build3_amd64.deb",
+    "filename": "wine64_9.0~repack-4build3_amd64.deb",
+    "sha256": "7f4f912b21917f28c281c99e3244ee801be2e20f0a23cd9f6d37acc97f5041ff",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/w/wine/wine64_9.0~repack-4build3_amd64.deb",
+    "kind": "deb"
+  },
+  {
+    "asset": "F09_libwine_9.0~repack-4build3_amd64.deb",
+    "filename": "libwine_9.0~repack-4build3_amd64.deb",
+    "sha256": "eb421a3660bfdc090d70ce16b06aadfde1c2bce2593292023e520988f45d009e",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/w/wine/libwine_9.0~repack-4build3_amd64.deb",
+    "kind": "deb"
+  },
+  {
+    "asset": "F09_libz-mingw-w64_1.3.1+dfsg-1_all.deb",
+    "filename": "libz-mingw-w64_1.3.1+dfsg-1_all.deb",
+    "sha256": "eb4ffd7e941578c58a323331b6b6953cef8a0bd61d6e0ba82f1b9b6e66650d16",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/libz/libz-mingw-w64/libz-mingw-w64_1.3.1+dfsg-1_all.deb",
+    "kind": "deb"
+  },
+  {
+    "asset": "F09_python-3.12.10-embed-amd64.zip",
+    "filename": "python-3.12.10-embed-amd64.zip",
+    "sha256": "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",
+    "source": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip",
+    "kind": "python"
+  },
+  {
+    "asset": "F09_libunwind8_1.6.2-3build1.1_amd64.deb",
+    "filename": "libunwind8_1.6.2-3build1.1_amd64.deb",
+    "sha256": "825cb8724bb6b3389587e30c03ab3381f56a2422cafe3b1945f37e055c65e942",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/libu/libunwind/libunwind8_1.6.2-3build1.1_amd64.deb",
+    "kind": "deb"
+  },
+  {
+    "asset": "F09_pbs_installer-2026.10.3-py3-none-any.whl",
+    "filename": "pbs_installer-2026.10.3-py3-none-any.whl",
+    "sha256": "06914e979658b63502771ba565211ccfad16dbf835ceaa2ea247353b33fc2c01",
+    "source": "https://files.pythonhosted.org/packages/99/50/4619dc223d7f3866857af6189ead37ee02d0000f1394e5167eb08e3b2021/pbs_installer-2026.10.3-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_urllib3-2.8.0-py3-none-any.whl",
+    "filename": "urllib3-2.8.0-py3-none-any.whl",
+    "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+    "source": "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_colorama-0.4.6-py2.py3-none-any.whl",
+    "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+    "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+    "source": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_packaging-26.3-py3-none-any.whl",
+    "filename": "packaging-26.3-py3-none-any.whl",
+    "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+    "source": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_more_itertools-11.2.0-py3-none-any.whl",
+    "filename": "more_itertools-11.2.0-py3-none-any.whl",
+    "sha256": "e4c522352a24664c974d0be8382944107ae638281a06391a5a538366b5707fe5",
+    "source": "https://files.pythonhosted.org/packages/d4/f7/86f27473377a8ebdbdfedec5e62e87fbc24c4c88ed0a2a5ea0a12ee2229b/more_itertools-11.2.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_build-1.6.1-py3-none-any.whl",
+    "filename": "build-1.6.1-py3-none-any.whl",
+    "sha256": "ecd351a4be9d35a9eaaba244a7687143c9c7d4aea6ac964e7e7ddab20cbcf4e7",
+    "source": "https://files.pythonhosted.org/packages/ad/9b/9fb3585dabcd73a1b2a6267f63f62649347c9e6d072c9fde365b105abb2c/build-1.6.1-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_requests-2.34.2-py3-none-any.whl",
+    "filename": "requests-2.34.2-py3-none-any.whl",
+    "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+    "source": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_httpcore-1.0.9-py3-none-any.whl",
+    "filename": "httpcore-1.0.9-py3-none-any.whl",
+    "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+    "source": "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_shellingham-1.5.4-py2.py3-none-any.whl",
+    "filename": "shellingham-1.5.4-py2.py3-none-any.whl",
+    "sha256": "7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686",
+    "source": "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_tomlrt-2.3.2-py3-none-any.whl",
+    "filename": "tomlrt-2.3.2-py3-none-any.whl",
+    "sha256": "fb00cde5c3422770c171f4768cefe6e48c6d4f6260d82e2b869213ca87c326e9",
+    "source": "https://files.pythonhosted.org/packages/2b/e8/2d230a7ed9db2544fbd1adfb460b10fa0b77503ac8f829738a592dae5d94/tomlrt-2.3.2-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_certifi-2026.10.19-py3-none-any.whl",
+    "filename": "certifi-2026.10.19-py3-none-any.whl",
+    "sha256": "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b",
+    "source": "https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_cachecontrol-0.14.4-py3-none-any.whl",
+    "filename": "cachecontrol-0.14.4-py3-none-any.whl",
+    "sha256": "b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b",
+    "source": "https://files.pythonhosted.org/packages/ef/79/c45f2d53efe6ada1110cf6f9fca095e4ff47a0454444aefdde6ac4789179/cachecontrol-0.14.4-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_typing_extensions-4.16.0-py3-none-any.whl",
+    "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+    "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+    "source": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_backports_zstd-1.8.0-cp312-cp312-win_amd64.whl",
+    "filename": "backports_zstd-1.8.0-cp312-cp312-win_amd64.whl",
+    "sha256": "1eddf59fedaf19dd3a8e9c597add7eb6f0d51d4467a0924b2dcd2c118ed18ff5",
+    "source": "https://files.pythonhosted.org/packages/a5/78/2f497fd2bbf46099e46650f75467967d21f25bb921c894d28d493bbfb7e4/backports_zstd-1.8.0-cp312-cp312-win_amd64.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_trove_classifiers-2026.9.21.13-py3-none-any.whl",
+    "filename": "trove_classifiers-2026.9.21.13-py3-none-any.whl",
+    "sha256": "8b1ff4f9c191b1040b71c37f1e445ab99732911e3cd91de52838453a854d7a17",
+    "source": "https://files.pythonhosted.org/packages/30/81/0da8afb52a71d0a4f2bd3152357b1a441e393b286374802b9d3addab4ab5/trove_classifiers-2026.9.21.13-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_distlib-0.4.3-py2.py3-none-any.whl",
+    "filename": "distlib-0.4.3-py2.py3-none-any.whl",
+    "sha256": "4b0ce306c966eb73bc3a7b6abad017c556dadd92c44701562cd528ac7fde4d5b",
+    "source": "https://files.pythonhosted.org/packages/02/08/9c41fb51ab5b43eb21674aff13df270e8ba6c4b29c8624e328dc7a9482af/distlib-0.4.3-py2.py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_pywin32_ctypes-0.2.3-py3-none-any.whl",
+    "filename": "pywin32_ctypes-0.2.3-py3-none-any.whl",
+    "sha256": "8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8",
+    "source": "https://files.pythonhosted.org/packages/de/3d/8161f7711c017e01ac9f008dfddd9410dff3674334c233bde66e7ba65bbf/pywin32_ctypes-0.2.3-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_cleo-2.1.0-py3-none-any.whl",
+    "filename": "cleo-2.1.0-py3-none-any.whl",
+    "sha256": "4a31bd4dd45695a64ee3c4758f583f134267c2bc518d8ae9a29cf237d009b07e",
+    "source": "https://files.pythonhosted.org/packages/2d/f5/6bbead8b880620e5a99e0e4bb9e22e67cca16ff48d54105302a3e7821096/cleo-2.1.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_dulwich-1.2.17-py3-none-any.whl",
+    "filename": "dulwich-1.2.17-py3-none-any.whl",
+    "sha256": "82555d6ea6d728ed722fdfcde6658e3d2b1774ad916260fdfd90a2e7af64291a",
+    "source": "https://files.pythonhosted.org/packages/08/b0/5f971b268481b8b7ff3d237ffb1c33772da85b907438e25cd5399e8530f8/dulwich-1.2.17-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_pkginfo-1.13-py3-none-any.whl",
+    "filename": "pkginfo-1.13-py3-none-any.whl",
+    "sha256": "37e1bfb7b5b149829e6f140a225b517c4c8808d8d164f68137b9492023874061",
+    "source": "https://files.pythonhosted.org/packages/ed/ad/2e9e8a7bb014758af9453b3d818848d50852592296aceb8817f2a937fa71/pkginfo-1.13-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_jaraco.classes-3.4.0-py3-none-any.whl",
+    "filename": "jaraco.classes-3.4.0-py3-none-any.whl",
+    "sha256": "f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790",
+    "source": "https://files.pythonhosted.org/packages/7f/66/b15ce62552d84bbfcec9a4873ab79d993a1dd4edb922cbfccae192bd5b5f/jaraco.classes-3.4.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_installer-1.1.0-py3-none-any.whl",
+    "filename": "installer-1.1.0-py3-none-any.whl",
+    "sha256": "f55f5728ff61d3dd54dbc5a397cf3f7307cb64b180c20b72afbebf01c9e2c8a0",
+    "source": "https://files.pythonhosted.org/packages/d7/7a/63547a792a12148882205d79e07644091d5b7690f40c2bb9d41452a8bdc2/installer-1.1.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_rapidfuzz-3.14.6-cp312-cp312-win_amd64.whl",
+    "filename": "rapidfuzz-3.14.6-cp312-cp312-win_amd64.whl",
+    "sha256": "cfca36e4612208875e08611a779164b6cb8900ab8bbd3d82d4cfdfae9efbfac9",
+    "source": "https://files.pythonhosted.org/packages/84/c4/12f01df5778227c8655fcd9b429fc001d43270f5d8d154edc9066bab1de3/rapidfuzz-3.14.6-cp312-cp312-win_amd64.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_crashtest-0.4.1-py3-none-any.whl",
+    "filename": "crashtest-0.4.1-py3-none-any.whl",
+    "sha256": "8d23eac5fa660409f57472e3851dab7ac18aba459a8d19cbbba86d3d5aecd2a5",
+    "source": "https://files.pythonhosted.org/packages/b0/5c/3ba7d12e7a79566f97b8f954400926d7b6eb33bcdccc1315a857f200f1f1/crashtest-0.4.1-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_findpython-0.8.0-py3-none-any.whl",
+    "filename": "findpython-0.8.0-py3-none-any.whl",
+    "sha256": "4a61ee1618a8b55014f7d41f59345d322be93f6ce62395bdccccc651b3f7e28a",
+    "source": "https://files.pythonhosted.org/packages/bb/a5/fae2000239a1f0225c9f31ec5f790f465d3cf135e79937ad19c876303e21/findpython-0.8.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_pyproject_hooks-1.3.3-py3-none-any.whl",
+    "filename": "pyproject_hooks-1.3.3-py3-none-any.whl",
+    "sha256": "5fc53fdac9f7bd63fbcdc868fb5f90b4784d78a53a3d3388cd738b807441a20b",
+    "source": "https://files.pythonhosted.org/packages/85/11/044d1ae1b4ec0d7af88ee5bc91e081be1022533032b906a7bdabdbb60977/pyproject_hooks-1.3.3-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_jaraco_context-6.1.2-py3-none-any.whl",
+    "filename": "jaraco_context-6.1.2-py3-none-any.whl",
+    "sha256": "bf8150b79a2d5d91ae48629d8b427a8f7ba0e1097dd6202a9059f29a36379535",
+    "source": "https://files.pythonhosted.org/packages/f2/58/bc8954bda5fcda97bd7c19be11b85f91973d67a706ed4a3aec33e7de22db/jaraco_context-6.1.2-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_platformdirs-4.13.0-py3-none-any.whl",
+    "filename": "platformdirs-4.13.0-py3-none-any.whl",
+    "sha256": "3dbcf4cd708f21cf876c4eaa90e58412bc4f033d87143f41b1493ff77c25b7e1",
+    "source": "https://files.pythonhosted.org/packages/8d/15/1633010b26e88e872c93b67c0b6c5e174fb74cb6fb5c1472b4d51d4a8f22/platformdirs-4.13.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_msgpack-1.2.3-cp312-cp312-win_amd64.whl",
+    "filename": "msgpack-1.2.3-cp312-cp312-win_amd64.whl",
+    "sha256": "3ec409b0d6aa8e9eec6eaf881b893caa215dbe68c5319ca96e8a271d81bb111d",
+    "source": "https://files.pythonhosted.org/packages/6f/4c/331b45f9b86fbda6b9e103244d189068e51f726d8c40021ed66e1f2c415e/msgpack-1.2.3-cp312-cp312-win_amd64.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_poetry_core-2.5.0-py3-none-any.whl",
+    "filename": "poetry_core-2.5.0-py3-none-any.whl",
+    "sha256": "98ee465b66f7e14bb9fbe68fb5e00d0cff184f036993ec94610ae4b5612f3add",
+    "source": "https://files.pythonhosted.org/packages/b7/25/7ed0a2ea4fe12f7fd0394387b5debbcd6fdbd06e5ac9daab96ba11471da8/poetry_core-2.5.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_requests_toolbelt-1.0.0-py2.py3-none-any.whl",
+    "filename": "requests_toolbelt-1.0.0-py2.py3-none-any.whl",
+    "sha256": "cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06",
+    "source": "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_virtualenv-21.14.12-py3-none-any.whl",
+    "filename": "virtualenv-21.14.12-py3-none-any.whl",
+    "sha256": "7820aeaef23f1f59a96458edfc7f9d3deac937155718de15f1c9a64471e15551",
+    "source": "https://files.pythonhosted.org/packages/a0/92/f3b8af2d36ddec4dc61dc25655dc010e419ff456cb4ca0e720c8112f1047/virtualenv-21.14.12-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_httpx-0.28.1-py3-none-any.whl",
+    "filename": "httpx-0.28.1-py3-none-any.whl",
+    "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+    "source": "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_keyring-25.7.0-py3-none-any.whl",
+    "filename": "keyring-25.7.0-py3-none-any.whl",
+    "sha256": "be4a0b195f149690c166e850609a477c532ddbfbaed96a404d4e43f8d5e2689f",
+    "source": "https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_charset_normalizer-3.5.2-py3-none-any.whl",
+    "filename": "charset_normalizer-3.5.2-py3-none-any.whl",
+    "sha256": "b6b751274acb69d77b3323d6b7dbaa3c7fdfc1eb829b7eb61d262f32e1af9685",
+    "source": "https://files.pythonhosted.org/packages/fc/ad/d07d7862a62ffa6d79d68074d14823243dd235a77c45262acbf6adeb28bf/charset_normalizer-3.5.2-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_python_discovery-1.6.2-py3-none-any.whl",
+    "filename": "python_discovery-1.6.2-py3-none-any.whl",
+    "sha256": "f0c697f95a3aaec4174a6e5e58f5885e25768684bafc76f1afde384709ebdcf2",
+    "source": "https://files.pythonhosted.org/packages/61/3b/50ed32583bfffa737df67d33b9c15d7b25df232c55ab606d059f610ef6ca/python_discovery-1.6.2-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_filelock-4.1.1-py3-none-any.whl",
+    "filename": "filelock-4.1.1-py3-none-any.whl",
+    "sha256": "3f4a557945a7b0f95efeb1f432267affe5d45ac8ddde2aed1b97ebb62382c089",
+    "source": "https://files.pythonhosted.org/packages/d7/8b/f837f52905395ba4510fe61f753c24833fb0a9c76e21267bb9f828b664a9/filelock-4.1.1-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_jaraco_functools-4.6.0-py3-none-any.whl",
+    "filename": "jaraco_functools-4.6.0-py3-none-any.whl",
+    "sha256": "99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30",
+    "source": "https://files.pythonhosted.org/packages/02/36/ecc85bc96c273dc8a11273ed4782272975e6338d4a3e9228621175edf0e3/jaraco_functools-4.6.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_idna-3.20-py3-none-any.whl",
+    "filename": "idna-3.20-py3-none-any.whl",
+    "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c",
+    "source": "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_h11-0.16.0-py3-none-any.whl",
+    "filename": "h11-0.16.0-py3-none-any.whl",
+    "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+    "source": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_anyio-4.15.1-py3-none-any.whl",
+    "filename": "anyio-4.15.1-py3-none-any.whl",
+    "sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+    "source": "https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl",
+    "kind": "wheel"
+  },
+  {
+    "asset": "F09_fastjsonschema-2.22.2-py3-none-any.whl",
+    "filename": "fastjsonschema-2.22.2-py3-none-any.whl",
+    "sha256": "0fb3915616adac85ccfdd737d26be1089845d2019819505b42d39888458f74d4",
+    "source": "https://files.pythonhosted.org/packages/49/82/2755c7c982086f00d4dab85bc120ec35045a9fc2191893a6ce79afe94443/fastjsonschema-2.22.2-py3-none-any.whl",
+    "kind": "wheel"
+  }
+]

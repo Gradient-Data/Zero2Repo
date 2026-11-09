@@ -1,0 +1,30 @@
+{
+  "assets": [
+    {
+      "file": "F06_pyspark.tar.gz",
+      "format": "tar.gz",
+      "source_filename": "pyspark-4.0.1.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/ae/40/1414582f16c1d7b051c668c2e19c62d21a18bd181d944cb24f5ddbb2423f/pyspark-4.0.1.tar.gz",
+      "sha256": "9d1f22d994f60369228397e3479003ffe2dd736ba79165003246ff7bd48e2c73",
+      "size": 434204896
+    },
+    {
+      "file": "F06_py4j.whl",
+      "format": "zip",
+      "source_filename": "py4j-0.10.9.9-py2.py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/bd/db/ea0203e495be491c85af87b66e37acfd3bf756fd985f87e46fc5e3bf022c/py4j-0.10.9.9-py2.py3-none-any.whl",
+      "sha256": "c7c26e4158defb37b0bb124933163641a2ff6e3a3913f7811b0ddbe07ed61533",
+      "size": 203008
+    },
+    {
+      "file": "F06_java.deb",
+      "format": "deb",
+      "source_package": "Ubuntu openjdk-21-jre-headless 21.0.12.1+1-1~24.04.4, amd64",
+      "source_filename": "openjdk-21-jre-headless_21.0.12.1+1-1~24.04.4_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/openjdk-21-jre-headless_21.0.12.1%2B1-1~24.04.4_amd64.deb",
+      "sha256": "951bb9b9337f1af8568bdf8d8ae7a6d4ff837838c4987f5b5d077ef397fba375",
+      "size": 46499662
+    }
+  ],
+  "provenance": "Real offline third-party runtime prerequisites: the official Ubuntu Java runtime package and PySpark/Py4J from PyPI, each verified against its published SHA-256."
+}

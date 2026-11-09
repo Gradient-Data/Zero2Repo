@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case023",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "python3 /env-assets/install.py",
+    "build_command": "cargo build --workspace --release --locked --offline --features serialize,experimental_capture_groups,regex_set,stream"
+  }
+}

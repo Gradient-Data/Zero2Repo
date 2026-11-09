@@ -1,0 +1,110 @@
+[
+  {
+    "name": "setuptools",
+    "version": "82.0.1",
+    "url": "https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl",
+    "sha256": "a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb"
+  },
+  {
+    "name": "numpy",
+    "version": "2.5.4",
+    "url": "https://files.pythonhosted.org/packages/da/24/3bd070f3269dc609d8f26b2643f62ef91bb415841c0b294805aaf7fe06da/numpy-2.5.4-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0"
+  },
+  {
+    "name": "ipython",
+    "version": "9.18.1",
+    "url": "https://files.pythonhosted.org/packages/bb/1c/91da4a1c541b75e97eb99d09c6a9b0534de55bb4a466669d1170e39b915c/ipython-9.18.1-py3-none-any.whl",
+    "sha256": "997ce9140d374531a61069c70c0f9ef299d6dd3559ea0f94b8af589726e3c1d5"
+  },
+  {
+    "name": "prompt_toolkit",
+    "version": "3.0.53",
+    "url": "https://files.pythonhosted.org/packages/54/6f/84908cad2d6aa5144abcf7b42709fe4fdb459bc640ec7ac5786e7693dabc/prompt_toolkit-3.0.53-py3-none-any.whl",
+    "sha256": "01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2"
+  },
+  {
+    "name": "ipython_pygments_lexers",
+    "version": "1.1.1",
+    "url": "https://files.pythonhosted.org/packages/d9/33/1f075bf72b0b747cb3288d011319aaf64083cf2efef8354174e3ed4540e2/ipython_pygments_lexers-1.1.1-py3-none-any.whl",
+    "sha256": "a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c"
+  },
+  {
+    "name": "jedi",
+    "version": "0.20.1",
+    "url": "https://files.pythonhosted.org/packages/be/c7/71eb0d51cdcbb63b857c931aa4e9218b078b5d9f8ecd383b234f28fe7b0f/jedi-0.20.1-py2.py3-none-any.whl",
+    "sha256": "0fb16d86c4a4c73c37ba518c77419975e30fcc620658a8d14fbb5720cdd34142"
+  },
+  {
+    "name": "parso",
+    "version": "0.8.7",
+    "url": "https://files.pythonhosted.org/packages/99/5d/8268b644392ee874ee82a635cd0df1773de230bde356c38de28e298392cc/parso-0.8.7-py2.py3-none-any.whl",
+    "sha256": "a8926eb2a1b915486941fdbd31e86a4baf88fe8c210f25f2f35ecec5b574ca1c"
+  },
+  {
+    "name": "matplotlib-inline",
+    "version": "0.2.2",
+    "url": "https://files.pythonhosted.org/packages/41/09/5b161152e2d90f7b87f781c2e1267494aef9c32498df793f73ad0a0a494a/matplotlib_inline-0.2.2-py3-none-any.whl",
+    "sha256": "3c821cf1c209f59fb2d2d64abbf5b23b67bcb2210d663f9918dd851c6da1fcf6"
+  },
+  {
+    "name": "pexpect",
+    "version": "4.9.0",
+    "url": "https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl",
+    "sha256": "7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523"
+  },
+  {
+    "name": "psutil",
+    "version": "7.2.2",
+    "url": "https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9"
+  },
+  {
+    "name": "ptyprocess",
+    "version": "0.7.0",
+    "url": "https://files.pythonhosted.org/packages/22/a6/858897256d0deac81a172289110f31629fc4cee19b6f01283303e18c8db3/ptyprocess-0.7.0-py2.py3-none-any.whl",
+    "sha256": "4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"
+  },
+  {
+    "name": "Pygments",
+    "version": "2.21.0",
+    "url": "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+    "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9"
+  },
+  {
+    "name": "stack-data",
+    "version": "0.6.3",
+    "url": "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl",
+    "sha256": "d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695"
+  },
+  {
+    "name": "asttokens",
+    "version": "3.0.2",
+    "url": "https://files.pythonhosted.org/packages/d4/2b/04b8a15f3a1c77bc79ddf5c73875327f34b4fa75982df2b76e45e402d364/asttokens-3.0.2-py3-none-any.whl",
+    "sha256": "9da13157f5b28becde0bd374fc677dcd3c290614264eff096f167c469cd9f933"
+  },
+  {
+    "name": "executing",
+    "version": "2.3.0",
+    "url": "https://files.pythonhosted.org/packages/4d/dd/8bc67e7d5ffc1d88aa5af511189dfb76dc4e1e5b808fab186146ef2663e5/executing-2.3.0-py3-none-any.whl",
+    "sha256": "736e859c9f8701f11fcf516856f26f562e04776387824b43a35a1dfe21c84122"
+  },
+  {
+    "name": "traitlets",
+    "version": "5.16.1",
+    "url": "https://files.pythonhosted.org/packages/ad/66/0d785f0bc5e4315a96c989bb476d0fc07ea4f85132550c7b156ca2035d52/traitlets-5.16.1-py3-none-any.whl",
+    "sha256": "f775618166caa0396c8e337099240f2bd3e5e917d203b2e6fbe21a58d3cb1f6b"
+  },
+  {
+    "name": "wcwidth",
+    "version": "0.9.4",
+    "url": "https://files.pythonhosted.org/packages/fa/e8/0485850748dfdba9443f4151c7b2442cfa4987ba6cd871038eb5d6b8eca9/wcwidth-0.9.4-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+    "sha256": "b185c8b927b23af2721be1783499d1cfa5c028b098b0858951b4ae224477f1c2"
+  },
+  {
+    "name": "pure_eval",
+    "version": "0.2.4",
+    "url": "https://files.pythonhosted.org/packages/6d/18/83376915176eb058cb86470eb7396388a13350b09a8f233a79303bbcbc5b/pure_eval-0.2.4-py3-none-any.whl",
+    "sha256": "96cae060a313cfaad51bb761278bfb0e62dc0248d9315a81173752dc546cd37a"
+  }
+]

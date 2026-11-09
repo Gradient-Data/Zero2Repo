@@ -1,0 +1,509 @@
+# Velnora Full Product Requirements
+
+Velnora is an embedded SQL database combining transactional data management with analytical queries.
+
+### FP-01: Embedded sessions and application access
+
+**Public entry**
+
+- Applications open Velnora through its Rust interface, or through the optional C interface; a WebAssembly build exposes independent in-memory databases to its host. Applications submit SQL and consume results without a database server.
+
+**Normal behavior**
+
+- An isolated in-memory database starts empty and keeps its data separate from other isolated databases. Opening the same named in-memory database within a process shares its committed data while providing separate sessions; different names identify separate databases. Releasing one session leaves other live sessions usable.
+
+- Execution distinguishes a result containing rows from a write result containing an affected-row count. Result iteration preserves column order, exposes column names, and distinguishes a missing value from an empty string or zero.
+
+- Rust callers can read result values by column position or name, request a single value or an optional value, and map rows into application records. The optional single-value operation distinguishes no matching row from a row containing a missing value. A single-value read uses the first column of the first returned row; it does not require the query to contain only one row.
+
+- Callers can bind positional or named values for insertion and filtering without those values becoming SQL instructions. Bound expressions in the projection of a stored-table query are outside this scope. Reusing a prepared statement with new bindings uses the new supplied values and the data visible to that execution.
+
+- The C interface supports database access, prepared execution, and result iteration with the same database outcomes as Rust access. WebAssembly supports SQL execution and ordered statement batches in a JavaScript/WebAssembly host without a host filesystem, native executables, or a database service; a batch returns the last successful statement result when all statements succeed.
+
+**Boundary / error behavior**
+
+- Rust callers can supply a query time allowance. A query that completes within its time allowance returns its normal result. A query that exhausts its time allowance fails with a distinguishable timeout instead of returning a successful complete result. A zero time allowance, or an omitted allowance, imposes no time limit.
+
+- Malformed SQL and omitted positional bindings in prepared execution produce a failure distinguishable from an empty successful query. Rejection of omitted bindings in unprepared or named execution is outside this scope. Rust result conversion fails when a requested column is absent or its value cannot be converted to the requested application type.
+
+- A required single-value read fails when no row is returned; the optional form reports absence. The ordered-execution and final-result guarantees for WebAssembly batches apply when every statement is valid; the effects and result of a batch containing a failed statement are outside this scope.
+
+- Closing a native database makes subsequent operations on stored tables and schema through that closed database fail; evaluating expressions that do not access stored data after closing is outside this scope. Destroying an isolated in-memory database ends its data lifetime; a newly created isolated database does not recover that data.
+
+### FP-02: Typed values and scalar expressions
+
+**Public entry**
+
+- Callers supply literals and column values to SQL expressions used in projections, predicates, and assignments. Bound values are supported in insertion and predicates, and in expressions evaluated without a table. Scalar expressions can also be evaluated without a table.
+
+**Normal behavior**
+
+- The scalar value families are signed 64-bit integers, 64-bit floating-point numbers, text, booleans, timestamps, and JSON, together with missing values. Integer values retain their exact value throughout the signed 64-bit domain when stored and retrieved as integers.
+
+- Arithmetic supports addition, subtraction, multiplication, division, remainder, and unary negation. Integer bit operations support conjunction, disjunction, exclusive disjunction, complement, and left and right shifts. Parentheses determine grouping; multiplication, division, and remainder precede addition and subtraction. For integer operands whose quotient is representable, division discards the fractional part toward zero. A nonzero remainder has the sign of the dividend. A missing arithmetic operand produces a missing result.
+
+- Comparisons support equality, inequality, and ordered comparisons; predicates support conjunction, disjunction, exclusive disjunction, negation, inclusive ranges, membership, and missing-value tests. Ordinary comparisons involving a missing value are unknown. Conjunction with false is false, disjunction with true is true, and negating unknown remains unknown. In the remaining cases, conjunction or disjunction involving unknown remains unknown. Exclusive disjunction is true when exactly one of two present boolean operands is true, and is unknown when either operand is unknown. Null-safe equality treats two missing values as equal and one missing value as different from a present value.
+
+- Comparing a number with text interprets the text numerically only when it consists of decimal digits with an optional leading sign, an optional fractional part containing digits on both sides of the decimal point, and an optional signed decimal exponent, without surrounding whitespace, and denotes a finite number. Otherwise the comparison is unknown. Integral comparisons retain distinctions between different representable integers; two text operands compare as text.
+
+- Conditional expressions choose the first branch whose condition is true, or their alternative when none is true; false and unknown conditions do not select a branch. A conditional expression with no matching branch and no alternative returns a missing value. A value-based conditional compares its supplied value with each branch value using ordinary equality. Missing-value substitution returns the first present argument, or a missing value when all are missing; an empty string is present. Conditional nullification returns a missing value when its two arguments compare equal and otherwise returns the first argument. Greatest-value and least-value expressions select the corresponding extreme among present arguments that are all numeric or all text, ignoring missing arguments. When every argument is missing, either operation returns a missing value.
+
+- Explicit conversion supports integer, floating-point, text, boolean, timestamp, and JSON destinations. Numeric conversions preserve the numeric value when representable; conversion from a finite fractional number to an integer discards the fractional part toward zero. Boolean conversion from a number distinguishes zero from nonzero; conversion to a number maps false to zero and true to one. Converting a missing scalar value preserves its absence.
+
+- Text containing a signed decimal integer converts to that integer when representable; decimal text with an optional fractional part or exponent converts to a floating-point value. For explicit boolean conversion, the words true and yes and the digit one represent true; false and no and the digit zero represent false, without regard to letter case. Converting an integer, boolean, or timestamp to text preserves its represented value. Valid JSON text converts to the corresponding JSON value. Date-only text converts to midnight UTC on that date, and date-and-time text converts to the specified instant. Other text-to-value conversion cases are outside this conversion scope.
+
+- Text operations provide uppercase and lowercase conversion, character count, character creation from a Unicode code point, concatenation with or without a supplied separator, substring extraction, leading and trailing trimming of whitespace or supplied characters, replacement, reversal, prefix and suffix extraction, repetition, splitting by a supplied delimiter, substring position, left and right padding, and prefix, suffix, and containment predicates. Operations that count or select characters preserve complete Unicode characters.
+
+- Pattern predicates support case-sensitive and case-insensitive SQL wildcard matching, shell-style matching, and regular-expression matching. SQL wildcard matching distinguishes a single-character wildcard from an arbitrary-length wildcard; an explicitly supplied escape character makes the following pattern character literal. SQL wildcard and shell-style matching compare the entire text with the pattern. Shell-style matching supports single-character and arbitrary-length wildcards and bracketed character sets and ranges, with case preserved. Patterns combining an arbitrary-length wildcard with a later bracketed set or range are outside the supported scope. Regular-expression matching searches for a matching portion of the text; beginning and end anchors constrain that portion, and patterns support character classes, repetition, grouping, and alternatives.
+
+- Text comparison can retain case or ignore case. Accent-insensitive comparison equates a Latin vowel bearing a grave, acute, circumflex, tilde, diaeresis, or ring accent with its unaccented counterpart where that accented character is in the Latin-1 character set; it also equates cedilla-bearing c, tilde-bearing n, and diaeresis-bearing y with their counterparts, preserving case.
+
+- Mathematical scalar operations provide absolute value, rounding, floor, ceiling, remainder, exponentiation, square root, base-ten, base-two, natural and caller-selected-base logarithms, exponential, sign, decimal truncation, pi, and sine, cosine, and tangent with angles in radians. For finite arguments in each operation's mathematical domain, results represent the corresponding mathematical value. For arguments of magnitude at most 100 whose mathematical result has magnitude at most one million, absolute result error must not exceed one billionth of the larger of one and the result magnitude, measured against the mathematical value for the supplied numeric operands. Random numeric values are independent draws distributed uniformly from zero inclusive to one exclusive. Rounding selects the nearest value at the requested decimal place, with exact halfway values rounded away from zero. Decimal truncation discards digits toward zero at the requested decimal place. A negative decimal-place count applies these operations to positions to the left of the decimal point. When the rounding precision is omitted, rounding is to the nearest integer.
+
+- Timestamp values denote UTC instants; an input without a time-zone offset is interpreted in UTC. Current-date, current-time, and current-timestamp expressions reflect the clock during the statement rather than an earlier execution. Timestamp operations extract year, quarter, month, ISO 8601-1:2019 week number, day, Sunday-based weekday number from zero for Sunday through six for Saturday, or ISO 8601-1:2019 weekday number, day of year, hour, minute, whole seconds within the minute, the fractional-second component in whole milliseconds or microseconds with smaller units discarded, and whole elapsed Unix seconds, and support caller-selected date/time text formatting.
+
+- Calendar truncation returns the start of the containing year, quarter, month, Monday-based week, day, hour, minute, or second. For UTC timestamps from the start of 1970 through the end of 2099, fixed-duration truncation returns the beginning of the duration bucket containing the timestamp, with buckets measured from the Unix epoch. Durations can combine nonnegative whole counts of hours, minutes, seconds, milliseconds, microseconds, and nanoseconds; the required success range is a positive whole number of nanoseconds no greater than one day. Dates and durations outside this fixed-duration scope carry no truncation guarantee. Date addition and subtraction support years, months, weeks, days, hours, minutes, and seconds, using days when the unit is omitted; calendar month and year changes clamp an invalid day to the last day of the destination month. Date differences report whole elapsed days from the second supplied date to the first, discarding any fractional day toward zero.
+
+- Duration-literal arithmetic supports seconds, minutes, hours, days, weeks, months, and years. Seconds through weeks denote elapsed durations, with a week equal to seven days. Month and year arithmetic changes the calendar month or year while retaining the time of day and clamping an invalid day to the last day of the destination month.
+
+- JSON operations construct objects from key/value pairs and arrays from supplied values, validate JSON text, extract nested object members and array elements selected by nonnegative positions counting from zero, report a selected value's JSON type, count array elements, and enumerate object keys. Extraction distinguishes JSON-valued output from text-valued output and returns a missing SQL value for an absent path. JSON type inspection distinguishes objects, arrays, strings, numbers, booleans, and JSON null. Array construction preserves argument order and represents missing SQL inputs as JSON null elements. Object construction associates supplied keys with their supplied values. JSON-valued extraction preserves the selected JSON value; text-valued extraction exposes a selected string without its JSON quotation marks. Array length counts elements at the selected root or nested path, using the root when no path is supplied, and object-key inspection returns the keys belonging to the supplied object. JSON validity inspection distinguishes syntactically valid JSON text from malformed text without treating malformed text as a valid document.
+
+- Text digest operations return MD5 under RFC 1321 (April 1992), SHA-1, SHA-256, SHA-384, or SHA-512 under FIPS PUB 180-4 (August 2015), or IEEE CRC-32 under RFC 1952 (May 1996), section 8, results for the complete UTF-8 encoding of the supplied text, in its original character order, without a key, salt, or additional text. A missing input produces a missing result.
+
+- Scalar type inspection identifies whether an evaluated value is an integer, floating-point number, text, boolean, timestamp, or JSON, and distinguishes a missing value from every present type. It inspects the evaluated value, so converting the value can change the reported type.
+
+- Substring extraction returns the requested span of Unicode characters, counting the first character as position one. Position zero lies immediately before the first character. A negative starting position counts back from the end; a negative length selects characters preceding the starting position, in their original order. Only the part of the span inside the string is returned. Omitting the length selects the remaining suffix. Prefix and suffix extraction return up to the requested nonnegative character count, including the whole string when it is shorter; a zero count returns empty text. Repetition with a nonnegative count returns that many consecutive copies, with no separator.
+
+- Text concatenation joins present arguments in their supplied order, skipping missing arguments and returning empty text when none are present. The separator form places the supplied separator between those present arguments; a missing separator produces a missing result. Trimming removes consecutive members of the supplied character set at the selected end or ends, and does not remove matching interior characters. Replacement replaces nonoverlapping occurrences of the supplied search text; an empty search text leaves the original text unchanged.
+
+- Delimiter splitting numbers parts from one and selects the requested positive-numbered part of the text, preserving empty parts between adjacent delimiters and returning empty text when the requested part is absent. An empty delimiter leaves the text as one part. Substring search reports the first matching character position at or after a supplied starting position and distinguishes no match from a match; an empty search string matches at the beginning of the searched suffix. Search positions count Unicode characters from one. Omitting the starting position searches from the beginning of the text. Padding to a nonnegative target character count repeats the supplied padding text on the selected side, cutting its last repetition as needed. If the original text is already longer than the target, either padding operation returns its prefix of the target length. An empty padding text adds no characters. Omitting the padding text uses spaces.
+
+- Caller-selected text formatting can render numeric values with a requested number of decimal places and optional thousands grouping. Date/time formatting can select calendar components, numeric or English month and weekday names, twelve-hour or twenty-four-hour time, and the millisecond part of the supplied timestamp. Formatting a missing value returns a missing value.
+
+**Boundary / error behavior**
+
+- A malformed regular-expression pattern fails the operation instead of reporting that no text matches. This applies both to literal patterns and to patterns obtained from bound or evaluated text when the predicate is evaluated with present text. An unrecognized scalar operation fails. Unknown conversion destinations and unknown collation selections are outside the supported scope.
+
+- JSON column writes reject syntactically invalid JSON. Integer conversion of non-finite floating-point values and timestamp conversion of invalid date/time text are outside the supported scope.
+
+### FP-03: Table schemas, constraints, and schema evolution
+
+**Public entry**
+
+- Users issue SQL to create, inspect, alter, rename, or drop tables, supplying column definitions and data-integrity constraints.
+
+**Normal behavior**
+
+- Creating a table establishes named, ordered columns with declared types. Table inspection reports existing tables, each column's type and nullability, and a reconstructable table definition including single-column keys, defaults, checks, and generated-number behavior. Reconstructing composite key constraints from the inspected definition is outside this scope; their enforcement on the originally declared table remains supported. Column-inspection descriptions remain unchanged while the declared schema is unchanged.
+
+- Primary keys identify rows uniquely and forbid missing key components. Both single-column and composite primary keys are supported on their declared schemas; changing a composite primary-key column's type or nullability is outside this scope. Unique constraints forbid duplicate present keys across one column or a combination of columns, while permitting multiple keys containing missing values. Not-null constraints reject missing values on insertion; enforcement when an existing row is updated, including by a conflict action, is outside this scope. Column check constraints declared when creating a table reject rows for which their condition is false; true or unknown satisfies that check. Adding unique or check constraints through later column addition is outside this scope.
+
+- An omitted column receives its declared default, or a missing value when it has no default and is nullable. Defaults support scalar literals, a missing value, and the current timestamp. An auto-increment integer primary key generates increasing values within an open database; supplying a larger explicit key advances subsequent generated keys, and deleting rows during that open lifetime does not rewind the sequence. After reopening, generated values exceed the keys still present in the table.
+
+- Adding a column exposes its declared default, or a missing value without a default, on pre-existing rows. Dropping a column removes it from subsequent query results and name resolution. Renaming a column or table preserves its data under the new name, and the old name ceases to resolve. Renaming a column referenced by a check constraint is outside this scope.
+
+- Changing a column's type converts existing values to the destination type and changes subsequent reads and writes to use that type. Values for which conversion fails become missing values only when the new definition allows missing values. Changing nullability changes which subsequent insertions are accepted.
+
+- Dropping a table removes its definition and data from subsequent access. A conditional create preserves an already existing table; a conditional drop accepts an already absent table.
+
+**Boundary / error behavior**
+
+- An unconditional create with an existing table name fails. References to a missing table, or to a missing column in a schema operation, fail. Duplicate column definitions fail.
+
+- A type change fails without changing the table when a converted missing value violates not-null, converted keys violate uniqueness, or the column is a single-column primary key.
+
+### FP-04: Selection, ordering, and generated relations
+
+**Public entry**
+
+- Users submit SQL queries selecting expressions from a table, supplied rows, or a generated numeric or timestamp series, with optional filtering, duplicate removal, ordering, and pagination.
+
+**Normal behavior**
+
+- Projection returns the selected expressions for rows whose predicate is true; false and unknown predicates exclude rows. Selecting all columns follows the source column order. Column and table aliases permit the requested result naming and qualified references.
+
+- Ordering respects each supplied sort expression and its ascending or descending direction, including expressions not projected in the result. An omitted sort direction is ascending. Without an explicit missing-value placement, ascending order puts missing values last and descending order puts them first. Explicit missing-value placement controls whether missing values precede or follow present values. Pagination skips the requested number of qualifying rows, whether or not a result limit is supplied, and returns no more than the requested limit.
+
+- Duplicate removal collapses equal projected rows, treating missing values as equal for this purpose. Selection of one row per distinct key chooses the first row for that key in the requested order, including when the key is not projected.
+
+- A supplied row relation exposes the supplied rows as queryable data. A generated series emits successive integer, floating-point, or timestamp values from a supplied beginning toward an inclusive end using the supplied increment; the end is included only when reached by an increment. The generated relation supports filtering, ordering, and pagination like table data. For numeric endpoints, omitting the increment produces successive values one unit apart toward the inclusive end.
+
+- Timestamp series support increments measured in years, months, weeks, days, hours, minutes, seconds, milliseconds, and microseconds. Omitting the timestamp increment uses one day toward the inclusive end. Here years and months denote fixed durations of 365 and thirty days respectively. Scalar series generation produces a JSON array containing the same sequence of values.
+
+**Boundary / error behavior**
+
+- An empty source, a predicate satisfied by no rows, an offset beyond the result, or a zero requested result count produces an empty result. Without an ordering that separates tied rows, no relative order among those tied rows is promised.
+
+- A zero increment fails when a series is requested as a row source; scalar series generation is specified for nonzero increments. An increment directed away from the end produces an empty series. Selecting a nonexistent column from a stored table fails. Ordering expressions must refer to existing columns.
+
+### FP-05: Row mutation and conflict-aware insertion
+
+**Public entry**
+
+- Users insert supplied rows or query results, update rows selected by a predicate, delete selected rows, or request affected-row values as part of the same SQL operation.
+
+**Normal behavior**
+
+- Insertion writes each supplied or selected row into the requested target columns, applying omitted-column defaults and enforcing the table's constraints. This includes tables without a primary key.
+
+- Updates change only matching rows and only assigned columns, with assignment expressions able to read each row's prior values. Assigning a column's default restores its declared default. Deletion removes only matching rows. Mutation results report the number of affected rows; no match affects no rows.
+
+- Conflict-aware insertion inserts nonconflicting rows. For a conflicting primary or unique key it either leaves the existing row unchanged or updates that row using the requested expressions over existing and incoming values, according to the requested conflict action. This applies to supplied rows and query-derived rows, including composite unique keys and tables without a primary key.
+
+- A conflict action targeting specified key columns applies only to a conflict on those columns. An untargeted conflict action applies to any primary or unique-key conflict. A skipped insertion does not count as an affected row.
+
+- Returning expressions expose inserted values after insertion, updated values after modification, and deleted values from before deletion. A mutation matching no rows returns no affected-row records.
+
+- Whole-table truncation empties a table while retaining a usable schema.
+
+- A query result can create a new independent table whose ordered columns and rows are the query output. This creation is supported outside an explicit transaction for nonempty results with distinct output names and one consistent, nonmissing scalar type per column. The new columns have those types, allow missing values, and do not inherit source keys, defaults, or check constraints. Later changes to the source data do not change the created table. An already occupied table name causes creation to fail.
+
+- A conflict update may have a condition over the existing and incoming row values. It changes the conflicting row only when that condition is true; false or unknown leaves the row unchanged and contributes no affected row. Nonconflicting rows are still inserted. Failure to evaluate the condition fails the statement with the same atomicity as other mutation failures.
+
+**Boundary / error behavior**
+
+- An unhandled primary or unique-key conflict, a violation of an applicable column constraint, or a conflict on a different key than the requested conflict target fails the statement. Updates of a single-column primary key are rejected.
+
+- If a row constraint or a returning expression fails during a mutation statement, none of that statement's inserts, updates, or deletes remain applied.
+
+### FP-06: Transactions, isolation, and savepoints
+
+**Public entry**
+
+- Applications through Rust or the optional C interface, and SQL users, begin, commit, or roll back a session transaction, select its isolation behavior, and create, release, or roll back to named savepoints.
+
+**Normal behavior**
+
+- Outside an explicit transaction, a successful row mutation commits its changes. Within an explicit transaction, reads see that transaction's own changes, while other sessions do not see them before commit. Commit publishes the changes together; rollback discards the transaction's row mutations. Dropping an unfinished native transaction rolls it back.
+
+- The initial isolation choice is read-committed. With the database configured for read-committed isolation, read-committed transactions observe other sessions' changes committed before each query. Snapshot isolation observes the committed database as it stood when the transaction began, plus its own changes, and retains that view despite later commits. These are the two distinct isolation behaviors; accepted aliases do not introduce additional guarantees.
+
+- Users can configure the isolation used by subsequent transactions. A transaction can explicitly request a snapshot while the configured isolation is read-committed; that transaction retains its original view even if the configured isolation changes. Independent defaults for sessions sharing one database, and an explicit read-committed override of a configured snapshot default, are outside this scope.
+
+- Rollback to a savepoint undoes later row mutations while retaining earlier work and the named savepoint. It discards savepoints created after that point. Releasing a savepoint discards it and later savepoints without committing the transaction. Reusing a savepoint name makes rollback and release target the most recently created surviving savepoint of that name.
+
+- Transactions modifying different rows can commit without overwriting each other's changes. Concurrent attempts to write the same row under snapshot isolation produce a conflict instead of silently losing a committed update.
+
+- Creating a table in a transaction and then rolling back removes that newly created table. Transaction rollback of row mutations does not extend to restoring data removed by truncation.
+
+- Callers can inspect the current transaction identity through a SQL expression. An explicit transaction has one stable positive identity throughout its queries and mutations, and separate transactions have different identities. Outside an explicit transaction the expression reports absence, including after commit or rollback.
+
+**Boundary / error behavior**
+
+- Savepoint operations outside an active transaction, or operations naming a nonexistent or already released savepoint, fail. Completing a transaction removes its savepoints.
+
+- A failed uniqueness or row-write conflict cannot publish a partially committed transaction. A failed statement does not turn uncommitted work into committed data. Successfully completed earlier statements remain available to the transaction after a later statement fails.
+
+- Transactions refine table-alteration and truncation behavior: a transaction that wrote a table before a concurrent addition or removal of one of its columns cannot commit those earlier writes under the changed schema; it fails and discards those writes. Truncation fails while another transaction has uncommitted writes to the table.
+
+### FP-07: Referential integrity and cascading changes
+
+**Public entry**
+
+- Users declare a single-column foreign-key relationship to a parent primary or unique column, together with the desired behavior for parent deletion and referenced-value updates.
+
+**Normal behavior**
+
+- Inserting or changing a nonmissing child reference requires a matching parent value visible to the transaction. A nullable child reference may be missing. References see parent inserts and deletes already performed in the same transaction.
+
+- The supported referential actions are restriction, no action, cascading change, and setting the child reference to a missing value. Omitting a referential action rejects a parent change that would leave references unmatched. Restriction and no action reject a parent change that would leave references unmatched. Cascading deletion deletes matching children; cascading updates of an updatable referenced unique column change matching child references to the new value. Setting missing values clears matching references. Direct parent-deletion actions are supported when the relationship references the parent primary key; direct deletion through a different unique column is outside this scope.
+
+- Cascading changes propagate through dependent relationships and belong to the caller's transaction. Rollback restores both parent and child rows. If a deeper relationship restricts the requested change, the entire statement fails without retaining earlier cascade effects.
+
+- Dropping or truncating a referenced parent table fails while visible child rows contain nonmissing references to it, irrespective of the configured row-level action. When dropping the parent is allowed, the surviving child definition no longer enforces a reference to that removed table.
+
+**Boundary / error behavior**
+
+- A foreign-key declaration fails if the parent table or referenced column is absent, the referenced column is neither primary nor unique, or an action that sets a missing value targets a not-null child column.
+
+- Inserting or updating a child to a nonmissing value without a matching visible parent fails without retaining the attempted change. Cascading behavior does not permit updates of a primary-key column otherwise forbidden by row mutation rules. Foreign keys further restrict schema evolution: changing the type of a column on either side of a foreign-key reference fails without changing the table.
+
+### FP-08: Persistent databases, recovery, and backups
+
+**Public entry**
+
+- Native applications open a file-backed Velnora database at a chosen directory and request checkpoints, backup snapshots, or restoration through database operations.
+
+**Normal behavior**
+
+- Closing and reopening a file-backed database preserves committed rows, scalar values, table schemas, and constraints. Committed updates and deletes remain effective after reopening; rolled-back or unfinished transactions do not become committed by reopening.
+
+- Full durability preserves acknowledged commits across abrupt process termination. A checkpoint makes the database's committed state recoverable on reopening, including when write synchronization is disabled.
+
+- A checkpoint preserves query results and subsequent update and delete behavior, including rows written before earlier checkpoints. Column additions, removals, renames, and type conversions remain effective for previously stored data and survive reopening. Table renaming survives reopening when its rows have not previously been checkpointed.
+
+- Creating a backup snapshot captures committed database data and definitions. Restoring the latest available snapshot, or a selected existing snapshot, replaces the backed-up tables' data with their snapshot state, restores their table constraints, and preserves that restored state after reopening. A restore request without a snapshot selection uses the latest available snapshot.
+
+- While one process holds a file database open, another process cannot open the same database for concurrent access. Closing the owning database releases that exclusion so another process can open it.
+
+**Boundary / error behavior**
+
+- Opening a file-backed database whose directory cannot be read produces a failure rather than an apparently empty successful database. If access to a storage subdirectory is denied, reopening and reading previously committed data must either report a failure or return the complete committed result; successful reads must not silently omit or change committed rows.
+
+- Restoration without an available selected backup fails. When recording or synchronizing a row mutation for durability fails, the caller observes a failure and further row writes are refused until the database is closed and reopened.
+
+- Checkpoint, backup creation, and restoration requests are refused inside an explicit transaction.
+
+### FP-09: Relational joins and set combinations
+
+**Public entry**
+
+- Users combine query sources using SQL joins or combine complete query results using set operations.
+
+**Normal behavior**
+
+- Inner joins return all source-row combinations whose join condition is true. Left, right, and full outer joins additionally retain unmatched rows from the designated side or sides, with missing values for the absent side. Cross joins produce every pair of source rows.
+
+- Joins support equality and non-equality conditions, multiple conditions, self-joins, and chains of more than two sources. A join by named shared columns matches all named columns and exposes each shared column once; a natural join uses all common column names. For outer joins, a shared-column value is preserved when the left row is present. The merged shared-column value of a right-only row is outside this scope; its nonshared columns and the row itself remain part of the result.
+
+- Set union, intersection, and difference operate on complete corresponding rows, treating corresponding missing values as equal for these operations. Without the all form, union returns each distinct row present in either input, intersection returns each distinct row present in both inputs, and difference returns each distinct left-side row absent from the right input. With the all form, union adds the two occurrence counts, intersection retains the smaller occurrence count, and difference subtracts the right occurrence count from the left occurrence count, with a minimum result count of zero.
+
+- Ordering and pagination requested for a combined set apply to the combined result.
+
+**Boundary / error behavior**
+
+- Set operands with different numbers of columns fail. A join condition expressed as a predicate that names a nonexistent source column fails. Named shared-column joins require names present in both sources; rejection of absent names in that form is outside this scope.
+
+### FP-10: Subqueries and common table expressions
+
+**Public entry**
+
+- Users embed SQL queries as scalar expressions, existence or membership predicates, derived tables, or named common table expressions, including recursive definitions.
+
+**Normal behavior**
+
+- A scalar subquery containing one result row supplies its selected scalar value; no row supplies a missing value. Existence predicates distinguish at least one result row from no rows, independently of the selected values.
+
+- Membership subqueries compare against the subquery's selected values using the same equality and missing-value rules as other comparisons. A nonmatch with an unknown comparison remains unknown; membership in an empty result is false. Negated membership preserves unknown rather than accepting it as true.
+
+- Quantified comparisons support any matching value and all matching values. Against an empty result, the any form is false and the all form is true. Otherwise a decisive true for any or false for all determines the result; absent a decisive value, unknown comparisons leave the result unknown.
+
+- Correlated subqueries use the current outer row's referenced values. Correlated existence is supported in filters and inside scalar subqueries; a bare correlated existence expression directly projected as a result column is outside this scope. A local source or alias shadows the same name in an outer scope, and a qualified outer reference remains bound to its named source. Derived tables expose their query's output columns as a source for an enclosing query.
+
+- Common table expressions expose named query results for the containing statement, support explicit output-column names, and can refer to earlier named expressions. They are available to selections and to insertion, update, and deletion statements, including subqueries inside those statements.
+
+- A recursive common table expression combines its initial rows with rows derived from the preceding recursive result until its recursive members yield no further rows. The supported recursive combination preserves duplicates, including repeated rows from different derivations. This supports terminating numeric recurrences and finite hierarchical traversals requiring at most 10,000 successive derivation levels after the initial rows. Completion beyond that depth is outside this scope.
+
+**Boundary / error behavior**
+
+- A scalar subquery returning more than one row fails rather than silently selecting a row. References to a common table expression outside its containing statement fail.
+
+- A subquery's execution error is propagated to the enclosing operation rather than converted into an empty result or a missing scalar value, except that error propagation from scalar subqueries embedded in literal insertion rows is outside this scope. A recursive definition without an initial member and at least one recursive member fails. A recursive combination requesting duplicate elimination is rejected.
+
+### FP-11: Grouped aggregation and multidimensional summaries
+
+**Public entry**
+
+- Users request aggregate expressions over a whole query result or groups defined by expressions, optionally filtering groups and requesting subtotals.
+
+**Normal behavior**
+
+- Grouping forms one result per distinct combination of grouping-expression values, with missing values belonging to the same group. Group filtering retains only groups whose requested condition is true.
+
+- Aggregate operations provide row count, present-value count, sum, arithmetic mean, minimum, maximum, first and last values, median, sample and population variance, sample and population standard deviation, text concatenation, and collection into a JSON array. Distinct aggregation removes duplicate input values before applying the requested aggregate. For median, variance, and standard deviation, this guarantee applies to grouped aggregation; distinct statistical aggregation without grouping is outside the supported scope.
+
+- Row count includes rows containing missing values. All value-based aggregates ignore missing inputs. On empty input, both counts return zero. Present-value count also returns zero when all supplied values are missing; the other value-based aggregates return missing values on empty or all-missing input. A grouped query with no input rows has no ordinary groups.
+
+- Median is the middle sorted present value, or the arithmetic mean of the two middle values for an even count. Population variance is the mean squared deviation from the mean, while sample variance uses one fewer than the number of present values as its divisor. Standard deviation is the square root of the corresponding variance. Sample variance and sample standard deviation return missing values with fewer than two present values. For at most 10,000 finite inputs of magnitude at most 100, the absolute error of median, variance, and standard deviation must not exceed one billionth of the larger of one and the magnitude of the mathematical result, measured from the supplied numeric values.
+
+- Text concatenation joins present values with the supplied separator, using a comma when the separator is omitted. Array aggregation collects present values as array elements and returns a missing value when there are none. First-value and last-value aggregation select the first and last present values from an explicitly ordered input relation. Explicit aggregate ordering controls the value order for text and array aggregation. Within one query, repeated uses of the same text or array aggregate on the same input expression must use the same ordering and, for text, the same separator.
+
+- Hierarchical rollup returns grouping prefixes and a grand total. A grouping cube returns all subsets of the requested grouping dimensions. Explicit grouping sets return precisely the requested groupings. Grouping indicators distinguish missing values standing for an omitted subtotal dimension from missing values in actual data.
+
+### FP-12: Window analytics
+
+**Public entry**
+
+- Users attach analytical expressions to query rows using partitions, ordering, explicit frames, and reusable named window specifications.
+
+**Normal behavior**
+
+- Window evaluation retains an output row for each input row and computes each window value within that row's partition. Multiple window expressions may have different partitioning and ordering in the same query.
+
+- Ranking provides consecutive row numbers, ranks with gaps after ties, dense ranks without gaps, approximately equal ordered buckets, relative rank, and cumulative distribution. Relative rank is the number of rows before the peer group divided by one fewer than the partition size, or zero for a singleton partition. Cumulative distribution is the fraction of partition rows at or before the current peer group. The absolute error of relative rank and cumulative distribution must not exceed one billionth, measured against these fractions for the partition rows and peer groups. Row numbers begin at one. A rank with gaps is one plus the number of preceding rows outside the current peer group; a dense rank is one plus the number of preceding distinct peer groups. Peers are rows with equal values for all window ordering expressions. Missing partition values belong to the same partition.
+
+- Bucket assignment distributes a partition among the requested positive number of buckets in order, with bucket sizes differing by at most one and larger buckets preceding smaller ones.
+
+- Preceding-row and following-row value access use the requested offset within the partition and return the supplied replacement when that row is outside the partition. Frame value access returns the first, last, or requested ordinal value in the specified frame. Omitting the offset selects the immediately preceding or following row.
+
+- Row frames use physical row offsets. An aggregate row frame with a following start has specified aggregate values only for rows where that start lies within the partition. Value-range frames use the ordering value and requested bounds; finite value-range offsets are supported for ascending ordering. Bounds can denote preceding or following offsets, the current row, or a partition endpoint. With a finite value-range bound, a missing ordering key has missing-key peers rather than a numeric interval.
+
+- Without an explicit frame, an ordered window includes the partition beginning through the current row and all its peers; an unordered window includes the entire partition. An omitted partition specification places all input rows in one partition. A frame specified with only a starting bound ends at the current row.
+
+- Count, sum, arithmetic mean, minimum, and maximum can be evaluated over the specified window frame, permitting running and moving summaries. One named window specification per query allows its partitioning, ordering, and frames to be reused by multiple expressions; an expression can attach its own frame to the named partitioning and ordering. Multiple named definitions in one query are outside this scope.
+
+**Boundary / error behavior**
+
+- A requested ordinal outside the frame produces a missing value; a preceding or following lookup without a replacement produces a missing value when its target is absent.
+
+- A reference to an undefined named window fails.
+
+### FP-13: Reusable read-only views
+
+**Public entry**
+
+- Users create a named view from a query, read it as a query source, inspect its definition, and drop it.
+
+**Normal behavior**
+
+- A view exposes the output of its defining query over data visible to the current statement. Later committed changes to the underlying data affect later view queries under the session's isolation behavior.
+
+- Views support declared output-column aliases, selection and filtering, and references from other views. A query can follow a chain of at most 32 nested views, counting each view between the query and a base table once; a longer chain is refused as excessive nesting.
+
+- View inspection distinguishes existing views and exposes their saved definitions. Dropping a view removes access by that name without deleting its underlying tables or their rows. File-backed databases retain view definitions after reopening.
+
+**Boundary / error behavior**
+
+- A view name conflicts with an existing table name or an unconditionally created existing view name. A conditional create accepts an existing view without replacing its definition.
+
+- Insertion, update, and deletion addressed to a view fail. Querying a removed view fails.
+
+### FP-14: Secondary index management and indexed consistency
+
+**Public entry**
+
+- Users create, inspect, and drop named indexes on existing table columns, optionally imposing uniqueness on one column or a column combination.
+
+**Normal behavior**
+
+- Scalar indexes can cover one column or an ordered combination of columns. An index may be created after data already exists. Inspection identifies its table, indexed columns in their declared order, and uniqueness property.
+
+- A unique index enforces uniqueness across all existing and subsequent present keys in its indexed columns, including composite keys. Multiple keys containing missing values remain permitted. Removing a user-created unique index removes the additional uniqueness restriction it introduced.
+
+- Equality, range, membership, missing-value predicates, and ordering retain their specified results after indexes are created or removed. Accepted inserts, updates, and deletes change subsequent indexed-query results according to transaction visibility, including for rows written before a checkpoint.
+
+- Secondary indexes extend persistent backup behavior: creating and restoring a backup preserves its index definitions and their uniqueness behavior. File-backed database reopening also restores those definitions and restrictions. Schema renaming preserves the index's association with the renamed column.
+
+**Boundary / error behavior**
+
+- Creating a unique index fails if existing present keys are duplicated. Creating an index on a nonexistent table or column, or unconditionally reusing an existing index name, fails.
+
+- When a write violates an indexed unique key, it fails without changing that key's accepted existing rows. Dropping a nonexistent index without a conditional request fails.
+
+### FP-15: Historical queries
+
+**Public entry**
+
+- Users request a table's data at a specified transaction identifier or timestamp, including separate historical points for joined sources. The historical-data promise applies to sequential committed writes in an in-memory database while the relevant row history remains retained; timestamp-qualified reads are scoped to rows that have not been deleted.
+
+**Normal behavior**
+
+- A transaction-qualified historical query selects row values from writes at or before the requested transaction rather than substituting current row values. Later updates do not replace those historical values; deletion excludes a row at or after its deleting transaction. A timestamp-qualified query over undeleted rows returns the most recent retained row values at or before its requested time.
+
+- Historical reads support filtered projections, aliases, and joins between current and historical table data. An unfiltered historical source returns all of its columns. A requested timestamp earlier than any row's insertion produces no rows for that table.
+
+**Boundary / error behavior**
+
+- A malformed timestamp, missing historical point, or nonnumeric transaction identifier fails. Historical queries do not change current stored rows.
+
+### FP-16: Vector values and nearest-neighbor search
+
+**Public entry**
+
+- Users declare fixed-dimension vector columns, supply vector values, calculate distances and vector properties, and request nearest rows by a chosen distance, optionally creating a vector index for approximate selection.
+
+**Normal behavior**
+
+- Vector columns preserve their declared component count and stored single-precision numeric components. Callers can retrieve the component values, their count, and Euclidean magnitude, and convert a vector to a text representation that preserves those component values. Scalar type inspection distinguishes a vector from the other value families.
+
+- The three supported distance meanings are Euclidean distance, cosine distance, and negative inner product. For two equal-length finite vectors, Euclidean distance is the length of their difference and negative inner product is the negated sum of corresponding component products. For nonzero vectors, cosine distance is one minus their normalized inner product. For vectors with at most 1,024 components, each of magnitude at most one, reported distance and magnitude errors must not exceed one ten-thousandth of the larger of one and the exact result magnitude, measured from the stored component values; cosine measurements require both magnitudes to be at least one hundredth.
+
+- Without an approximate vector index, a distance-ordered limited query returns the nearest qualifying visible rows according to the selected distance, with actual distances computed from their stored vectors.
+
+- A vector index permits approximate nearest-neighbor queries for Euclidean, cosine, or negative-inner-product distance as selected when it is created. Omitting the distance choice selects Euclidean distance. Returned candidates are existing visible rows, their reported distances are the selected distances to the supplied query vector, and their order follows those distances.
+
+- Approximate Euclidean search supports a caller-selectable operating configuration achieving mean recall of at least 95 percent on Fashion-MNIST: the 60,000 training images are the stored vectors, the 10,000 test images are queries, and each image supplies its 784 pixel intensities in row-major order without rescaling. Each query requests ten neighbors. Recall is the fraction of ten returned row identities belonging to an exact ten-nearest set, averaged over all test images; equally distant boundary neighbors are interchangeable.
+
+- Creating a vector index after rows have been persisted includes those rows as candidates. Updates change a row's candidate vector, and deletion removes it from current candidates. Vector values and index definitions survive reopening. A snapshot transaction continues to query its own visible vectors after another session changes them.
+
+- Vector queries retain SQL filtering, explicit missing-value ordering, and result limits. A missing vector produces a missing distance and cannot be reported as a present finite-distance match.
+
+**Boundary / error behavior**
+
+- Writing a vector whose dimension differs from its declared column dimension fails. A distance operation on vectors with different component counts or malformed vector text produces a missing distance. Writes of malformed vector text fail rather than supplying a fabricated vector. Vector typing further restricts schema evolution: changing a declared dimension fails when an existing vector has another dimension; existing vectors are not padded or truncated.
+
+- Creating a vector index on an ordinary nonvector column, or a vector column without a known dimension, fails. While the vector index exists, changing its column to a nonvector type fails without changing the table; dropping that index removes this additional restriction. Requests on an integer primary-key column are outside this scope. A query using a different distance meaning from an existing index still returns results using the requested distance meaning.
+
+### FP-17: Local semantic text embeddings
+
+**Public entry**
+
+- With semantic search enabled, users supply text to the SQL embedding operation and use its result as a vector in storage, distance expressions, and similarity queries.
+
+**Normal behavior**
+
+- The embedding operation represents supplied text in the published all-MiniLM-L6-v2 sentence-embedding space at immutable model revision 1110a243fdf4706b3f48f1d95db1a4f5529b4d41. For text within the published model's input length, each component differs from an independent evaluation of that model by at most 0.0001. It returns 384 numeric components with Euclidean magnitude within 0.0001 of one, directly comparable to other sentence embeddings from that published model. For repeated requests with identical text in the same deployment, the maximum absolute difference between corresponding output components is at most 0.0001.
+
+- Texts can be embedded as they are inserted and query text can be embedded for distance-based retrieval from those rows. The resulting search order follows the chosen vector distance between document and query embeddings.
+
+- Integer and floating-point inputs are embedded as their textual values. A missing input yields a missing embedding. Once the required model files are locally available, embedding requests can complete without network access or transmission of the supplied text to an external inference service.
+
+**Boundary / error behavior**
+
+- A build without semantic search rejects the embedding operation as unavailable. When required model files cannot be obtained or loaded, the operation produces no embedding, returning either a failure or a missing result.
+
+### FP-18: Bulk file import
+
+**Public entry**
+
+- Users request a bulk import into an existing table from a local CSV or JSON file, optionally selecting target columns and CSV interpretation options.
+
+**Normal behavior**
+
+- CSV import supports header-based column matching and positional column mapping, a supplied field delimiter, and a supplied missing-value marker. Imported fields are converted to their destination column types, and quoted field contents remain intact. When no file format is selected, import uses CSV. By default the first CSV record is a header; disabling headers maps records positionally. An explicit target-column selection takes precedence over header-name matching and maps fields positionally to that selection. The default CSV delimiter is comma, and the default missing-value marker is an empty field.
+
+- JSON import accepts an array of objects or JSON Lines containing one object per line. Object keys match target columns case-insensitively; absent keys use the destination column's default or nullable missing value, and extra keys are ignored. An explicit target-column selection limits which object members are imported.
+
+- A successful import adds all imported records and reports the inserted-row count. The imported rows obey the same destination type, vector-dimension, and integrity constraints as ordinary insertion.
+
+**Boundary / error behavior**
+
+- A missing or unreadable input file, a malformed JSON object record, incompatible CSV field count, or failed field conversion causes an import failure. JSON array imports require a well-formed outer array; validation of the array separators and enclosing punctuation is outside this scope. A failing import does not retain a partial set of its rows.
+
+- Bulk file import is rejected inside an explicit transaction. Referencing a nonexistent destination table or target column fails.
+
+### FP-19: Query diagnosis and database maintenance
+
+**Public entry**
+
+- Users request a query explanation, an explanation with execution, table statistics collection, configuration inspection, or explicit database cleanup through SQL administration operations.
+
+**Normal behavior**
+
+- An explanation describes the submitted query without executing its data operations. Its output distinguishes source access, filtering, joins, grouping, sorting, and limiting when those operations are present, and identifies the relevant source tables and predicates.
+
+- An explanation with execution performs the query and reports its actual result-row count separately from any estimated count. For a full-row scan of a single integer column in one process, increasing the table from 2,000 rows to 200,000 rows increases both the median reported execution duration and the independently observed elapsed time over three repetitions. Both measurements span completion of the query; the independent observation includes receiving the explanation.
+
+- Table analysis exposes the number of committed rows in each analyzed table and can address one named table or all user tables. For tables containing at most 10,000 rows, analyzed integer, floating-point, text, and boolean columns expose their missing-value count, count of distinct present values, and present-value minimum and maximum. Boolean ordering places false before true. A column with no present values has no present-value extrema. Repeating analysis after committed inserts or deletes refreshes these statistics to describe the newly analyzed data. Exact column statistics for larger tables are outside this scope.
+
+- Administration operations report persistence settings selected when opening the database, expose the current backup retention count, and permit changing the backup retention count. The initial count is three backups per table. Reading the backup retention setting after a successful change reports the selected value; selecting a positive backup retention count limits the total backups retained for each table, including the newest, after another backup is created. The newest backups remain restorable and earlier excess backups do not.
+
+- Explicit cleanup leaves current visible rows and active snapshot reads intact. It can target one table or the database. When no active transaction needs earlier row values, cleanup makes those superseded values unavailable to historical reads.
+
+**Boundary / error behavior**
+
+- Analysis of a specifically named nonexistent table succeeds with zero analyzed tables and issues a warning. Cleaning a specifically named nonexistent table fails. Writing a persistence setting exposed only for inspection fails and preserves its selected value. Cleanup inside an explicit transaction fails.
+
+- Explanation with execution propagates query execution errors; a failed query is not reported as a successful zero-row execution.
+
+### FP-20: Command-line database workflows
+
+**Public entry**
+
+- Users run the Velnora command-line application against an in-memory or file-backed database to execute a supplied command, a SQL file, redirected input, or an interactive session.
+
+**Normal behavior**
+
+- The command-line application executes SQL against the selected database and presents query rows and affected-row counts. Users can select tabular or JSON result presentation and a display-row limit; limiting displayed rows does not change the stored data. A positive explicit limit in tabular presentation displays the lesser of that limit and the available row count. An explicit zero limit displays all rows in either presentation. Without a selected display limit, tabular output displays up to 40 rows.
+
+- SQL files and redirected input execute statements in their input order. Quoted string contents and comments do not become separate statements merely because they contain a statement separator. Interactive input can span multiple lines before a statement is completed.
+
+- Interactive sessions support beginning, committing, and rolling back row changes. Exiting an interactive session with an unfinished transaction rolls back its pending row mutations.
+
+- Command-line backup and restore requests perform the same persistent snapshot creation and selected-snapshot restoration available through database operations, then return control to the invoking process.
+
+**Boundary / error behavior**
+
+- An invalid database selection, unreadable SQL input file, or SQL execution error is reported as a failure distinguishable from a successful query with no rows. A one-command execution that fails does not report successful completion.
+
+- Attempting to begin another interactive transaction while one is active, or to commit or roll back without an active interactive transaction, fails.

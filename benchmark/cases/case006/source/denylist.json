@@ -5,7 +5,8 @@
   "install_ban": [
     "click",
     "pallets/click",
-    "typer"
+    "typer",
+    "typer-slim"
   ],
   "import_ban": [
     "click",
@@ -13,5 +14,5 @@
     "typer",
     "typer/"
   ],
-  "notes": "Bans the upstream Click PyPI package and import root (click), the GitHub slug pallets/click, and Typer (typer) which wraps Click; allows runner-provided infra (pytest, apt less, Python/pip/flit_core) and does not ban org-wide or docs-only names (pallets, pallets-sphinx-themes, click-contrib)."
+  "notes": "Bans the upstream Click PyPI package and import root (click), the GitHub slug pallets/click, and Typer (typer) which wraps Click; allows runner-provided infra (pytest, apt less, Python/pip/flit_core) and does not ban org-wide or docs-only names (pallets, pallets-sphinx-themes, click-contrib). typer-slim is banned with it: it installs the same typer import package, so leaving it would keep the banned module importable."
 }

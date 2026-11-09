@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "artifacts": [
+    {
+      "file": "Python-3.11.14.tar.xz",
+      "sha256": "8d3ed8ec5c88c1c95f5e558612a725450d2452813ddad5e58fdb1a53b1209b78",
+      "kind": "cpython-source",
+      "version": "3.11.14",
+      "url": "https://www.python.org/ftp/python/3.11.14/Python-3.11.14.tar.xz"
+    },
+    {
+      "file": "bzip2_1.0.8-5.1ubuntu0.1_amd64.deb",
+      "sha256": "60fb79214dd8366fa39d7e69911294e72b9f1a4425a3d22f211359c8626e4b9e",
+      "kind": "deb",
+      "name": "bzip2",
+      "version": "1.0.8-5.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/bzip2/bzip2_1.0.8-5.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "gdb_15.1-1ubuntu1~24.04.1_amd64.deb",
+      "sha256": "7069c23ce3bc350646498e6607749c568f5c403b0db2204310a94baff3d85745",
+      "kind": "deb",
+      "name": "gdb",
+      "version": "15.1-1ubuntu1~24.04.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdb/gdb_15.1-1ubuntu1~24.04.1_amd64.deb"
+    },
+    {
+      "file": "libbabeltrace1_1.5.11-3build3_amd64.deb",
+      "sha256": "30f0b9fbe68115d7b50d478458e4d830695bce579529b52c7827720da9c0c2df",
+      "kind": "deb",
+      "name": "libbabeltrace1",
+      "version": "1.5.11-3build3",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/babeltrace/libbabeltrace1_1.5.11-3build3_amd64.deb"
+    },
+    {
+      "file": "libbz2-1.0_1.0.8-5.1ubuntu0.1_amd64.deb",
+      "sha256": "36ee08b00b1ee5018b2fce02881b7d2d73c9b4e32990bde3388400d86c48126a",
+      "kind": "deb",
+      "name": "libbz2-1.0",
+      "version": "1.0.8-5.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/bzip2/libbz2-1.0_1.0.8-5.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "libbz2-dev_1.0.8-5.1ubuntu0.1_amd64.deb",
+      "sha256": "f055bb5cb47117020a76dc40fcdb8164f4fa529df2b7f485faacc0b0f5083614",
+      "kind": "deb",
+      "name": "libbz2-dev",
+      "version": "1.0.8-5.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/bzip2/libbz2-dev_1.0.8-5.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "libdebuginfod-common_0.190-1.1ubuntu0.1_all.deb",
+      "sha256": "aa25e83c64fdb547d923ea1aaaa8fb8c1cdca2db69a5f0b560f90c5b832e4a85",
+      "kind": "deb",
+      "name": "libdebuginfod-common",
+      "version": "0.190-1.1ubuntu0.1",
+      "architecture": "all",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/e/elfutils/libdebuginfod-common_0.190-1.1ubuntu0.1_all.deb"
+    },
+    {
+      "file": "libdebuginfod1t64_0.190-1.1ubuntu0.1_amd64.deb",
+      "sha256": "7ff18c57198200f4af7e50e0dce29366dc832c10d8c475ca7e0403083e042ea7",
+      "kind": "deb",
+      "name": "libdebuginfod1t64",
+      "version": "0.190-1.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/e/elfutils/libdebuginfod1t64_0.190-1.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "libdw1t64_0.190-1.1ubuntu0.1_amd64.deb",
+      "sha256": "edaa9ce4221d95f4bd72a9805100902e313092a2f31a7a51e7186be97734714d",
+      "kind": "deb",
+      "name": "libdw1t64",
+      "version": "0.190-1.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/e/elfutils/libdw1t64_0.190-1.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "libelf1t64_0.190-1.1ubuntu0.1_amd64.deb",
+      "sha256": "b4aee123a37472d213647594b4f7d4a0d13615b0ca2a6fd33926b768d6b232c2",
+      "kind": "deb",
+      "name": "libelf1t64",
+      "version": "0.190-1.1ubuntu0.1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/e/elfutils/libelf1t64_0.190-1.1ubuntu0.1_amd64.deb"
+    },
+    {
+      "file": "libffi-dev_3.4.6-1build1_amd64.deb",
+      "sha256": "7009959b8a3b77206325026917fb45150ac81bf6139468abc0841d5a29c8619d",
+      "kind": "deb",
+      "name": "libffi-dev",
+      "version": "3.4.6-1build1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi-dev_3.4.6-1build1_amd64.deb"
+    },
+    {
+      "file": "libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "sha256": "ff1b650f655b36dfe202fdbae6bb02b363c7257b6dd23e4f95ab61f716190df3",
+      "kind": "deb",
+      "name": "libglib2.0-0t64",
+      "version": "2.80.0-6ubuntu3.10",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glib2.0/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb"
+    },
+    {
+      "file": "libipt2_2.0.6-1build1_amd64.deb",
+      "sha256": "c14702719d594c1ca099e2cd9ff0e9bbd0215c9bb6bebb4a0d7651f984600995",
+      "kind": "deb",
+      "name": "libipt2",
+      "version": "2.0.6-1build1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/i/intel-processor-trace/libipt2_2.0.6-1build1_amd64.deb"
+    },
+    {
+      "file": "liblzma-dev_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb",
+      "sha256": "a6af1ee2bd2d5c532465734f474d03d8e08977c881f10898eda0c88b70ff2e5d",
+      "kind": "deb",
+      "name": "liblzma-dev",
+      "version": "5.6.1+really5.4.5-1ubuntu0.4",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xz-utils/liblzma-dev_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb"
+    },
+    {
+      "file": "liblzma5_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb",
+      "sha256": "5bcf5da2339331e21d3f42a831e82c61c54c6b2f29804010e8d59abd0ae52167",
+      "kind": "deb",
+      "name": "liblzma5",
+      "version": "5.6.1+really5.4.5-1ubuntu0.4",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xz-utils/liblzma5_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb"
+    },
+    {
+      "file": "libncurses-dev_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "2c32ce182e90e6636ddb037ba2810cace9e1f076b13fac89034277d8ba943c38",
+      "kind": "deb",
+      "name": "libncurses-dev",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libncurses-dev_6.4+20240113-1ubuntu2.2_amd64.deb"
+    },
+    {
+      "file": "libncurses6_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "59e8527dfd14473393960bfb7c69566f1ad9d576423421dcb8b8dcdbb3e7fca1",
+      "kind": "deb",
+      "name": "libncurses6",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libncurses6_6.4+20240113-1ubuntu2.2_amd64.deb"
+    },
+    {
+      "file": "libncursesw6_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "579c9488755d1ddd70f66480cafd2f68776f68314d15d9cf4b5449d0de0fc968",
+      "kind": "deb",
+      "name": "libncursesw6",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libncursesw6_6.4+20240113-1ubuntu2.2_amd64.deb"
+    },
+    {
+      "file": "libpython3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "d646ad7112b5adec21ba0e1af015f04ae8ca7f5efdc619622547dd6673c4c14b",
+      "kind": "deb",
+      "name": "libpython3.12-minimal",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/p/python3.12/libpython3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "libpython3.12-stdlib_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "45d3f530ba1f9d6e879ad46b92046fabab13fe50a82450e4f65557a3bbad1489",
+      "kind": "deb",
+      "name": "libpython3.12-stdlib",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/p/python3.12/libpython3.12-stdlib_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "libpython3.12t64_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "0d29f4763eb95b8a4283a4aca3ef1d9658629c618be1778def41bdc31be12b46",
+      "kind": "deb",
+      "name": "libpython3.12t64",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/p/python3.12/libpython3.12t64_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "libreadline-dev_8.2-4build1_amd64.deb",
+      "sha256": "7298fb8ba3b779cead0c908c8c7a572ff6e271239527d2de5e0f59786f136613",
+      "kind": "deb",
+      "name": "libreadline-dev",
+      "version": "8.2-4build1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/r/readline/libreadline-dev_8.2-4build1_amd64.deb"
+    },
+    {
+      "file": "libsource-highlight-common_3.1.9-4.3build1_all.deb",
+      "sha256": "3f331e390caadcff33f42f56acad1a8c7e8a1f282eb31316f489c38f6c2460a5",
+      "kind": "deb",
+      "name": "libsource-highlight-common",
+      "version": "3.1.9-4.3build1",
+      "architecture": "all",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/s/source-highlight/libsource-highlight-common_3.1.9-4.3build1_all.deb"
+    },
+    {
+      "file": "libsource-highlight4t64_3.1.9-4.3build1_amd64.deb",
+      "sha256": "e0ef35d9b76669f22c2ad4ab3b9141ac46d3662823c5bbea248c21db53879470",
+      "kind": "deb",
+      "name": "libsource-highlight4t64",
+      "version": "3.1.9-4.3build1",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/s/source-highlight/libsource-highlight4t64_3.1.9-4.3build1_amd64.deb"
+    },
+    {
+      "file": "libsqlite3-0_3.45.1-1ubuntu2.8_amd64.deb",
+      "sha256": "b1190bb72359f5fcc47406aa46065eaf4f1ca208085c51224a52b04bedc0b4bb",
+      "kind": "deb",
+      "name": "libsqlite3-0",
+      "version": "3.45.1-1ubuntu2.8",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/s/sqlite3/libsqlite3-0_3.45.1-1ubuntu2.8_amd64.deb"
+    },
+    {
+      "file": "libsqlite3-dev_3.45.1-1ubuntu2.8_amd64.deb",
+      "sha256": "61e688e7ced1c6f7c0b66721e46fd996f891489654dbf382daa98e17ee3ae192",
+      "kind": "deb",
+      "name": "libsqlite3-dev",
+      "version": "3.45.1-1ubuntu2.8",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/s/sqlite3/libsqlite3-dev_3.45.1-1ubuntu2.8_amd64.deb"
+    },
+    {
+      "file": "libssl-dev_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "2b4734df0475e305ac03abb0a2cc5659651ed37ef02d967a1c4033a154cf714b",
+      "kind": "deb",
+      "name": "libssl-dev",
+      "version": "3.0.13-0ubuntu3.16",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_3.0.13-0ubuntu3.16_amd64.deb"
+    },
+    {
+      "file": "libssl3t64_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "219f43b1cd836a4da550938db5fda93160d269d39a4edcf1f1ce698a470db797",
+      "kind": "deb",
+      "name": "libssl3t64",
+      "version": "3.0.13-0ubuntu3.16",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl3t64_3.0.13-0ubuntu3.16_amd64.deb"
+    },
+    {
+      "file": "libtinfo6_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "b67a6df2bdab61d273eabebd208bb6a3fb12618a390a067e1ee305a409ff03d9",
+      "kind": "deb",
+      "name": "libtinfo6",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo6_6.4+20240113-1ubuntu2.2_amd64.deb"
+    },
+    {
+      "file": "ncurses-base_6.4+20240113-1ubuntu2.2_all.deb",
+      "sha256": "7a00fc1174fbc32ce68bfd2038ca4b8275dc2851f78e911180c0928534682b05",
+      "kind": "deb",
+      "name": "ncurses-base",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "all",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/ncurses-base_6.4+20240113-1ubuntu2.2_all.deb"
+    },
+    {
+      "file": "ncurses-bin_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "897a9d87aebfd92ed47223faef6ce40fa19196309ee98cfd8479ed38e5f75773",
+      "kind": "deb",
+      "name": "ncurses-bin",
+      "version": "6.4+20240113-1ubuntu2.2",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/ncurses-bin_6.4+20240113-1ubuntu2.2_amd64.deb"
+    },
+    {
+      "file": "openssl_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "675b84971ffd4467707008c25ef7520f90ea7c23ef27b7a76b0dccf1d7c4dc3f",
+      "kind": "deb",
+      "name": "openssl",
+      "version": "3.0.13-0ubuntu3.16",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/o/openssl/openssl_3.0.13-0ubuntu3.16_amd64.deb"
+    },
+    {
+      "file": "python3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "d452689b9660845345a4c3e05e4ad82c082d5474e04031b7aa47f1a6d5610a6e",
+      "kind": "deb",
+      "name": "python3.12-minimal",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/p/python3.12/python3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "python3.12-venv_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "b8d4bfea3df63945b6a202bd0773caf7727dde86d2df91df6e88a8ccf7c18b7e",
+      "kind": "deb",
+      "name": "python3.12-venv",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/universe/p/python3.12/python3.12-venv_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "python3.12_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "6745c9463432e619d7402b117ad4ac86c31dcd3999ba20daa9e395f6f9909d86",
+      "kind": "deb",
+      "name": "python3.12",
+      "version": "3.12.3-1ubuntu0.17",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/p/python3.12/python3.12_3.12.3-1ubuntu0.17_amd64.deb"
+    },
+    {
+      "file": "ucf_3.0043+nmu1_all.deb",
+      "sha256": "397e541af11db776ed7facf1674ee37b56e7de51348c9f077d7a283912c4b458",
+      "kind": "deb",
+      "name": "ucf",
+      "version": "3.0043+nmu1",
+      "architecture": "all",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/u/ucf/ucf_3.0043+nmu1_all.deb"
+    },
+    {
+      "file": "xz-utils_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb",
+      "sha256": "18ef3c30308990626cfbda8b6336ef6ef5a412d1991bdad0cdaa226fd2041ffe",
+      "kind": "deb",
+      "name": "xz-utils",
+      "version": "5.6.1+really5.4.5-1ubuntu0.4",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xz-utils/xz-utils_5.6.1+really5.4.5-1ubuntu0.4_amd64.deb"
+    },
+    {
+      "file": "zlib1g-dev_1%3a1.3.dfsg-3.1ubuntu2.3_amd64.deb",
+      "sha256": "419902a649e1078f24596cdf31ced9c839519828790f59888056fcdcd58e8a28",
+      "kind": "deb",
+      "name": "zlib1g-dev",
+      "version": "1:1.3.dfsg-3.1ubuntu2.3",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/z/zlib/zlib1g-dev_1.3.dfsg-3.1ubuntu2.3_amd64.deb"
+    },
+    {
+      "file": "zlib1g_1%3a1.3.dfsg-3.1ubuntu2.3_amd64.deb",
+      "sha256": "376249c8de139568221dbb242318cc8cb8f02299e3a62b7432948e1754fbddf9",
+      "kind": "deb",
+      "name": "zlib1g",
+      "version": "1:1.3.dfsg-3.1ubuntu2.3",
+      "architecture": "amd64",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/z/zlib/zlib1g_1.3.dfsg-3.1ubuntu2.3_amd64.deb"
+    }
+  ],
+  "cpython": {
+    "prefix": "/opt/cpython311",
+    "source_root": "/opt/src/Python-3.11.14",
+    "cflags": "-Og -g3",
+    "configure": [
+      "--prefix=/opt/cpython311",
+      "--with-ensurepip=install"
+    ]
+  }
+}

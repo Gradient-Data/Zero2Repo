@@ -1,0 +1,159 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_configuration.py",
+    "tests/F01_helpers.py",
+    "tests/F02_helpers.py",
+    "tests/F02_recipes.py",
+    "tests/F02_templates.py",
+    "tests/F03_export.py",
+    "tests/F03_helpers.py",
+    "tests/F04_helpers.py",
+    "tests/F04_remotes.py",
+    "tests/F05_helpers.py",
+    "tests/F05_resolution.py",
+    "tests/F06_helpers.py",
+    "tests/F06_identity.py",
+    "tests/F07_bazel.py",
+    "tests/F07_cmake.py",
+    "tests/F07_helpers.py",
+    "tests/F07_native.py",
+    "tests/F07_other_native.py",
+    "tests/F07_qbs.py",
+    "tests/F08_environments.py",
+    "tests/F08_helpers.py",
+    "tests/F09_helpers.py",
+    "tests/F09_locking.py",
+    "tests/F10_helpers.py",
+    "tests/F10_production.py",
+    "tests/F11_helpers.py",
+    "tests/F11_installation.py",
+    "tests/F11_run.py",
+    "tests/F12_discovery.py",
+    "tests/F12_helpers.py",
+    "tests/F13_helpers.py",
+    "tests/F13_transfers.py",
+    "tests/F14_deployment.py",
+    "tests/F14_helpers.py",
+    "tests/F15_helpers.py",
+    "tests/F15_maintenance.py",
+    "tests/F16_editable.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_workspace.py",
+    "tests/F18_extensions.py",
+    "tests/F18_helpers.py",
+    "tests/F19_helpers.py",
+    "tests/F19_provenance.py",
+    "tests/F20_helpers.py",
+    "tests/F20_service.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "PATH=/opt/runtime/bin:$PATH /opt/runtime/bin/python -m pytest -p no:cacheprovider tests/F01_configuration.py tests/F01_helpers.py tests/F02_helpers.py tests/F02_recipes.py tests/F02_templates.py tests/F03_export.py tests/F03_helpers.py tests/F04_helpers.py tests/F04_remotes.py tests/F05_helpers.py tests/F05_resolution.py tests/F06_helpers.py tests/F06_identity.py tests/F07_bazel.py tests/F07_cmake.py tests/F07_helpers.py tests/F07_native.py tests/F07_other_native.py tests/F07_qbs.py tests/F08_environments.py tests/F08_helpers.py tests/F09_helpers.py tests/F09_locking.py tests/F10_helpers.py tests/F10_production.py tests/F11_helpers.py tests/F11_installation.py tests/F11_run.py tests/F12_discovery.py tests/F12_helpers.py tests/F13_helpers.py tests/F13_transfers.py tests/F14_deployment.py tests/F14_helpers.py tests/F15_helpers.py tests/F15_maintenance.py tests/F16_editable.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_workspace.py tests/F18_extensions.py tests/F18_helpers.py tests/F19_helpers.py tests/F19_provenance.py tests/F20_helpers.py tests/F20_service.py tests/_helpers.py",
+  "test_command_template": "PATH=/opt/runtime/bin:$PATH /opt/runtime/bin/python -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_configuration.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_recipes.py",
+      "tests/F02_templates.py"
+    ],
+    "F03": [
+      "tests/F03_export.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_remotes.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_resolution.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_identity.py"
+    ],
+    "F07": [
+      "tests/F07_bazel.py",
+      "tests/F07_cmake.py",
+      "tests/F07_helpers.py",
+      "tests/F07_native.py",
+      "tests/F07_other_native.py",
+      "tests/F07_qbs.py"
+    ],
+    "F08": [
+      "tests/F08_environments.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_locking.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_production.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_installation.py",
+      "tests/F11_run.py"
+    ],
+    "F12": [
+      "tests/F12_discovery.py",
+      "tests/F12_helpers.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_transfers.py"
+    ],
+    "F14": [
+      "tests/F14_deployment.py",
+      "tests/F14_helpers.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_maintenance.py"
+    ],
+    "F16": [
+      "tests/F16_editable.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_workspace.py"
+    ],
+    "F18": [
+      "tests/F18_extensions.py",
+      "tests/F18_helpers.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_provenance.py"
+    ],
+    "F20": [
+      "tests/F20_helpers.py",
+      "tests/F20_service.py"
+    ]
+  },
+  "support_files": [
+    "tests/F07_assets/bazel-6.5.0-linux-x86_64",
+    "tests/F07_assets/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+    "tests/F07_assets/meson-1.12.1-py3-none-any.whl",
+    "tests/F07_assets/ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+    "tests/F07_assets/premake-5.0.0-beta2-linux.tar.gz",
+    "tests/F07_assets/qbs-linux-x86_64-2.5.0.tar.gz",
+    "tests/F07_assets/rules_cc-0.0.2.tar.gz",
+    "tests/F07_assets/scons-4.11.1-py3-none-any.whl",
+    "tests/F07_autotools/configure",
+    "tests/F07_autotools/configure.ac"
+  ]
+}

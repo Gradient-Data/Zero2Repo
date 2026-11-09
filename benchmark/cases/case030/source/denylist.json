@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case030",
+  "ecosystem": "pip",
+  "install_ban": [
+    "pyccel"
+  ],
+  "import_ban": [
+    "pyccel"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "pyccel",
+      "runtime": "python3",
+      "evidence": "Probed original recipe image: /opt/runtime/bin/python resolves pyccel to /opt/runtime/lib/python3.12/site-packages/pyccel/__init__.py; distribution metadata confirms pyccel is installed, and /opt/runtime/bin/pyccel imports pyccel.commands.console."
+    }
+  ],
+  "notes": "Ban only the Pyccel pip distribution and module root, including the copy installed in the recipe runtime; allow Python/Node/Perl standard libraries, NumPy, SciPy, SymPy, textX, STC, gFTL, and provided build/compiler dependencies."
+}

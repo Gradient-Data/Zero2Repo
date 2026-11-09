@@ -1,0 +1,101 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_helpers.py",
+    "tests/F01_storage.py",
+    "tests/F02_helpers.py",
+    "tests/F02_persistence.py",
+    "tests/F03_compaction.py",
+    "tests/F03_helpers.py",
+    "tests/F04_eviction.py",
+    "tests/F04_helpers.py",
+    "tests/F05_helpers.py",
+    "tests/F05_selection.py",
+    "tests/F06_helpers.py",
+    "tests/F06_order_limits.py",
+    "tests/F07_helpers.py",
+    "tests/F07_joins.py",
+    "tests/F08_aggregates.py",
+    "tests/F08_helpers.py",
+    "tests/F09_access.py",
+    "tests/F09_helpers.py",
+    "tests/F10_helpers.py",
+    "tests/F10_http.py",
+    "tests/F11_helpers.py",
+    "tests/F11_query.py",
+    "tests/F12_helpers.py",
+    "tests/F12_routing.py",
+    "tests/F13_helpers.py",
+    "tests/F13_interchange.py",
+    "tests/F14_distributed.py",
+    "tests/F14_helpers.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "python3 -m pytest -p no:cacheprovider tests/F01_helpers.py tests/F01_storage.py tests/F02_helpers.py tests/F02_persistence.py tests/F03_compaction.py tests/F03_helpers.py tests/F04_eviction.py tests/F04_helpers.py tests/F05_helpers.py tests/F05_selection.py tests/F06_helpers.py tests/F06_order_limits.py tests/F07_helpers.py tests/F07_joins.py tests/F08_aggregates.py tests/F08_helpers.py tests/F09_access.py tests/F09_helpers.py tests/F10_helpers.py tests/F10_http.py tests/F11_helpers.py tests/F11_query.py tests/F12_helpers.py tests/F12_routing.py tests/F13_helpers.py tests/F13_interchange.py tests/F14_distributed.py tests/F14_helpers.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_storage.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_persistence.py"
+    ],
+    "F03": [
+      "tests/F03_compaction.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_eviction.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_selection.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_order_limits.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_joins.py"
+    ],
+    "F08": [
+      "tests/F08_aggregates.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_access.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_http.py"
+    ],
+    "F11": [
+      "tests/F11_helpers.py",
+      "tests/F11_query.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_routing.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_interchange.py"
+    ],
+    "F14": [
+      "tests/F14_distributed.py",
+      "tests/F14_helpers.py"
+    ]
+  }
+}

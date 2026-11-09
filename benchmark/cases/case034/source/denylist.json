@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case_id": "case034",
+  "ecosystem": "pip",
+  "install_ban": [
+    "control",
+    "python-control"
+  ],
+  "import_ban": [
+    "control"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "control",
+      "runtime": "python3",
+      "evidence": "casebox original image: /opt/runtime/bin/python imports control from /opt/runtime/lib/python3.12/site-packages/control/__init__.py; distribution version 0.10.3.dev46+gb4cf7360. System and Conda Python module inventories, Node built-ins/global packages, Perl and Tcl inventories, and OS packages/executables revealed no additional product equivalent."
+    }
+  ],
+  "notes": "Ban the upstream control package/import root and python-control identity alias; explicitly allow recipe-provided NumPy, SciPy, Matplotlib, Slycot, CVXOPT, pandas, standard libraries, and build/test tools."
+}

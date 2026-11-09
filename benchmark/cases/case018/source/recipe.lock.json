@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case018",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "bash /env-assets/install.sh",
+    "build_command": "export PATH=/opt/product-env/bin:/opt/rust/bin:$PATH CARGO_HOME=/opt/cargo CARGO_NET_OFFLINE=true CARGO_BUILD_JOBS=4 && cargo metadata --locked --offline --format-version=1 > /dev/null && python -m pip install --no-index --no-build-isolation --no-deps -e ."
+  }
+}

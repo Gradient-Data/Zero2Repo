@@ -1,0 +1,14 @@
+# feature: F18
+
+F18_rinoh_typeface_texgyretermes-0.1.1-py3-none-any.whl
+  Unmodified wheel downloaded on 2026-10-30 from PyPI:
+  https://files.pythonhosted.org/packages/b9/15/82225ab8b159aba51073b61ee35955aac8e3b340ff7c6612be8f356e3a27/rinoh_typeface_texgyretermes-0.1.1-py3-none-any.whl
+  sha256 6261219c547b3bebd8ccb95b93cae83e86dc567c7a093d632f5ed6db8bb4fa84,
+  the digest published by https://pypi.org/simple/rinoh-typeface-texgyretermes/.
+  TeX Gyre Termes fonts under the GUST Font License, included in the wheel.
+
+The judge has no network. The acquisition tests serve this wheel through the
+loopback HTTPS mirror in _helpers.py (certificates F00_service_ca.pem and
+F00_service_identity.pem): the package index lists only this project and
+answers 404 for every other one; the Google Fonts list service answers 400,
+the real service's answer for a family it does not provide.

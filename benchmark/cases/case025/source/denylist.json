@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "case_id": "case025",
+  "ecosystem": "pip",
+  "install_ban": [
+    "pycroscope"
+  ],
+  "import_ban": [
+    "_pycroscope_tests",
+    "_pycroscope_tests-stubs",
+    "pycroscope",
+    "pycroscope-stubs"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the upstream distribution, module root and bundled stub/test roots; allow Python/Node/OS toolchains and all recipe dependencies; no equivalent found in recipe-base Python 3.12/3.13, Node or system probes, but the final recipe image could not be probed because Init/image.json is absent."
+}

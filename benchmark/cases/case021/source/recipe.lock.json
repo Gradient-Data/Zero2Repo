@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case021",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "python3 /env-assets/install.py",
+    "build_command": "python3 setup.py build_ext --inplace -j 2 && NO_VELORA_COMPILE=true python3 -m pip install --no-index --no-deps --no-build-isolation --editable ."
+  }
+}

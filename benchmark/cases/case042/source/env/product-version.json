@@ -1,0 +1,15 @@
+{
+  "commit": "e210f9245faa716248d8f0d698aef4e12bf68507",
+  "describe": "v3.4.1-23-ge210f924",
+  "describe_command": "git describe --dirty --tags --long --match v*",
+  "version": "3.4.2.dev23+ge210f924",
+  "environment_variable": "SETUPTOOLS_SCM_PRETEND_VERSION",
+  "independent_distributions": {
+    "metadata": {
+      "version": "0.5.1.dev148"
+    },
+    "http-server": {
+      "version": "0.1.1.dev163"
+    }
+  }
+}

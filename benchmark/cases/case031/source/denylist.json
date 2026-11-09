@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case031",
+  "ecosystem": "pip",
+  "install_ban": [
+    "pypsa"
+  ],
+  "import_ban": [
+    "pypsa"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "pypsa",
+      "runtime": "python3",
+      "evidence": "In recipe image original, /opt/runtime/bin/python -I resolves pypsa to /opt/runtime/lib/python3.13/site-packages/pypsa/__init__.py; distribution metadata identifies pypsa version 1.4.0.post1.dev10+g41bbcdb3."
+    }
+  ],
+  "notes": "Ban only the upstream PyPSA distribution and Python module root identified by pyproject.toml; allow provided numerical, plotting, modeling and solver dependencies. Inventories of all three Python environments, Node built-ins and global packages, Perl, Tcl, OS packages and PATH programs found no additional product equivalents."
+}

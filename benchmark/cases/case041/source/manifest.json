@@ -1,0 +1,22 @@
+{
+  "schema_version": 3,
+  "case_id": "case041",
+  "runner": {
+    "language_label": "Python (pure Python library)",
+    "docker_image": "ubuntu:24.04",
+    "install_command": "python3 -c 'import sys, pytest; print(sys.version); print(\"pytest \" + pytest.__version__)' && python3 -m pytest --version",
+    "build_command": "true",
+    "test_command_template": "PYTHONPATH=\"$PWD\" python3 -m pytest {test_files}",
+    "workdir": "."
+  },
+  "sensitive_terms": [
+    "asn1crypto",
+    "asn1crypto-tests",
+    "asn1crypto_tests",
+    "wbond",
+    "wbond.net",
+    "will@wbond.net",
+    "Will Bond",
+    "modularcrypto"
+  ]
+}

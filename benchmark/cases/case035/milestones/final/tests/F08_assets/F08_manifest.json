@@ -1,0 +1,42 @@
+[
+  {
+    "version": "3.12.8",
+    "implementation": "cpython",
+    "free_threaded": false,
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250115/cpython-3.12.8%2B20250115-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "34a5a1619aba16544ec8d6f225be59b333d650f58983eeca25193722dc9016fd",
+    "asset": "F08_cpython-3.12.8+20250115-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+  },
+  {
+    "version": "3.12.9",
+    "implementation": "cpython",
+    "free_threaded": false,
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.12.9%2B20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "a36bc60c38fe146e908e2e71fc21266c8558b24a9407226b1d887212839437ef",
+    "asset": "F08_cpython-3.12.9+20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+  },
+  {
+    "version": "3.13.2",
+    "implementation": "cpython",
+    "free_threaded": true,
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.13.2%2B20250317-x86_64-unknown-linux-gnu-freethreaded%2Bpgo%2Blto-full.tar.zst",
+    "sha256": "1aea5062614c036904b55c1cc2fb4b500b7f6f7a4cacc263f4888889d355eef8",
+    "asset": "F08_cpython-3.13.2+20250317-x86_64-unknown-linux-gnu-freethreaded+pgo+lto-full.tar.zst"
+  },
+  {
+    "version": "3.10.16",
+    "implementation": "pypy",
+    "free_threaded": false,
+    "url": "https://downloads.python.org/pypy/pypy3.10-v7.3.19-linux64.tar.gz",
+    "sha256": "abfbb05bb3691e694cf9307635d14d0866f0a85429df8958c110e3de168706b4",
+    "asset": "F08_pypy3.10-v7.3.19-linux64.tar.gz"
+  },
+  {
+    "version": "3.13.2",
+    "implementation": "cpython",
+    "free_threaded": false,
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.13.2%2B20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "ee909a9d0fb16375ebd3b3ca0322fd9cac0904b304e28ad68527036858e301e9",
+    "asset": "F08_cpython-3.13.2+20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+  }
+]

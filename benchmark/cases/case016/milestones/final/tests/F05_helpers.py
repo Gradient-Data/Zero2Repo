@@ -1107,6 +1107,11 @@ def interpreter_standin(
         'echo invoked >> "$log"',
         'if [ "$F05_STUB_PROBE" = "1" ]; then exit 0; fi',
     ]
+    if not forward:
+        # A real detector reads the prose the host pipes to it before it answers.
+        # Without this, the stand-in could exit while the host is still writing, and
+        # whether the host then sees a broken pipe would depend on scheduling.
+        lines.append("cat > /dev/null")
     if sleep_s is not None:
         lines.append(f"sleep {sleep_s}")
     if forward:

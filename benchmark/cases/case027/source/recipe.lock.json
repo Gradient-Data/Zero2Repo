@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case027",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "A=$(uname -m) && R=rust-1.96.0-$A-unknown-linux-gnu && curl -fsSL --retry 5 --retry-delay 3 --connect-timeout 20 --speed-limit 102400 --speed-time 30 -o /tmp/$R.tar.xz https://static.rust-lang.org/dist/2026-05-28/$R.tar.xz && curl -fsSL --retry 5 -o /tmp/$R.tar.xz.sha256 https://static.rust-lang.org/dist/2026-05-28/$R.tar.xz.sha256 && echo \"$(cut -d' ' -f1 /tmp/$R.tar.xz.sha256)  /tmp/$R.tar.xz\" | sha256sum -c - && tar -xJf /tmp/$R.tar.xz -C /tmp && /tmp/$R/install.sh --prefix=/usr/local --components=rustc,rust-std-$A-unknown-linux-gnu,cargo,rustfmt-preview,clippy-preview && rm -rf /tmp/$R /tmp/$R.tar.xz /tmp/$R.tar.xz.sha256 && N=node-v22.20.0-linux-$(echo $A | sed -e s/x86_64/x64/ -e s/aarch64/arm64/) && curl -fsSL --retry 5 --retry-delay 3 --connect-timeout 20 --speed-limit 102400 --speed-time 30 -o /tmp/$N.tar.xz https://nodejs.org/dist/v22.20.0/$N.tar.xz && mkdir -p /usr/local/lib/node22 && tar -xJf /tmp/$N.tar.xz -C /usr/local/lib/node22 --strip-components=1 --no-same-owner && rm -f /tmp/$N.tar.xz && ln -sf /usr/local/lib/node22/bin/node /usr/local/bin/node && python3 /env-assets/prepare-cargo.py",
+    "build_command": "export CARGO_HOME=/usr/local/cargo && cargo build --workspace --locked --offline"
+  }
+}

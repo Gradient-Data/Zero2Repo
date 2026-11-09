@@ -1,0 +1,20 @@
+[
+  {
+    "name": "rustc-1.99.1-x86_64-unknown-linux-gnu",
+    "checksum": "2ff05ff9c08a90861e7f6e4065b40a8b87463b4576186fd613871c3e37f2091f",
+    "official": "https://static.rust-lang.org/dist/2026-10-15/rustc-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 84098960
+  },
+  {
+    "name": "cargo-1.99.1-x86_64-unknown-linux-gnu",
+    "checksum": "53f3521949404d595efb06a55c12c5658d4ed1c75566f33d3d514eaebe70bd8a",
+    "official": "https://static.rust-lang.org/dist/2026-10-15/cargo-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 10954816
+  },
+  {
+    "name": "rust-std-1.99.1-x86_64-unknown-linux-gnu",
+    "checksum": "109b074225bf5b9ea3820890876bfdf4ed161adbfaf94b2b4b5984c85ee5d958",
+    "official": "https://static.rust-lang.org/dist/2026-10-15/rust-std-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 31563228
+  }
+]

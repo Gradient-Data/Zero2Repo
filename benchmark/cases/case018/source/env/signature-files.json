@@ -1,0 +1,4164 @@
+{
+  "revision": "eaf9234448ced5800497d8ec2c565b186c9f65e4",
+  "files": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "sha": "3ada774560002dde5b4be89bf59fc2d5d3ac2d18",
+      "size": 6
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "sha": "a4814f313183ac2ffbe7f6e56d88e18749699519",
+      "size": 1314
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "sha": "213e6d0afc995944526aae2dc5bbda2ba6a486bc",
+      "size": 18
+    },
+    {
+      "path": "armel/linux/debian_10.3_libc.meta",
+      "mode": "100644",
+      "sha": "51258ac80bf28b854bd0db51ab74f97c2ff2ee6d",
+      "size": 1722
+    },
+    {
+      "path": "armel/linux/debian_10.3_libc.sig",
+      "mode": "100644",
+      "sha": "4fb2510cf77d2b887200ee9279ba1626f9256eef",
+      "size": 88774
+    },
+    {
+      "path": "armel/linux/debian_10.3_libgcc.meta",
+      "mode": "100644",
+      "sha": "17d8e1c6c26e00cd9f10111420da0a8e10730d6c",
+      "size": 360
+    },
+    {
+      "path": "armel/linux/debian_10.3_libgcc.sig",
+      "mode": "100644",
+      "sha": "3e698b69656493414bb3ed8f0289cb99f6fbf52c",
+      "size": 31100
+    },
+    {
+      "path": "armel/linux/ubuntu_2004_libc.meta",
+      "mode": "100644",
+      "sha": "b1f3ed544b37b1d5d4e5ddb8263475febc5878cf",
+      "size": 1696
+    },
+    {
+      "path": "armel/linux/ubuntu_2004_libc.sig",
+      "mode": "100644",
+      "sha": "466b5a91dbb0a8567b30eb7f25d1bfd925787a34",
+      "size": 94100
+    },
+    {
+      "path": "armhf/linux/debian_10.3_libcrypto.meta",
+      "mode": "100644",
+      "sha": "a915028c65d5bd29f1efdaa31d1b4e0b37e17765",
+      "size": 1647
+    },
+    {
+      "path": "armhf/linux/debian_10.3_libcrypto.sig",
+      "mode": "100644",
+      "sha": "1668b99d662139444e0ebf43c3efe6393bb2ce7f",
+      "size": 146592
+    },
+    {
+      "path": "armhf/linux/debian_10.3_libdl.meta",
+      "mode": "100644",
+      "sha": "fc820d36593ea6da8d16d03b1d623fd485566299",
+      "size": 327
+    },
+    {
+      "path": "armhf/linux/debian_10.3_libdl.sig",
+      "mode": "100644",
+      "sha": "6548f46588697e81f9303aa508b7075df23a35f1",
+      "size": 237
+    },
+    {
+      "path": "armhf/linux/ubuntu_2004_libc.meta",
+      "mode": "100644",
+      "sha": "f88f1016601a01b8bfe5ecf2c0178003a8843c70",
+      "size": 1697
+    },
+    {
+      "path": "armhf/linux/ubuntu_2004_libc.sig",
+      "mode": "100644",
+      "sha": "72d2cc9dc79e58e052f4f8673cc771d330ba19a2",
+      "size": 90684
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-O0.sig",
+      "mode": "100644",
+      "sha": "235ade8bccb6d4a3ae503f035b80f023e09b6565",
+      "size": 771322
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-O1.sig",
+      "mode": "100644",
+      "sha": "18a48128a6ed7388862d65355ec6b34bdbf38f8b",
+      "size": 543711
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-O2.sig",
+      "mode": "100644",
+      "sha": "c26b476215c3e9cc39d202845012f8c2394deb92",
+      "size": 68799
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-O3.sig",
+      "mode": "100644",
+      "sha": "518ca77f4cd037478902765dac10b3bf0cbbbbbf",
+      "size": 68819
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-Os.sig",
+      "mode": "100644",
+      "sha": "6c4e7726f336c0948c4b2e6a7db18c6fe7102fcb",
+      "size": 146363
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.39.0-Oz.sig",
+      "mode": "100644",
+      "sha": "8f330a2f0d2179da6f1b6c165d19791cf597bbd3",
+      "size": 170574
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-O0.sig",
+      "mode": "100644",
+      "sha": "674c48ad10b7775c34472e94675afffd8ae55d3d",
+      "size": 755919
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-O1.sig",
+      "mode": "100644",
+      "sha": "922d0198336a9e2644dd96986e01b20c4fbfdcb2",
+      "size": 529796
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-O2.sig",
+      "mode": "100644",
+      "sha": "687d9b32cf383811e3651ecf16c923c74152be30",
+      "size": 68673
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-O3.sig",
+      "mode": "100644",
+      "sha": "08fce18099ef17e12aabed74bb7bf7ffbd6bdd60",
+      "size": 68585
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-Os.sig",
+      "mode": "100644",
+      "sha": "2770825cfaba2fda194654fa567d33a8de3146e1",
+      "size": 69093
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.40.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0b7c122bdb99e0a976dfd3cd99a4d0d547370e1e",
+      "size": 171075
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-O0.sig",
+      "mode": "100644",
+      "sha": "1d63e30afaea02a185a19ee4f5f55b1dbb8a10f0",
+      "size": 702865
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-O1.sig",
+      "mode": "100644",
+      "sha": "9298407be2b749d819ec3300459ef68b38132a2b",
+      "size": 528476
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-O2.sig",
+      "mode": "100644",
+      "sha": "14461d32656fe5071e1d0822904ae4c55441ce77",
+      "size": 67915
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-O3.sig",
+      "mode": "100644",
+      "sha": "65653c77c69a67e7f70b2887d94f0187cfc9b4cf",
+      "size": 67836
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-Os.sig",
+      "mode": "100644",
+      "sha": "4d1cade4cc9dd1f65793124f0543f1fa11808503",
+      "size": 68537
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.41.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c02704f637a14323fdd435032d1d9ca78bac455a",
+      "size": 169750
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-O0.sig",
+      "mode": "100644",
+      "sha": "fca2308caf17920eaa648dfbb99800e421a461d7",
+      "size": 697652
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-O1.sig",
+      "mode": "100644",
+      "sha": "be0a46c2f66658ed0f0f405557efbcbfa3b90cef",
+      "size": 528810
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-O2.sig",
+      "mode": "100644",
+      "sha": "5b51d11fc06e2153a8df022186cc4f053bdab4cb",
+      "size": 67751
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-O3.sig",
+      "mode": "100644",
+      "sha": "65119b6498959ab9ad35b2a52df7f88bb7349951",
+      "size": 67672
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-Os.sig",
+      "mode": "100644",
+      "sha": "45662343f30ec87536fc75b91d923bf6345e2703",
+      "size": 68398
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.42.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c10b8cd5f9b07a6b3ada09dd0eb77f98db4158a1",
+      "size": 169375
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-O0.sig",
+      "mode": "100644",
+      "sha": "e065cf957e9eedcbf94d647e57162f44e6dfa54c",
+      "size": 700157
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-O1.sig",
+      "mode": "100644",
+      "sha": "59fed1d350f9ae7b0dad32869a139e0fe26eb820",
+      "size": 554346
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-O2.sig",
+      "mode": "100644",
+      "sha": "316d939b76436ddde4fb3d5a9c3235e376bd47b4",
+      "size": 70518
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-O3.sig",
+      "mode": "100644",
+      "sha": "fa7ddb409f198ed30b81f9f6e642af56d69af5dc",
+      "size": 70394
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-Os.sig",
+      "mode": "100644",
+      "sha": "2d4fc1e6029241f7cd87711e0bc000cfddb32bf2",
+      "size": 71038
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.43.0-Oz.sig",
+      "mode": "100644",
+      "sha": "f4502c62bbe5ee6c3687913589d0389bb3d7af64",
+      "size": 177215
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-O0.sig",
+      "mode": "100644",
+      "sha": "96e2834503874d8ad177fb87fd5550af1538ac98",
+      "size": 731307
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-O1.sig",
+      "mode": "100644",
+      "sha": "292a9eb1d1b23057db3ae1cadf2d9e3e85612740",
+      "size": 568317
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-O2.sig",
+      "mode": "100644",
+      "sha": "0973bc1dd7855aeecb462069228bc3f7f5e7cd41",
+      "size": 76902
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-O3.sig",
+      "mode": "100644",
+      "sha": "363023a6917cab55f1217ff4ef37ee834991630e",
+      "size": 76269
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-Os.sig",
+      "mode": "100644",
+      "sha": "eae05683df631c9690aa68b0639c66f556dbe859",
+      "size": 77217
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.44.0-Oz.sig",
+      "mode": "100644",
+      "sha": "7dd5028b2346fe20a6ec8079d0975a830a9b4242",
+      "size": 186869
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-O0.sig",
+      "mode": "100644",
+      "sha": "fa4e0740a78340278462279f6c2d5f5c0a27dfc3",
+      "size": 671611
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-O1.sig",
+      "mode": "100644",
+      "sha": "39668448f6232cd60eb2bac20b4833c48e5cb170",
+      "size": 635443
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-O2.sig",
+      "mode": "100644",
+      "sha": "c30634c93a0230404ad2df9f4bb5bdc16b9319ac",
+      "size": 76779
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-O3.sig",
+      "mode": "100644",
+      "sha": "c62f5d4c3a00fc22fe9a7425303d1f1bb20b64dd",
+      "size": 76589
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-Os.sig",
+      "mode": "100644",
+      "sha": "f53e7d6197a1e3cde3de02297de1a0416e684224",
+      "size": 77670
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.45.0-Oz.sig",
+      "mode": "100644",
+      "sha": "2a74a039fa0faa19b299fc4adf873bc3228a7437",
+      "size": 185982
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-O0.sig",
+      "mode": "100644",
+      "sha": "77c856be933f16804a1c1e879e69ab7dd28720f6",
+      "size": 680300
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-O1.sig",
+      "mode": "100644",
+      "sha": "96f71a347a82c8017eb66b480c013111d88e6387",
+      "size": 631069
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-O2.sig",
+      "mode": "100644",
+      "sha": "18e08b2ba98d51534a36a8f3c0b5c9bce1a00900",
+      "size": 75094
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-O3.sig",
+      "mode": "100644",
+      "sha": "6f5e99553fc2765b2f7641187d6c53954acd8745",
+      "size": 75128
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-Os.sig",
+      "mode": "100644",
+      "sha": "ce17ae189be108fa2ce07677a78d2a70c2cecf61",
+      "size": 76044
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.46.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0609ba15a60b68522866d7c59a40d16be8052424",
+      "size": 184954
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-O0.sig",
+      "mode": "100644",
+      "sha": "25e022d7c62e4078bd38aa093a68b9f023852770",
+      "size": 680426
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-O1.sig",
+      "mode": "100644",
+      "sha": "f46bce8de40886b6eadea1406752131c080ef50c",
+      "size": 635354
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-O2.sig",
+      "mode": "100644",
+      "sha": "3ffca6cbb7303f8880767fea74aa59299b8fa07e",
+      "size": 89471
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-O3.sig",
+      "mode": "100644",
+      "sha": "3fea2783d9521bb0a31f1ef2f85926c66631d576",
+      "size": 89403
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-Os.sig",
+      "mode": "100644",
+      "sha": "ef4f59bab57e5c2814d074b3c02e2aa8dd7f8ef1",
+      "size": 90173
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.47.0-Oz.sig",
+      "mode": "100644",
+      "sha": "298580efa37dffe5d4c73cc7fbd4c1a17b6364b4",
+      "size": 194822
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-O0.sig",
+      "mode": "100644",
+      "sha": "94b5732fcef667855c5bd8fecfb2b9a50020a4b1",
+      "size": 675657
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-O1.sig",
+      "mode": "100644",
+      "sha": "e3840a9bd70df4b8f7bdc4b47ec6f7079a619d72",
+      "size": 638855
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-O2.sig",
+      "mode": "100644",
+      "sha": "afddd62c1995683cc42184c1b91a63071c987360",
+      "size": 88302
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-O3.sig",
+      "mode": "100644",
+      "sha": "7e833223dd05609e570d39923bbbb6f43fd4649c",
+      "size": 88238
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-Os.sig",
+      "mode": "100644",
+      "sha": "d32950d39c77d5738f77bafe36349a94536a912f",
+      "size": 167911
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.48.0-Oz.sig",
+      "mode": "100644",
+      "sha": "20c5250806aea949e64461f7fb4b832658b745ce",
+      "size": 198528
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-O0.sig",
+      "mode": "100644",
+      "sha": "ccb7bb4c06266a8f13d95a3926c995875be683a7",
+      "size": 696105
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-O1.sig",
+      "mode": "100644",
+      "sha": "b2c1b3e86d237808b9652055905fbff248df0ac1",
+      "size": 656091
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-O2.sig",
+      "mode": "100644",
+      "sha": "255ef588dd6104b8327e5be0dcc7669debf17d0b",
+      "size": 90725
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-O3.sig",
+      "mode": "100644",
+      "sha": "b2e4deb4d1aac355de604833c300837d442a1ec9",
+      "size": 90688
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-Os.sig",
+      "mode": "100644",
+      "sha": "9893028b8f72874ab00033e002722e5b6c3f2c0c",
+      "size": 91439
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.49.0-Oz.sig",
+      "mode": "100644",
+      "sha": "7e55fefec52ca68186c1f682d615e76a62ed0054",
+      "size": 200843
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-O0.sig",
+      "mode": "100644",
+      "sha": "17c634b55478b9b56698afe96cbcf70e105a3743",
+      "size": 696867
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-O1.sig",
+      "mode": "100644",
+      "sha": "fe677f32db06938cb6ef082b4549092794c4216d",
+      "size": 658532
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-O2.sig",
+      "mode": "100644",
+      "sha": "31e066df02f2154a58d6b9cc196a4944868402df",
+      "size": 92400
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-O3.sig",
+      "mode": "100644",
+      "sha": "f867cf58ef31330936f059db46ddb6834bda79af",
+      "size": 92365
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-Os.sig",
+      "mode": "100644",
+      "sha": "0d53f5a2f9a2eecd227b50573c7a2587bee3fa5d",
+      "size": 93056
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.50.0-Oz.sig",
+      "mode": "100644",
+      "sha": "6ac5c17226f3cb8e399a42df7da67e084edbe4ed",
+      "size": 204906
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-O0.sig",
+      "mode": "100644",
+      "sha": "4ad017d53993cf9ccfd7ec33fb24b92834c3ed01",
+      "size": 756798
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-O1.sig",
+      "mode": "100644",
+      "sha": "0cdd21778d761a316b26b30b78ea21dee33740bb",
+      "size": 720394
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-O2.sig",
+      "mode": "100644",
+      "sha": "5806521a30ff39cb6d515d2c9f683827d3a4da25",
+      "size": 97351
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-O3.sig",
+      "mode": "100644",
+      "sha": "2b34ad6c3021c820604fd05ddd81e221fa73acde",
+      "size": 97244
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-Os.sig",
+      "mode": "100644",
+      "sha": "469614d0ea403e923efe137a93e4db74c14575c7",
+      "size": 97956
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.51.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c7a73fe862ea5fb27488c0e63184aafb2f36ae81",
+      "size": 216761
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-O0.sig",
+      "mode": "100644",
+      "sha": "49170b2c7f82107012103af6472a736d74808049",
+      "size": 750331
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-O1.sig",
+      "mode": "100644",
+      "sha": "b41eee54a769228302f95ff0d0dd53e24247a6ac",
+      "size": 708938
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-O2.sig",
+      "mode": "100644",
+      "sha": "1c5c92138256c8030a2aa9649964b9a53848f809",
+      "size": 95704
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-O3.sig",
+      "mode": "100644",
+      "sha": "9b700791a8baa6fe4aac2d657971411412f7c40b",
+      "size": 95622
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-Os.sig",
+      "mode": "100644",
+      "sha": "bb687fecb5482758591a31d634c511b1bb1120a8",
+      "size": 96058
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.52.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d7e42e55e802832b9446a1fa2264f671dd7df089",
+      "size": 219712
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-O0.sig",
+      "mode": "100644",
+      "sha": "fbcd2371ec6134b9da6a043a0ad8a883a4b5f7d9",
+      "size": 732527
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-O1.sig",
+      "mode": "100644",
+      "sha": "8d6beb17ecfcb780708a527c1e36852b93c990e3",
+      "size": 690228
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-O2.sig",
+      "mode": "100644",
+      "sha": "4d9dd57a083727d1652e88e1a1f1e3b7bb10564f",
+      "size": 95955
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-O3.sig",
+      "mode": "100644",
+      "sha": "c90c8daa0b0b7090a0f6751293e3704b0c126806",
+      "size": 95835
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-Os.sig",
+      "mode": "100644",
+      "sha": "18738cafa2a5cba8754fd4fdd5ff39c5bd1993b9",
+      "size": 96400
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.53.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b1a32d67e3862ed67a5cdef272341a4f68ed2b65",
+      "size": 218493
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-O0.sig",
+      "mode": "100644",
+      "sha": "b74418c04c17990cd9c6cdc738f64d09665f20a0",
+      "size": 753767
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-O1.sig",
+      "mode": "100644",
+      "sha": "97173e378cbfdb9a85a6275bbcac7c47688c175b",
+      "size": 704565
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-O2.sig",
+      "mode": "100644",
+      "sha": "99934e3d0cab071a568d7284ff1e002f8ac6a95e",
+      "size": 95770
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-O3.sig",
+      "mode": "100644",
+      "sha": "12dff4b81b307bf512afb806be032ce9dfa3878a",
+      "size": 95688
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-Os.sig",
+      "mode": "100644",
+      "sha": "0b012a55d0261230d3e94dfb86238cb1067e19ae",
+      "size": 96271
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.54.0-Oz.sig",
+      "mode": "100644",
+      "sha": "2fbb15b2c031bb2053313ed367fa62ff45c44be2",
+      "size": 220120
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-O0.sig",
+      "mode": "100644",
+      "sha": "167d7993d1076ffef6433c5813eb348cecdcda6e",
+      "size": 757472
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-O1.sig",
+      "mode": "100644",
+      "sha": "4e53ab5bfa788bfec9d80e0a30dd750075df1400",
+      "size": 705230
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-O2.sig",
+      "mode": "100644",
+      "sha": "cb94e5862618e8e04e794be25f175bdcf0e7c0b6",
+      "size": 97448
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-O3.sig",
+      "mode": "100644",
+      "sha": "08f4c5df103fc742c83068fbbe53156f61495d02",
+      "size": 97448
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-Os.sig",
+      "mode": "100644",
+      "sha": "3919f9c5def7b519b107cd6cfc84063aea52d7d7",
+      "size": 98014
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.55.0-Oz.sig",
+      "mode": "100644",
+      "sha": "fe6b7894d1094991f764b5b9398337a676d6fd82",
+      "size": 222007
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-O0.sig",
+      "mode": "100644",
+      "sha": "c1cd002c8135ba1e4db1bd930e7fa755615c79a7",
+      "size": 770209
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-O1.sig",
+      "mode": "100644",
+      "sha": "bcf48792bf349e5ad79ba2938ae01b5d5b14f956",
+      "size": 714615
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-O2.sig",
+      "mode": "100644",
+      "sha": "84b6cf7998219fa3c8ff862acd580d9665e17498",
+      "size": 108368
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-O3.sig",
+      "mode": "100644",
+      "sha": "555687507bd3f753a11588a8935a943fe6596959",
+      "size": 108368
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-Os.sig",
+      "mode": "100644",
+      "sha": "e45cb90be5167f2df86c95506573a534a91ff7a9",
+      "size": 108966
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.56.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0c2488d007419cedfcce2b8772159bbef9d8a37b",
+      "size": 226907
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-O0.sig",
+      "mode": "100644",
+      "sha": "305c2c0ae512ffbd30013855ae8b1f9a7774e91f",
+      "size": 768426
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-O1.sig",
+      "mode": "100644",
+      "sha": "4e7ef3d1b57eda8bb1e7b10ef431feef61115b67",
+      "size": 109688
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-O2.sig",
+      "mode": "100644",
+      "sha": "1ff4692d91cd508b71a74b8466487313669cc91f",
+      "size": 109541
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-O3.sig",
+      "mode": "100644",
+      "sha": "5c2f3611d30ae4ba370e0407f23949072191e92f",
+      "size": 109561
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-Os.sig",
+      "mode": "100644",
+      "sha": "c5fb566b23804dfd616fe19afc968ebd1331677c",
+      "size": 110242
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.57.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d2b3ba155c21a817d6197e0daf5dbe18a16a6f45",
+      "size": 228438
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-O0.sig",
+      "mode": "100644",
+      "sha": "9b2fd2f6759f80b19448e39d19ca0d095ab57c4d",
+      "size": 763875
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-O1.sig",
+      "mode": "100644",
+      "sha": "55f3e79e12d64343d24d183189ab3123a8c12fee",
+      "size": 108698
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-O2.sig",
+      "mode": "100644",
+      "sha": "7e716ea6f357affc7300c8ce65f08955625e7c0f",
+      "size": 108556
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-O3.sig",
+      "mode": "100644",
+      "sha": "7923c736fa89a483f6e65ce826fd8fcd56f18ba3",
+      "size": 108625
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-Os.sig",
+      "mode": "100644",
+      "sha": "3dce02048c3b507e2d36ce35752ac97f39adda69",
+      "size": 109347
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.58.0-Oz.sig",
+      "mode": "100644",
+      "sha": "f0c66709d325d0eeeacff37b13c42bfcc502a6fe",
+      "size": 223929
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-O0.sig",
+      "mode": "100644",
+      "sha": "c4a4848e4ae7013b1ebe6c36c267df5b73b5ccc2",
+      "size": 754998
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-O1.sig",
+      "mode": "100644",
+      "sha": "2ea5cec0bdcc0dc8504d5a6c33544beb6b8ca929",
+      "size": 101461
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-O2.sig",
+      "mode": "100644",
+      "sha": "b1028381de4b4ce612aeb6241b01bd0b08194b61",
+      "size": 101231
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-O3.sig",
+      "mode": "100644",
+      "sha": "4e5e0f463cc071008b5ca0d22ab10fba7171a667",
+      "size": 101201
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-Os.sig",
+      "mode": "100644",
+      "sha": "61ce9cde30faacc39e6d8d6addc7608534011084",
+      "size": 101868
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.59.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c7c6ecddf382f8442031d7181be501149a9188d5",
+      "size": 211728
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-O0.sig",
+      "mode": "100644",
+      "sha": "30c16c8478ca179a19771321b42057a06539ef1b",
+      "size": 764537
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-O1.sig",
+      "mode": "100644",
+      "sha": "6ce07dc4a2013356719310888e38f28433ece3eb",
+      "size": 101417
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-O2.sig",
+      "mode": "100644",
+      "sha": "a75942ef4f62c9676ecb9612e86eaf01b5589045",
+      "size": 101148
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-O3.sig",
+      "mode": "100644",
+      "sha": "5f75ea8e5a09502cdbc1621c05dd5641642c47e9",
+      "size": 101148
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-Os.sig",
+      "mode": "100644",
+      "sha": "7047d1726e2279232cad3545e8be060e23e15723",
+      "size": 101778
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.60.0-Oz.sig",
+      "mode": "100644",
+      "sha": "612510f32496a666418bf23df90c96add061bc81",
+      "size": 211873
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-O0.sig",
+      "mode": "100644",
+      "sha": "1b67d67ccbdf8757370a86fa0c2570e302b6cb15",
+      "size": 785615
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-O1.sig",
+      "mode": "100644",
+      "sha": "f23f31fc16fb8b27e4c9a8f1d21bac39fbafba3f",
+      "size": 114187
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-O2.sig",
+      "mode": "100644",
+      "sha": "355947b93bf536f233cd2a09e0352cfc40585839",
+      "size": 114068
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-O3.sig",
+      "mode": "100644",
+      "sha": "3d19a71190f8dce2f2d2d0ebc166bdc07789141d",
+      "size": 114077
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-Os.sig",
+      "mode": "100644",
+      "sha": "aa73092a9903fa7b690893e94061345e1e75c5d6",
+      "size": 114742
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.61.0-Oz.sig",
+      "mode": "100644",
+      "sha": "efcebc1079aad355ee49f9e0c60ceb5573858c24",
+      "size": 228392
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-O0.sig",
+      "mode": "100644",
+      "sha": "414216635dc55958b80fa6e9a20bf9fb8db3fd6a",
+      "size": 806389
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-O1.sig",
+      "mode": "100644",
+      "sha": "95444e390a3fbbe52ed6f1314f0a11a908e679e2",
+      "size": 115461
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-O2.sig",
+      "mode": "100644",
+      "sha": "cd2c8356c64fe6e3abebc6e8d1974ec873372a0c",
+      "size": 115178
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-O3.sig",
+      "mode": "100644",
+      "sha": "43a0a710bb0bf776adf5bb20b8c3a6b2ba88660f",
+      "size": 115375
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-Os.sig",
+      "mode": "100644",
+      "sha": "5d0e48df119b486d4337aafeca1ca2ccae534ba6",
+      "size": 115860
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.62.0-Oz.sig",
+      "mode": "100644",
+      "sha": "bf90d4ee5f3bcad0c5fa2bcd1e9e90f900025edf",
+      "size": 229168
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-O0.sig",
+      "mode": "100644",
+      "sha": "3628a7c81a9a51f139b6cfc65d135caf4dc533d1",
+      "size": 811901
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-O1.sig",
+      "mode": "100644",
+      "sha": "e895121932a1ad8decdf890cee6ca7f613c371cb",
+      "size": 115133
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-O2.sig",
+      "mode": "100644",
+      "sha": "2139dfd76b23b16106c1e9403cb0d5ffe15092f2",
+      "size": 114895
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-O3.sig",
+      "mode": "100644",
+      "sha": "02eec68b071af67426bdf132af8285a16991929d",
+      "size": 115078
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-Os.sig",
+      "mode": "100644",
+      "sha": "708cb210e527608beea788127c388ae005dc7ae5",
+      "size": 115544
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.63.0-Oz.sig",
+      "mode": "100644",
+      "sha": "4e44d347b6a5b9c609122307de087490987bb309",
+      "size": 229158
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-O0.sig",
+      "mode": "100644",
+      "sha": "940c1c27b93285675dfce05a2e66abfca46d7685",
+      "size": 683585
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-O1.sig",
+      "mode": "100644",
+      "sha": "214ddfd4f7c232cc0a9f9b0fb9a43e86895b8d1c",
+      "size": 115732
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-O2.sig",
+      "mode": "100644",
+      "sha": "c7b7ead69c3929b0ec97d0eed398f4b3c335647f",
+      "size": 115520
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-O3.sig",
+      "mode": "100644",
+      "sha": "e8763a0e95b744180aec3bea425a72a508a23bd7",
+      "size": 115519
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-Os.sig",
+      "mode": "100644",
+      "sha": "72cf248f5b790aee4e4e18a3f9c7b285562b4d7b",
+      "size": 201511
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.64.0-Oz.sig",
+      "mode": "100644",
+      "sha": "33454bf170c091866617b1be119ca183e272e232",
+      "size": 228621
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-O0.sig",
+      "mode": "100644",
+      "sha": "6fa28466cd62beb81052ea3432fbea5ec656545e",
+      "size": 680370
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-O1.sig",
+      "mode": "100644",
+      "sha": "35f40812ea6d4b7dea7936ed8a4b82273b91e68b",
+      "size": 115302
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-O2.sig",
+      "mode": "100644",
+      "sha": "f1e8f9ead1b310c95aed891ab58889dcfce13c81",
+      "size": 115259
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-O3.sig",
+      "mode": "100644",
+      "sha": "69c2f6ce93ba0a369bb340706d02a8d64fac7de0",
+      "size": 114819
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-Os.sig",
+      "mode": "100644",
+      "sha": "bcc7b18417833fc867b66e85a5d46aa9ece6e9e6",
+      "size": 201717
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.65.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b38e381c1736324dc5ad2c8b8bc84f374e685b79",
+      "size": 229880
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-O0.sig",
+      "mode": "100644",
+      "sha": "922f17dc22ea43fa7e51896223a3508b1d631a18",
+      "size": 663745
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-O1.sig",
+      "mode": "100644",
+      "sha": "e2e072d868f96a92218084507d6e7b6faf1e905e",
+      "size": 112919
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-O2.sig",
+      "mode": "100644",
+      "sha": "e9ee511f34cdb32a194d31f257fd876d7e4e1167",
+      "size": 112865
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-O3.sig",
+      "mode": "100644",
+      "sha": "088f8d6d9d2d41332e1db0cdf5b8c85617f4dead",
+      "size": 112423
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-Os.sig",
+      "mode": "100644",
+      "sha": "d16824ed10b71d73c5f428fff79394b45e88fbb3",
+      "size": 201805
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.66.0-Oz.sig",
+      "mode": "100644",
+      "sha": "4623357355e88db317168bc28baf49f39a7ab4d2",
+      "size": 231172
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-O0.sig",
+      "mode": "100644",
+      "sha": "1a4ba25c4885d6427fdd02f6eb264e092770b8c5",
+      "size": 665754
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-O1.sig",
+      "mode": "100644",
+      "sha": "32c0cb389c27f88dfdd645c21680fcf241e57dca",
+      "size": 114563
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-O2.sig",
+      "mode": "100644",
+      "sha": "f3d59798f7f0b1785a18ec80c49083b8909bdf81",
+      "size": 114475
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-O3.sig",
+      "mode": "100644",
+      "sha": "2fe19dc24f998176d7ecc33741a7911d7758c3bd",
+      "size": 114030
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-Os.sig",
+      "mode": "100644",
+      "sha": "169c3ad164ee3d58a9a902e7a017e0d91eb39f81",
+      "size": 202574
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.67.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d305b83af4119f4d528c2850d77a538a6a374767",
+      "size": 231120
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-O0.sig",
+      "mode": "100644",
+      "sha": "d3709350fa0a6fd26e19f3c33299c950aae4e15a",
+      "size": 660896
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-O1.sig",
+      "mode": "100644",
+      "sha": "bc3f710b055557110790585df33188f2def1f3c0",
+      "size": 116706
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-O2.sig",
+      "mode": "100644",
+      "sha": "0e42f9e8d8f4b300d02f63bf68a5c7726fd7b515",
+      "size": 116579
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-O3.sig",
+      "mode": "100644",
+      "sha": "f9dcf7bec35b02951a612540a33272a88d19cacc",
+      "size": 114956
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-Os.sig",
+      "mode": "100644",
+      "sha": "d7cfff1e7bc9f77cc276030c6348423a481fff99",
+      "size": 203478
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.68.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d676091f34ec4312dd62409945e0069e0897bbaf",
+      "size": 232286
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-O0.sig",
+      "mode": "100644",
+      "sha": "1dd3d289576bf4474b2590bd5e576c07ce55d92c",
+      "size": 651761
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-O1.sig",
+      "mode": "100644",
+      "sha": "d393445ada977efb6ee6bb3e357761fc699dd6a8",
+      "size": 117186
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-O2.sig",
+      "mode": "100644",
+      "sha": "e7b42f52e0461be7df05c391fb2ef8b4eb54740a",
+      "size": 117071
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-O3.sig",
+      "mode": "100644",
+      "sha": "2159b8b2bdc8ce37e8b0e9dc35f53809205e1b2c",
+      "size": 115495
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-Os.sig",
+      "mode": "100644",
+      "sha": "a95e37ed31a641c53ebafdd5cf1b7e48be83f054",
+      "size": 202235
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.69.0-Oz.sig",
+      "mode": "100644",
+      "sha": "be800c2207e2b166ea2e71df37c97523c6676780",
+      "size": 232515
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-O0.sig",
+      "mode": "100644",
+      "sha": "09c95f9e3b1d5cf0d25ee0f86d33790ff2547656",
+      "size": 575070
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-O1.sig",
+      "mode": "100644",
+      "sha": "24ea893e475a11123d21c9bcc0a62121ed09c6e9",
+      "size": 122509
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-O2.sig",
+      "mode": "100644",
+      "sha": "32a7a0508aeb0506e383486e39be2f0321312b77",
+      "size": 122365
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-O3.sig",
+      "mode": "100644",
+      "sha": "f553818819a8e86ef89467a5f7cb80fcf3fb63d2",
+      "size": 120734
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-Os.sig",
+      "mode": "100644",
+      "sha": "d196404e8bad02277aa3af9252d9ffa4d33e09bc",
+      "size": 123045
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.70.0-Oz.sig",
+      "mode": "100644",
+      "sha": "ad5e70b88e317e24bbeace1a0d10a7dc195c4d6f",
+      "size": 234017
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-O0.sig",
+      "mode": "100644",
+      "sha": "0043284f1be304dae27606c68963346ab3989cdf",
+      "size": 552023
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-O1.sig",
+      "mode": "100644",
+      "sha": "078f36995fe45cb326ba1a243ec4f282e0293f96",
+      "size": 123676
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-O2.sig",
+      "mode": "100644",
+      "sha": "56658bc9c520485af69ee7e073996b696f218ac8",
+      "size": 123399
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-O3.sig",
+      "mode": "100644",
+      "sha": "482183cebc11abd18b87baa91807b5b1f373044b",
+      "size": 121774
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-Os.sig",
+      "mode": "100644",
+      "sha": "2b29d3bba0d972bcacf90efaee7728757957c5fc",
+      "size": 124085
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.71.0-Oz.sig",
+      "mode": "100644",
+      "sha": "8c9d70f01fd65cc71a8ae0ba431a03b089791110",
+      "size": 237088
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-O0.sig",
+      "mode": "100644",
+      "sha": "e402e6d8df015520f9c7be401893c4bde65b8bad",
+      "size": 560134
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-O1.sig",
+      "mode": "100644",
+      "sha": "41c4e604bfeb4988b29a9862411bc4beeead9dcb",
+      "size": 130728
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-O2.sig",
+      "mode": "100644",
+      "sha": "ed5e2bfe7284317bb064ddaa9ebb503a21604eb1",
+      "size": 130595
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-O3.sig",
+      "mode": "100644",
+      "sha": "f76eba817997d3f7455b1fde787e9009be64d605",
+      "size": 128916
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-Os.sig",
+      "mode": "100644",
+      "sha": "181752458929ab327343120651d1e15ab2b7b200",
+      "size": 131245
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.72.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b582b844cdb03118a909e4c5e53f89615f10ee44",
+      "size": 244271
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-O0.sig",
+      "mode": "100644",
+      "sha": "d62ab9281141728ce274f4e12a97d5183c0d2465",
+      "size": 560127
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-O1.sig",
+      "mode": "100644",
+      "sha": "b072e8996ccf7919de9ed474d9258526a121c41a",
+      "size": 133217
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-O2.sig",
+      "mode": "100644",
+      "sha": "24c04f683a6ca29c0cd2683d302663730880a10d",
+      "size": 132990
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-O3.sig",
+      "mode": "100644",
+      "sha": "e426a2c12ee287b1ee158d6e98a1f4efc217223a",
+      "size": 131344
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-Os.sig",
+      "mode": "100644",
+      "sha": "bcdf59d15fa48b46eb9ab0f40bbe3905f4712d1c",
+      "size": 133764
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.73.0-Oz.sig",
+      "mode": "100644",
+      "sha": "6881dc92977ff65172b1c34941f3824705f68d2c",
+      "size": 242145
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-O0.sig",
+      "mode": "100644",
+      "sha": "a55418b12126091311c9268771330a7a4fd60e55",
+      "size": 540998
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-O1.sig",
+      "mode": "100644",
+      "sha": "a857bd4c1e23f3be7ba9d47ba394e86651d5d531",
+      "size": 116008
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-O2.sig",
+      "mode": "100644",
+      "sha": "cb8823cfb20df08f1a56c29baa82dfee8b4ad49c",
+      "size": 115854
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-O3.sig",
+      "mode": "100644",
+      "sha": "4b74da2e1d509a2527557266acf5e873bfa052ae",
+      "size": 115681
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-Os.sig",
+      "mode": "100644",
+      "sha": "68188090fa63cea43aea33de1d03d562b925a345",
+      "size": 116547
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.74.0-Oz.sig",
+      "mode": "100644",
+      "sha": "70cc0554a31853baa7e85a957b53884184c6f0e8",
+      "size": 221291
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-O0.sig",
+      "mode": "100644",
+      "sha": "207566baff3d0e5e27be66e0f5cd53b2d4b10850",
+      "size": 530013
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-O1.sig",
+      "mode": "100644",
+      "sha": "d05fb04aa12f4bb2283b6934ff2d1b28fbbbf0be",
+      "size": 112984
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-O2.sig",
+      "mode": "100644",
+      "sha": "ac62df8186eb34e8dd19e0a6045436742acbb6aa",
+      "size": 112822
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-O3.sig",
+      "mode": "100644",
+      "sha": "69dc00a0a6b069e12b4f507d228d3d44016938d4",
+      "size": 112670
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-Os.sig",
+      "mode": "100644",
+      "sha": "bdc11cf37f70e8d84c6312d860829da371856a39",
+      "size": 113536
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.75.0-Oz.sig",
+      "mode": "100644",
+      "sha": "24bfb12d73d2237e63781089675c0016628a3e97",
+      "size": 220315
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-O0.sig",
+      "mode": "100644",
+      "sha": "309285e40d300066e700d2cade9c98a3bb6fa012",
+      "size": 524353
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-O1.sig",
+      "mode": "100644",
+      "sha": "8e7c7bc7edf982bca032852265ea1e9a7ed0ae51",
+      "size": 111895
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-O2.sig",
+      "mode": "100644",
+      "sha": "a0c4fc353ace3d6257cef0d215a9072373bae01b",
+      "size": 111765
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-O3.sig",
+      "mode": "100644",
+      "sha": "09053b12561f081415b4ed56fd559223de8faa04",
+      "size": 111593
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-Os.sig",
+      "mode": "100644",
+      "sha": "893678c2a34b0815ef7f52623ab5cdc0d2b512cf",
+      "size": 112458
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.76.0-Oz.sig",
+      "mode": "100644",
+      "sha": "86ec5d1af08f55c53706fe8d0ab6ca0d190d02a7",
+      "size": 218955
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-O0.sig",
+      "mode": "100644",
+      "sha": "624b814b592a3053f60604ab6af3186306b73d7f",
+      "size": 530257
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-O1.sig",
+      "mode": "100644",
+      "sha": "dfa276ba5726cb6c464973f601315acfd79ff3a8",
+      "size": 112456
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-O2.sig",
+      "mode": "100644",
+      "sha": "934b71b293d2fefdffb7551ebdbc4c742814c4cc",
+      "size": 112309
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-O3.sig",
+      "mode": "100644",
+      "sha": "09a349b385b8f1c867da1645c160b46842401c34",
+      "size": 112137
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-Os.sig",
+      "mode": "100644",
+      "sha": "b52e465172e5061e5a5d765e3117ae6837709642",
+      "size": 112976
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.77.0-Oz.sig",
+      "mode": "100644",
+      "sha": "5aaa93b75eb6301bf9d370b4e4a28d075382eee0",
+      "size": 220777
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-O0.sig",
+      "mode": "100644",
+      "sha": "f6bda7cd65840c94d24d768a432903448c04188e",
+      "size": 540698
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-O1.sig",
+      "mode": "100644",
+      "sha": "b4f19f3fdeb16dd722cb11f9d9d55d7b2d444843",
+      "size": 117639
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-O2.sig",
+      "mode": "100644",
+      "sha": "7e1492b981b9cc1f1733ebccf2b0f2c9bf19c8dd",
+      "size": 116700
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-O3.sig",
+      "mode": "100644",
+      "sha": "11a86da87db77bbba2082a49e171b06a8d8717fe",
+      "size": 116691
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-Os.sig",
+      "mode": "100644",
+      "sha": "93cf7a23add7bb9d27d776ffda50dacd74bae907",
+      "size": 117364
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.78.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d26a060edc85e5a533a398fc9371420a297d3b31",
+      "size": 227814
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-O0.sig",
+      "mode": "100644",
+      "sha": "64f227ba2b9e61ff13e8dad1579d027b8a1f1994",
+      "size": 540334
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-O1.sig",
+      "mode": "100644",
+      "sha": "826c54728bc26b8d0aa3b665082d9f5519e8c887",
+      "size": 115539
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-O2.sig",
+      "mode": "100644",
+      "sha": "b78f7fb7df40bf0c51bb24e3224ef55ef72ec829",
+      "size": 114703
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-O3.sig",
+      "mode": "100644",
+      "sha": "958ea58284a8bae7cbf6679075cae0c8a5e08860",
+      "size": 114706
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-Os.sig",
+      "mode": "100644",
+      "sha": "be4b1e52187975fa40e77a25440ede3115e39bcd",
+      "size": 115374
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.79.0-Oz.sig",
+      "mode": "100644",
+      "sha": "656844279e00d48a78b588ea60f06fc5f2a85721",
+      "size": 225605
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-O0.sig",
+      "mode": "100644",
+      "sha": "bd95557d0f208cb947d4a07e9640f40324686341",
+      "size": 534252
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-O1.sig",
+      "mode": "100644",
+      "sha": "477b4b619467663112eefe2e73e81119bd0a9627",
+      "size": 116185
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-O2.sig",
+      "mode": "100644",
+      "sha": "0c77c1b5b59b4cef8551b1908d5fb61027cc92b7",
+      "size": 115352
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-O3.sig",
+      "mode": "100644",
+      "sha": "dc1b1da64788c8becd371d86032cd18caeba93bb",
+      "size": 115330
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-Os.sig",
+      "mode": "100644",
+      "sha": "eca8d9f9b9c3dc39cadb288ead0cdfc853f7dbad",
+      "size": 116008
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.80.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0f83c0ea4bfbb3c3e1534406b106c19379daaaff",
+      "size": 224048
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-O0.sig",
+      "mode": "100644",
+      "sha": "3ea73925fb4a30fcbf679a644bbbd435f6c7f6b8",
+      "size": 513380
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-O1.sig",
+      "mode": "100644",
+      "sha": "130fb0e208c06f1db1faab4c77b55174a239b1a4",
+      "size": 118889
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-O2.sig",
+      "mode": "100644",
+      "sha": "23c6435a361c341caa0b1e8b636323a1c54b39e6",
+      "size": 118804
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-O3.sig",
+      "mode": "100644",
+      "sha": "fee7df0618622441e13ad4e104a42c2e1b40f2dd",
+      "size": 118793
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-Os.sig",
+      "mode": "100644",
+      "sha": "b3d1f4d088566c76abb5a9fafcb3b34735467644",
+      "size": 120005
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.81.0-Oz.sig",
+      "mode": "100644",
+      "sha": "aed8d43831bdc96a2b97a2477080563d2e2ceb8c",
+      "size": 222691
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-O0.sig",
+      "mode": "100644",
+      "sha": "5c701b7d851294676f4e296a8e2a487b43997a59",
+      "size": 506980
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-O1.sig",
+      "mode": "100644",
+      "sha": "7ecde3afe2abe61ca92db6bd2901e0afbf7cecaf",
+      "size": 121519
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-O2.sig",
+      "mode": "100644",
+      "sha": "8cb9dd25f76d8a09f341c7c2577b8011c179ab58",
+      "size": 122076
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-O3.sig",
+      "mode": "100644",
+      "sha": "65c33689a3a00ad61cd0fa32c08bf6670d1e9dc0",
+      "size": 122087
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-Os.sig",
+      "mode": "100644",
+      "sha": "e9f7f721301ae02381430709484ebde8f0341815",
+      "size": 122838
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.82.0-Oz.sig",
+      "mode": "100644",
+      "sha": "8dc4df8850b8fb162fe4859b4be674af2108c31d",
+      "size": 222892
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-O0.sig",
+      "mode": "100644",
+      "sha": "e58730298239e29d3cf4c6a0354386cddb819e5f",
+      "size": 509589
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-O1.sig",
+      "mode": "100644",
+      "sha": "26560ad9a21d3ca0bc45092adb68560ab3510a4d",
+      "size": 121333
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-O2.sig",
+      "mode": "100644",
+      "sha": "ed734eb2b016fc96db5315d7f3755ad07fa3af0c",
+      "size": 121963
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-O3.sig",
+      "mode": "100644",
+      "sha": "e8f1ed0449ed2947fda78286f3f9f687dbe08c27",
+      "size": 121917
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-Os.sig",
+      "mode": "100644",
+      "sha": "9b03b73ff73f4c878e1b956ac53b5be874191e1a",
+      "size": 122501
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.83.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1f93e61a75069cc8c547bcfcadd135de3aeb5454",
+      "size": 226383
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-O0.sig",
+      "mode": "100644",
+      "sha": "a0a5342777fb2ab959c68ab2dcb60d7317e26f5b",
+      "size": 527697
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-O1.sig",
+      "mode": "100644",
+      "sha": "68e08c6791369d73e52e25896c190d13066eac1b",
+      "size": 123340
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-O2.sig",
+      "mode": "100644",
+      "sha": "dc19168d5072fa9a25ef7160ef429f609826a1c7",
+      "size": 123785
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-O3.sig",
+      "mode": "100644",
+      "sha": "c8f0bbd059c34e55b89af41096518b656c81b17d",
+      "size": 123774
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-Os.sig",
+      "mode": "100644",
+      "sha": "7b0a95dd0522f0b858af22cf2b63e8605aad0798",
+      "size": 124349
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.84.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c5d4bd4a9fda8c9a3238fecbef54d80393766a30",
+      "size": 229915
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-O0.sig",
+      "mode": "100644",
+      "sha": "aa6a564e07c25b11b09993b9e1a6b3ada8330c1b",
+      "size": 525125
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-O1.sig",
+      "mode": "100644",
+      "sha": "b3baf8f2bb1d7ce470a85859d72237453d14d704",
+      "size": 122925
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-O2.sig",
+      "mode": "100644",
+      "sha": "694f610cd8179e6e9d35dfbdd0ac0bf4b841f1fc",
+      "size": 123359
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-O3.sig",
+      "mode": "100644",
+      "sha": "560d36363cdc8577a24461e354815821b3a1af8e",
+      "size": 123334
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-Os.sig",
+      "mode": "100644",
+      "sha": "661c9c6bcee81ef2f545c83bcdd399d4a5d2c33d",
+      "size": 124074
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.85.0-Oz.sig",
+      "mode": "100644",
+      "sha": "e07c1faffcc8d9db8f9437aaa15ee140799d33a5",
+      "size": 228226
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-O0.sig",
+      "mode": "100644",
+      "sha": "22221d8e433c01797aa7b3ee68389d42e10f6ee0",
+      "size": 521860
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-O1.sig",
+      "mode": "100644",
+      "sha": "7e2bde7472f117118ebc5bd931946f2182bdb247",
+      "size": 122902
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-O2.sig",
+      "mode": "100644",
+      "sha": "c6fde655f8860bb7588b50afcf7d7bd184d9bb57",
+      "size": 123218
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-O3.sig",
+      "mode": "100644",
+      "sha": "7f6645e72079de42f087bd8623d9f5884cadea32",
+      "size": 123186
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-Os.sig",
+      "mode": "100644",
+      "sha": "e70ddff4fd99a955b449445539e242cce8b4718e",
+      "size": 124005
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.86.0-Oz.sig",
+      "mode": "100644",
+      "sha": "72e4a0eab338e6fb6deddcc827b9b1943f867b02",
+      "size": 228085
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-O0.sig",
+      "mode": "100644",
+      "sha": "97f5e3fc76ebe0af2262bb0d2378cbe676684f3f",
+      "size": 520343
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-O1.sig",
+      "mode": "100644",
+      "sha": "9701d4bc1d2abba0a756d4cb8e55adc253ba1f20",
+      "size": 120720
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-O2.sig",
+      "mode": "100644",
+      "sha": "49ccc0c072d86dd2453c80c086962ec2166d2635",
+      "size": 121047
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-O3.sig",
+      "mode": "100644",
+      "sha": "742e8cc1b78468e461d4bd9837c6020a7b70bdbf",
+      "size": 121015
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-Os.sig",
+      "mode": "100644",
+      "sha": "a21860d7131bc8a752b4d261ce1b0d2ceb74271c",
+      "size": 121727
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.87.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c877455fc7e693a045e80aae6ddc123192478dbf",
+      "size": 123232
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-O0.sig",
+      "mode": "100644",
+      "sha": "bb04da095f2742cc68847a2087c01aca63260fd6",
+      "size": 518540
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-O1.sig",
+      "mode": "100644",
+      "sha": "71392643c1943efb77a56d7a43974948e1b572a1",
+      "size": 119760
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-O2.sig",
+      "mode": "100644",
+      "sha": "a90362cb04b8d4f2a29933628dff1e54888f7b91",
+      "size": 120086
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-O3.sig",
+      "mode": "100644",
+      "sha": "2b079381ffff428f2cc581de331c563232d99cef",
+      "size": 120066
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-Os.sig",
+      "mode": "100644",
+      "sha": "3f14dec3cc7a9eb6cb572986b92aa9fdc932ff35",
+      "size": 120880
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.88.0-Oz.sig",
+      "mode": "100644",
+      "sha": "ad1d6555ac4c8b81bf474bfee71485715f8154e6",
+      "size": 224216
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-O0.sig",
+      "mode": "100644",
+      "sha": "37d7039d2f067ad7963f7e9c013bc002c48fa99f",
+      "size": 522718
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-O1.sig",
+      "mode": "100644",
+      "sha": "dfba5684a68827f80aa3289695a2817fc1d72f4e",
+      "size": 125136
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-O2.sig",
+      "mode": "100644",
+      "sha": "91df7609a94a4bbbc5196029cef7e462338793ee",
+      "size": 125471
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-O3.sig",
+      "mode": "100644",
+      "sha": "6c2b7a7153681661cf2aa876843fb8059946479e",
+      "size": 125452
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-Os.sig",
+      "mode": "100644",
+      "sha": "d5f5105521014f920ef0d7afe6bded282603f3a2",
+      "size": 126254
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.89.0-Oz.sig",
+      "mode": "100644",
+      "sha": "687fbb78d5131958058651783e24049adb18605f",
+      "size": 127584
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-O0.sig",
+      "mode": "100644",
+      "sha": "78edadefb13f1562b1697eb31b0a1407d2ad98ef",
+      "size": 522302
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-O1.sig",
+      "mode": "100644",
+      "sha": "f3ce3a410a153b32d0e3e0b7cdc1842aacfd5d39",
+      "size": 124774
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-O2.sig",
+      "mode": "100644",
+      "sha": "85a99aab162d8c9536e453d79eee048ee15bdcd8",
+      "size": 125060
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-O3.sig",
+      "mode": "100644",
+      "sha": "31c4dbf5fafc390df1b133cec4b85cc4fd5ebe30",
+      "size": 125034
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-Os.sig",
+      "mode": "100644",
+      "sha": "37f35386088d07571f8da9d764359451c619f737",
+      "size": 125666
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.90.0-Oz.sig",
+      "mode": "100644",
+      "sha": "18bcbab71327c493d123596055119676d72b024e",
+      "size": 228961
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-O0.sig",
+      "mode": "100644",
+      "sha": "c3f9194bd204b5d3e953d3c704fb011b25952873",
+      "size": 522299
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-O1.sig",
+      "mode": "100644",
+      "sha": "3ac96aa988a6e013091758e95fad280bc27cc571",
+      "size": 125387
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-O2.sig",
+      "mode": "100644",
+      "sha": "131334d0840a9a7aee4362aa0a5e651b72c74879",
+      "size": 125684
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-O3.sig",
+      "mode": "100644",
+      "sha": "821cb4038312e5c7035130ec9fed79450086242f",
+      "size": 125658
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-Os.sig",
+      "mode": "100644",
+      "sha": "e661df6ad21e099a2077e015c6dac7e150b6c5ba",
+      "size": 126290
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.91.0-Oz.sig",
+      "mode": "100644",
+      "sha": "e224aef1bee482159098d3ffbd7b3cc6ea126bf9",
+      "size": 127426
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-O0.sig",
+      "mode": "100644",
+      "sha": "adb6cf1fcb8594b32f5d8556ed809badded4cfb9",
+      "size": 519903
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-O1.sig",
+      "mode": "100644",
+      "sha": "cdb2483d85346f571dd2149d308710b56c02fa09",
+      "size": 125185
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-O2.sig",
+      "mode": "100644",
+      "sha": "979c4fb5d4640aba8822d23f92bcc7110808e5df",
+      "size": 125517
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-O3.sig",
+      "mode": "100644",
+      "sha": "79e21e513eb0d6bc9e801660c7bd80df81977cca",
+      "size": 125431
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-Os.sig",
+      "mode": "100644",
+      "sha": "08d0574f0e922d28889e30ab68930a3de8e72e2c",
+      "size": 126181
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.92.0-Oz.sig",
+      "mode": "100644",
+      "sha": "40bbffbe19c1d32a689cc49d552553bb67ecf4f1",
+      "size": 127137
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-O0.sig",
+      "mode": "100644",
+      "sha": "21af091191b77f305d6ee58b014ec1706dc537d0",
+      "size": 639178
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-O1.sig",
+      "mode": "100644",
+      "sha": "db8eec80296d7a900d75dd5fa77020604a1a686a",
+      "size": 140333
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-O2.sig",
+      "mode": "100644",
+      "sha": "57c887725fda6381de09895403b9f254dfac7cba",
+      "size": 140758
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-O3.sig",
+      "mode": "100644",
+      "sha": "f59d53bdafd30fccbd961b9879abbba88f39c9bd",
+      "size": 140639
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-Os.sig",
+      "mode": "100644",
+      "sha": "8c61d80ca37fede86ba8107c650c3daba507455a",
+      "size": 141681
+    },
+    {
+      "path": "x86_64/linux/rust/inline/1.93.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1ae400abb0b186ec5bac978a8cb8340b0040bac8",
+      "size": 258409
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-O0.sig",
+      "mode": "100644",
+      "sha": "235ade8bccb6d4a3ae503f035b80f023e09b6565",
+      "size": 771322
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-O1.sig",
+      "mode": "100644",
+      "sha": "18a48128a6ed7388862d65355ec6b34bdbf38f8b",
+      "size": 543711
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-O2.sig",
+      "mode": "100644",
+      "sha": "c26b476215c3e9cc39d202845012f8c2394deb92",
+      "size": 68799
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-O3.sig",
+      "mode": "100644",
+      "sha": "518ca77f4cd037478902765dac10b3bf0cbbbbbf",
+      "size": 68819
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-Os.sig",
+      "mode": "100644",
+      "sha": "6c4e7726f336c0948c4b2e6a7db18c6fe7102fcb",
+      "size": 146363
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.39.0-Oz.sig",
+      "mode": "100644",
+      "sha": "8f330a2f0d2179da6f1b6c165d19791cf597bbd3",
+      "size": 170574
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-O0.sig",
+      "mode": "100644",
+      "sha": "674c48ad10b7775c34472e94675afffd8ae55d3d",
+      "size": 755919
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-O1.sig",
+      "mode": "100644",
+      "sha": "922d0198336a9e2644dd96986e01b20c4fbfdcb2",
+      "size": 529796
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-O2.sig",
+      "mode": "100644",
+      "sha": "687d9b32cf383811e3651ecf16c923c74152be30",
+      "size": 68673
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-O3.sig",
+      "mode": "100644",
+      "sha": "08fce18099ef17e12aabed74bb7bf7ffbd6bdd60",
+      "size": 68585
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-Os.sig",
+      "mode": "100644",
+      "sha": "2770825cfaba2fda194654fa567d33a8de3146e1",
+      "size": 69093
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.40.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0b7c122bdb99e0a976dfd3cd99a4d0d547370e1e",
+      "size": 171075
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-O0.sig",
+      "mode": "100644",
+      "sha": "1d63e30afaea02a185a19ee4f5f55b1dbb8a10f0",
+      "size": 702865
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-O1.sig",
+      "mode": "100644",
+      "sha": "9298407be2b749d819ec3300459ef68b38132a2b",
+      "size": 528476
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-O2.sig",
+      "mode": "100644",
+      "sha": "14461d32656fe5071e1d0822904ae4c55441ce77",
+      "size": 67915
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-O3.sig",
+      "mode": "100644",
+      "sha": "65653c77c69a67e7f70b2887d94f0187cfc9b4cf",
+      "size": 67836
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-Os.sig",
+      "mode": "100644",
+      "sha": "4d1cade4cc9dd1f65793124f0543f1fa11808503",
+      "size": 68537
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.41.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c02704f637a14323fdd435032d1d9ca78bac455a",
+      "size": 169750
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-O0.sig",
+      "mode": "100644",
+      "sha": "fca2308caf17920eaa648dfbb99800e421a461d7",
+      "size": 697652
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-O1.sig",
+      "mode": "100644",
+      "sha": "be0a46c2f66658ed0f0f405557efbcbfa3b90cef",
+      "size": 528810
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-O2.sig",
+      "mode": "100644",
+      "sha": "5b51d11fc06e2153a8df022186cc4f053bdab4cb",
+      "size": 67751
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-O3.sig",
+      "mode": "100644",
+      "sha": "65119b6498959ab9ad35b2a52df7f88bb7349951",
+      "size": 67672
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-Os.sig",
+      "mode": "100644",
+      "sha": "45662343f30ec87536fc75b91d923bf6345e2703",
+      "size": 68398
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.42.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c10b8cd5f9b07a6b3ada09dd0eb77f98db4158a1",
+      "size": 169375
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-O0.sig",
+      "mode": "100644",
+      "sha": "e065cf957e9eedcbf94d647e57162f44e6dfa54c",
+      "size": 700157
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-O1.sig",
+      "mode": "100644",
+      "sha": "59fed1d350f9ae7b0dad32869a139e0fe26eb820",
+      "size": 554346
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-O2.sig",
+      "mode": "100644",
+      "sha": "316d939b76436ddde4fb3d5a9c3235e376bd47b4",
+      "size": 70518
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-O3.sig",
+      "mode": "100644",
+      "sha": "fa7ddb409f198ed30b81f9f6e642af56d69af5dc",
+      "size": 70394
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-Os.sig",
+      "mode": "100644",
+      "sha": "2d4fc1e6029241f7cd87711e0bc000cfddb32bf2",
+      "size": 71038
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.43.0-Oz.sig",
+      "mode": "100644",
+      "sha": "f4502c62bbe5ee6c3687913589d0389bb3d7af64",
+      "size": 177215
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-O0.sig",
+      "mode": "100644",
+      "sha": "96e2834503874d8ad177fb87fd5550af1538ac98",
+      "size": 731307
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-O1.sig",
+      "mode": "100644",
+      "sha": "a89db35225a47bcfb31f13254a4482c803d943db",
+      "size": 568314
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-O2.sig",
+      "mode": "100644",
+      "sha": "0973bc1dd7855aeecb462069228bc3f7f5e7cd41",
+      "size": 76902
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-O3.sig",
+      "mode": "100644",
+      "sha": "363023a6917cab55f1217ff4ef37ee834991630e",
+      "size": 76269
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-Os.sig",
+      "mode": "100644",
+      "sha": "eae05683df631c9690aa68b0639c66f556dbe859",
+      "size": 77217
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.44.0-Oz.sig",
+      "mode": "100644",
+      "sha": "ce381962c0cc9d76578370a021a54da57af90ed6",
+      "size": 186872
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-O0.sig",
+      "mode": "100644",
+      "sha": "fa4e0740a78340278462279f6c2d5f5c0a27dfc3",
+      "size": 671611
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-O1.sig",
+      "mode": "100644",
+      "sha": "89fb37cdcf7dbf246a13c7fa90cfb99181cace76",
+      "size": 635444
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-O2.sig",
+      "mode": "100644",
+      "sha": "c30634c93a0230404ad2df9f4bb5bdc16b9319ac",
+      "size": 76779
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-O3.sig",
+      "mode": "100644",
+      "sha": "c62f5d4c3a00fc22fe9a7425303d1f1bb20b64dd",
+      "size": 76589
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-Os.sig",
+      "mode": "100644",
+      "sha": "f53e7d6197a1e3cde3de02297de1a0416e684224",
+      "size": 77670
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.45.0-Oz.sig",
+      "mode": "100644",
+      "sha": "7f0d9fb04502b939b9fe36c11151d33a52274620",
+      "size": 185980
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-O0.sig",
+      "mode": "100644",
+      "sha": "77c856be933f16804a1c1e879e69ab7dd28720f6",
+      "size": 680300
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-O1.sig",
+      "mode": "100644",
+      "sha": "0ecfeaa06662ed6d131c81f63bd515627fd2865c",
+      "size": 631069
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-O2.sig",
+      "mode": "100644",
+      "sha": "18e08b2ba98d51534a36a8f3c0b5c9bce1a00900",
+      "size": 75094
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-O3.sig",
+      "mode": "100644",
+      "sha": "6f5e99553fc2765b2f7641187d6c53954acd8745",
+      "size": 75128
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-Os.sig",
+      "mode": "100644",
+      "sha": "ce17ae189be108fa2ce07677a78d2a70c2cecf61",
+      "size": 76044
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.46.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1743d23b040c37575bfea610168b40efde101da1",
+      "size": 184955
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-O0.sig",
+      "mode": "100644",
+      "sha": "25e022d7c62e4078bd38aa093a68b9f023852770",
+      "size": 680426
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-O1.sig",
+      "mode": "100644",
+      "sha": "a6298ab8f6a88ce46cde2a4dd201b7eb57c30af0",
+      "size": 635352
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-O2.sig",
+      "mode": "100644",
+      "sha": "3ffca6cbb7303f8880767fea74aa59299b8fa07e",
+      "size": 89471
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-O3.sig",
+      "mode": "100644",
+      "sha": "3fea2783d9521bb0a31f1ef2f85926c66631d576",
+      "size": 89403
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-Os.sig",
+      "mode": "100644",
+      "sha": "ef4f59bab57e5c2814d074b3c02e2aa8dd7f8ef1",
+      "size": 90173
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.47.0-Oz.sig",
+      "mode": "100644",
+      "sha": "4c692eebf97eb20b5f37a59d3693d84e9f682818",
+      "size": 194824
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-O0.sig",
+      "mode": "100644",
+      "sha": "94b5732fcef667855c5bd8fecfb2b9a50020a4b1",
+      "size": 675657
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-O1.sig",
+      "mode": "100644",
+      "sha": "2f68b93cf5cc0c6ca46fb236a63afd4d429f1c6c",
+      "size": 638644
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-O2.sig",
+      "mode": "100644",
+      "sha": "afddd62c1995683cc42184c1b91a63071c987360",
+      "size": 88302
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-O3.sig",
+      "mode": "100644",
+      "sha": "7e833223dd05609e570d39923bbbb6f43fd4649c",
+      "size": 88238
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-Os.sig",
+      "mode": "100644",
+      "sha": "d32950d39c77d5738f77bafe36349a94536a912f",
+      "size": 167911
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.48.0-Oz.sig",
+      "mode": "100644",
+      "sha": "7000fb904dcb0ea40731681bd758ce2ec9e5fe50",
+      "size": 198529
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-O0.sig",
+      "mode": "100644",
+      "sha": "ccb7bb4c06266a8f13d95a3926c995875be683a7",
+      "size": 696105
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-O1.sig",
+      "mode": "100644",
+      "sha": "7f517eb9be7306b691658e186fecd6e28f39e3d4",
+      "size": 656093
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-O2.sig",
+      "mode": "100644",
+      "sha": "255ef588dd6104b8327e5be0dcc7669debf17d0b",
+      "size": 90725
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-O3.sig",
+      "mode": "100644",
+      "sha": "b2e4deb4d1aac355de604833c300837d442a1ec9",
+      "size": 90688
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-Os.sig",
+      "mode": "100644",
+      "sha": "9893028b8f72874ab00033e002722e5b6c3f2c0c",
+      "size": 91439
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.49.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b9aef78aabbcb69af3b0b532aed8554963e89eb3",
+      "size": 200844
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-O0.sig",
+      "mode": "100644",
+      "sha": "17c634b55478b9b56698afe96cbcf70e105a3743",
+      "size": 696867
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-O1.sig",
+      "mode": "100644",
+      "sha": "8155a90ba5dc6be8d7bcce998a07b786def7b4c2",
+      "size": 658533
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-O2.sig",
+      "mode": "100644",
+      "sha": "31e066df02f2154a58d6b9cc196a4944868402df",
+      "size": 92400
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-O3.sig",
+      "mode": "100644",
+      "sha": "f867cf58ef31330936f059db46ddb6834bda79af",
+      "size": 92365
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-Os.sig",
+      "mode": "100644",
+      "sha": "0d53f5a2f9a2eecd227b50573c7a2587bee3fa5d",
+      "size": 93056
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.50.0-Oz.sig",
+      "mode": "100644",
+      "sha": "93a00345bcaf8703c5282b3d28e6b28d9bc4c716",
+      "size": 204907
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-O0.sig",
+      "mode": "100644",
+      "sha": "4ad017d53993cf9ccfd7ec33fb24b92834c3ed01",
+      "size": 756798
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-O1.sig",
+      "mode": "100644",
+      "sha": "33c7427bbcdeab2a0e4142a95313637337ae603c",
+      "size": 720394
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-O2.sig",
+      "mode": "100644",
+      "sha": "5806521a30ff39cb6d515d2c9f683827d3a4da25",
+      "size": 97351
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-O3.sig",
+      "mode": "100644",
+      "sha": "2b34ad6c3021c820604fd05ddd81e221fa73acde",
+      "size": 97244
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-Os.sig",
+      "mode": "100644",
+      "sha": "469614d0ea403e923efe137a93e4db74c14575c7",
+      "size": 97956
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.51.0-Oz.sig",
+      "mode": "100644",
+      "sha": "568fc695ea8fba1202bbb669d4ccc798261f32d8",
+      "size": 216759
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-O0.sig",
+      "mode": "100644",
+      "sha": "49170b2c7f82107012103af6472a736d74808049",
+      "size": 750331
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-O1.sig",
+      "mode": "100644",
+      "sha": "2df7a196edad67c5473e639b7780cb79e61f34e1",
+      "size": 708938
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-O2.sig",
+      "mode": "100644",
+      "sha": "1c5c92138256c8030a2aa9649964b9a53848f809",
+      "size": 95704
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-O3.sig",
+      "mode": "100644",
+      "sha": "9b700791a8baa6fe4aac2d657971411412f7c40b",
+      "size": 95622
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-Os.sig",
+      "mode": "100644",
+      "sha": "bb687fecb5482758591a31d634c511b1bb1120a8",
+      "size": 96058
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.52.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1b894ba95d1a83b0edf3e7b80cd83e7e264813ac",
+      "size": 219714
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-O0.sig",
+      "mode": "100644",
+      "sha": "fbcd2371ec6134b9da6a043a0ad8a883a4b5f7d9",
+      "size": 732527
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-O1.sig",
+      "mode": "100644",
+      "sha": "390993922607261236c0ec08743479cbfdd73501",
+      "size": 690231
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-O2.sig",
+      "mode": "100644",
+      "sha": "4d9dd57a083727d1652e88e1a1f1e3b7bb10564f",
+      "size": 95955
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-O3.sig",
+      "mode": "100644",
+      "sha": "c90c8daa0b0b7090a0f6751293e3704b0c126806",
+      "size": 95835
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-Os.sig",
+      "mode": "100644",
+      "sha": "18738cafa2a5cba8754fd4fdd5ff39c5bd1993b9",
+      "size": 96400
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.53.0-Oz.sig",
+      "mode": "100644",
+      "sha": "bebffb10505b12a6feecbe472d6835fc3d6143fc",
+      "size": 218493
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-O0.sig",
+      "mode": "100644",
+      "sha": "b74418c04c17990cd9c6cdc738f64d09665f20a0",
+      "size": 753767
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-O1.sig",
+      "mode": "100644",
+      "sha": "a1d788b855e84cabf541fca1605d9b7b4a3827e8",
+      "size": 704566
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-O2.sig",
+      "mode": "100644",
+      "sha": "99934e3d0cab071a568d7284ff1e002f8ac6a95e",
+      "size": 95770
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-O3.sig",
+      "mode": "100644",
+      "sha": "12dff4b81b307bf512afb806be032ce9dfa3878a",
+      "size": 95688
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-Os.sig",
+      "mode": "100644",
+      "sha": "0b012a55d0261230d3e94dfb86238cb1067e19ae",
+      "size": 96271
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.54.0-Oz.sig",
+      "mode": "100644",
+      "sha": "acd87e8979a32ebba41bfacfe686580af074fc21",
+      "size": 220120
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-O0.sig",
+      "mode": "100644",
+      "sha": "167d7993d1076ffef6433c5813eb348cecdcda6e",
+      "size": 757472
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-O1.sig",
+      "mode": "100644",
+      "sha": "e95bb51dec2adbfd6877376ff899120ae6f19dc9",
+      "size": 705229
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-O2.sig",
+      "mode": "100644",
+      "sha": "cb94e5862618e8e04e794be25f175bdcf0e7c0b6",
+      "size": 97448
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-O3.sig",
+      "mode": "100644",
+      "sha": "08f4c5df103fc742c83068fbbe53156f61495d02",
+      "size": 97448
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-Os.sig",
+      "mode": "100644",
+      "sha": "3919f9c5def7b519b107cd6cfc84063aea52d7d7",
+      "size": 98014
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.55.0-Oz.sig",
+      "mode": "100644",
+      "sha": "9e23a13634de71a8cdbfb5316fc9f4817f1d4e4a",
+      "size": 222009
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-O0.sig",
+      "mode": "100644",
+      "sha": "c1cd002c8135ba1e4db1bd930e7fa755615c79a7",
+      "size": 770209
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-O1.sig",
+      "mode": "100644",
+      "sha": "d275c04f73848b89d541e85034118ff131222b14",
+      "size": 714617
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-O2.sig",
+      "mode": "100644",
+      "sha": "84b6cf7998219fa3c8ff862acd580d9665e17498",
+      "size": 108368
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-O3.sig",
+      "mode": "100644",
+      "sha": "555687507bd3f753a11588a8935a943fe6596959",
+      "size": 108368
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-Os.sig",
+      "mode": "100644",
+      "sha": "e45cb90be5167f2df86c95506573a534a91ff7a9",
+      "size": 108966
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.56.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b839bd9cf60a8d7ea99b5ed690a8aa04149d432c",
+      "size": 226905
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-O0.sig",
+      "mode": "100644",
+      "sha": "305c2c0ae512ffbd30013855ae8b1f9a7774e91f",
+      "size": 768426
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-O1.sig",
+      "mode": "100644",
+      "sha": "4e7ef3d1b57eda8bb1e7b10ef431feef61115b67",
+      "size": 109688
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-O2.sig",
+      "mode": "100644",
+      "sha": "1ff4692d91cd508b71a74b8466487313669cc91f",
+      "size": 109541
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-O3.sig",
+      "mode": "100644",
+      "sha": "5c2f3611d30ae4ba370e0407f23949072191e92f",
+      "size": 109561
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-Os.sig",
+      "mode": "100644",
+      "sha": "c5fb566b23804dfd616fe19afc968ebd1331677c",
+      "size": 110242
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.57.0-Oz.sig",
+      "mode": "100644",
+      "sha": "89a724df3f714e037669286925ce1e51500497f7",
+      "size": 228440
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-O0.sig",
+      "mode": "100644",
+      "sha": "9b2fd2f6759f80b19448e39d19ca0d095ab57c4d",
+      "size": 763875
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-O1.sig",
+      "mode": "100644",
+      "sha": "55f3e79e12d64343d24d183189ab3123a8c12fee",
+      "size": 108698
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-O2.sig",
+      "mode": "100644",
+      "sha": "7e716ea6f357affc7300c8ce65f08955625e7c0f",
+      "size": 108556
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-O3.sig",
+      "mode": "100644",
+      "sha": "7923c736fa89a483f6e65ce826fd8fcd56f18ba3",
+      "size": 108625
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-Os.sig",
+      "mode": "100644",
+      "sha": "3dce02048c3b507e2d36ce35752ac97f39adda69",
+      "size": 109347
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.58.0-Oz.sig",
+      "mode": "100644",
+      "sha": "08d02a77d1cc3ee216f87f80da710ecfbf5a14bf",
+      "size": 223931
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-O0.sig",
+      "mode": "100644",
+      "sha": "c4a4848e4ae7013b1ebe6c36c267df5b73b5ccc2",
+      "size": 754998
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-O1.sig",
+      "mode": "100644",
+      "sha": "2ea5cec0bdcc0dc8504d5a6c33544beb6b8ca929",
+      "size": 101461
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-O2.sig",
+      "mode": "100644",
+      "sha": "b1028381de4b4ce612aeb6241b01bd0b08194b61",
+      "size": 101231
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-O3.sig",
+      "mode": "100644",
+      "sha": "4e5e0f463cc071008b5ca0d22ab10fba7171a667",
+      "size": 101201
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-Os.sig",
+      "mode": "100644",
+      "sha": "61ce9cde30faacc39e6d8d6addc7608534011084",
+      "size": 101868
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.59.0-Oz.sig",
+      "mode": "100644",
+      "sha": "3eb691feef3b6c094a39eb10d7324dc06a514057",
+      "size": 211724
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-O0.sig",
+      "mode": "100644",
+      "sha": "30c16c8478ca179a19771321b42057a06539ef1b",
+      "size": 764537
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-O1.sig",
+      "mode": "100644",
+      "sha": "6ce07dc4a2013356719310888e38f28433ece3eb",
+      "size": 101417
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-O2.sig",
+      "mode": "100644",
+      "sha": "a75942ef4f62c9676ecb9612e86eaf01b5589045",
+      "size": 101148
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-O3.sig",
+      "mode": "100644",
+      "sha": "5f75ea8e5a09502cdbc1621c05dd5641642c47e9",
+      "size": 101148
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-Os.sig",
+      "mode": "100644",
+      "sha": "7047d1726e2279232cad3545e8be060e23e15723",
+      "size": 101778
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.60.0-Oz.sig",
+      "mode": "100644",
+      "sha": "38c44d973c100e689883274ce99be97effae1267",
+      "size": 211873
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-O0.sig",
+      "mode": "100644",
+      "sha": "1b67d67ccbdf8757370a86fa0c2570e302b6cb15",
+      "size": 785615
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-O1.sig",
+      "mode": "100644",
+      "sha": "f23f31fc16fb8b27e4c9a8f1d21bac39fbafba3f",
+      "size": 114187
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-O2.sig",
+      "mode": "100644",
+      "sha": "355947b93bf536f233cd2a09e0352cfc40585839",
+      "size": 114068
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-O3.sig",
+      "mode": "100644",
+      "sha": "3d19a71190f8dce2f2d2d0ebc166bdc07789141d",
+      "size": 114077
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-Os.sig",
+      "mode": "100644",
+      "sha": "aa73092a9903fa7b690893e94061345e1e75c5d6",
+      "size": 114742
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.61.0-Oz.sig",
+      "mode": "100644",
+      "sha": "44fbe073aad8887267bebf4e046a20f5f2e49b00",
+      "size": 228392
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-O0.sig",
+      "mode": "100644",
+      "sha": "414216635dc55958b80fa6e9a20bf9fb8db3fd6a",
+      "size": 806389
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-O1.sig",
+      "mode": "100644",
+      "sha": "95444e390a3fbbe52ed6f1314f0a11a908e679e2",
+      "size": 115461
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-O2.sig",
+      "mode": "100644",
+      "sha": "cd2c8356c64fe6e3abebc6e8d1974ec873372a0c",
+      "size": 115178
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-O3.sig",
+      "mode": "100644",
+      "sha": "43a0a710bb0bf776adf5bb20b8c3a6b2ba88660f",
+      "size": 115375
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-Os.sig",
+      "mode": "100644",
+      "sha": "5d0e48df119b486d4337aafeca1ca2ccae534ba6",
+      "size": 115860
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.62.0-Oz.sig",
+      "mode": "100644",
+      "sha": "cb8071f0b62508fad53f28c32fa010ddd21a2792",
+      "size": 229170
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-O0.sig",
+      "mode": "100644",
+      "sha": "3628a7c81a9a51f139b6cfc65d135caf4dc533d1",
+      "size": 811901
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-O1.sig",
+      "mode": "100644",
+      "sha": "e895121932a1ad8decdf890cee6ca7f613c371cb",
+      "size": 115133
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-O2.sig",
+      "mode": "100644",
+      "sha": "2139dfd76b23b16106c1e9403cb0d5ffe15092f2",
+      "size": 114895
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-O3.sig",
+      "mode": "100644",
+      "sha": "02eec68b071af67426bdf132af8285a16991929d",
+      "size": 115078
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-Os.sig",
+      "mode": "100644",
+      "sha": "708cb210e527608beea788127c388ae005dc7ae5",
+      "size": 115544
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.63.0-Oz.sig",
+      "mode": "100644",
+      "sha": "63af0ed34b7c093eb3d76eb8d2716b30a7963874",
+      "size": 229160
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-O0.sig",
+      "mode": "100644",
+      "sha": "940c1c27b93285675dfce05a2e66abfca46d7685",
+      "size": 683585
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-O1.sig",
+      "mode": "100644",
+      "sha": "214ddfd4f7c232cc0a9f9b0fb9a43e86895b8d1c",
+      "size": 115732
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-O2.sig",
+      "mode": "100644",
+      "sha": "c7b7ead69c3929b0ec97d0eed398f4b3c335647f",
+      "size": 115520
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-O3.sig",
+      "mode": "100644",
+      "sha": "e8763a0e95b744180aec3bea425a72a508a23bd7",
+      "size": 115519
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-Os.sig",
+      "mode": "100644",
+      "sha": "6db76851ff65475fbc2ccea74d3dfe29aac2ea84",
+      "size": 201513
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.64.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1c4547d39dddf8905d76cc36419b041ce2b1e638",
+      "size": 228623
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-O0.sig",
+      "mode": "100644",
+      "sha": "624d64c1019a85cb84727570e64bad4b8bc7f173",
+      "size": 681666
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-O1.sig",
+      "mode": "100644",
+      "sha": "f7af738e882f471716a1f4a95f8a02252ae90854",
+      "size": 513907
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-O2.sig",
+      "mode": "100644",
+      "sha": "fe4bc726b0a39eb144d314a48bbca3d0f55f191c",
+      "size": 445033
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-O3.sig",
+      "mode": "100644",
+      "sha": "cb7c70df1575398f10bd87a1f48d8de63dcab5de",
+      "size": 428788
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-Os.sig",
+      "mode": "100644",
+      "sha": "337096ed4ca06e6b2abce49b2b568a5e23d7aa36",
+      "size": 464956
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.65.0-Oz.sig",
+      "mode": "100644",
+      "sha": "e07faa1e3c5fee48b42673acbfc412444c09bfc9",
+      "size": 464499
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-O0.sig",
+      "mode": "100644",
+      "sha": "8d1c580d056d5724a86fda3075aab4be53a18e0c",
+      "size": 664977
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-O1.sig",
+      "mode": "100644",
+      "sha": "c35c489e63f6f995befc6c9c2d0d3884d606af2f",
+      "size": 512883
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-O2.sig",
+      "mode": "100644",
+      "sha": "f64e02b04a0ddbb2b6fcb083187b2adf3a01b702",
+      "size": 444103
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-O3.sig",
+      "mode": "100644",
+      "sha": "df2a9bb34ba8ab55665e7caa28985baab36b61cd",
+      "size": 429059
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-Os.sig",
+      "mode": "100644",
+      "sha": "00aa182a33494a0b908948834d372d4c5f08178e",
+      "size": 464243
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.66.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1a946048102133fd3e03c4e5ca1373ca4a84a026",
+      "size": 464083
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-O0.sig",
+      "mode": "100644",
+      "sha": "20a8b5aad02986cd7288137429d22bc6d3f8978e",
+      "size": 667457
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-O1.sig",
+      "mode": "100644",
+      "sha": "1c397b2b4bd523fd474e12cb91b763d12594d9a6",
+      "size": 518997
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-O2.sig",
+      "mode": "100644",
+      "sha": "d27de8571564748379e5de3f9da67ce0bfaa9440",
+      "size": 456009
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-O3.sig",
+      "mode": "100644",
+      "sha": "05ccf3864117bea25f07560c1a211a6592e9e39e",
+      "size": 444129
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-Os.sig",
+      "mode": "100644",
+      "sha": "0e14ac0fe315e6e5a6ddb20c5ce9d947e58a25fa",
+      "size": 470145
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.67.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c369662bb89959592d8c1ab2bcca1a4ec2443560",
+      "size": 470157
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-O0.sig",
+      "mode": "100644",
+      "sha": "731c3296a3d92566c51cfebd9d4e5abb3e3109e7",
+      "size": 662470
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-O1.sig",
+      "mode": "100644",
+      "sha": "14de7276dbb6504ab24903e0966c5991f236757e",
+      "size": 510306
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-O2.sig",
+      "mode": "100644",
+      "sha": "8fa18212c7ca6cded4dcd7a83895810dfa2005f9",
+      "size": 442841
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-O3.sig",
+      "mode": "100644",
+      "sha": "8947d95da16c3325dda928a585df8c568fb02b4a",
+      "size": 431014
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-Os.sig",
+      "mode": "100644",
+      "sha": "ee9aaf98a91c07eff01b6dfcbfa91debebb31439",
+      "size": 462153
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.68.0-Oz.sig",
+      "mode": "100644",
+      "sha": "06a0da62b565d91856ae63b6ea18c6ce2b8db274",
+      "size": 462119
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-O0.sig",
+      "mode": "100644",
+      "sha": "59783e727cc1e72a4145f46fdfae433c944fb9ca",
+      "size": 653248
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-O1.sig",
+      "mode": "100644",
+      "sha": "7d840d6b422fe2d7d928a6c1c350b688946775c4",
+      "size": 494671
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-O2.sig",
+      "mode": "100644",
+      "sha": "356ebe09eabe7330e8ff0adf0d50ce2716b7ac49",
+      "size": 428239
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-O3.sig",
+      "mode": "100644",
+      "sha": "b41033f8017fb9f77f406e4ac8acf48ef6115e44",
+      "size": 416305
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-Os.sig",
+      "mode": "100644",
+      "sha": "36e3852d208fadf4359c92a8b7a45aaa00eeadc3",
+      "size": 445639
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.69.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b5fd15c40f59c3cf2c4a1ff95bdf869103b015e7",
+      "size": 445396
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-O0.sig",
+      "mode": "100644",
+      "sha": "29409f6e30484692550fdbe4b9d9eeaf2ec525be",
+      "size": 576623
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-O1.sig",
+      "mode": "100644",
+      "sha": "4287c953f135153d62d42ffa35e3fc4fab69540d",
+      "size": 437213
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-O2.sig",
+      "mode": "100644",
+      "sha": "0dffda1d565659add8ef4524abcb56e8467233c4",
+      "size": 404806
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-O3.sig",
+      "mode": "100644",
+      "sha": "ff3c4dafcf60b62e084f25838cccdf13a8b9ab67",
+      "size": 395636
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-Os.sig",
+      "mode": "100644",
+      "sha": "ce3295c1e16f3f2fdb572acd641a16378c2aba6e",
+      "size": 424925
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.70.0-Oz.sig",
+      "mode": "100644",
+      "sha": "4f160bc0fed818f4a90d2499fb6a6fb9f98fd81e",
+      "size": 425203
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-O0.sig",
+      "mode": "100644",
+      "sha": "c788c7a0d06c9914e7afd8a74584c107da669b6f",
+      "size": 557059
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-O1.sig",
+      "mode": "100644",
+      "sha": "b338473faf6df86d1593771bfe0de647f9452056",
+      "size": 426689
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-O2.sig",
+      "mode": "100644",
+      "sha": "744800a64a38ca11d6762fe1840fb6bfcfee6a26",
+      "size": 396347
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-O3.sig",
+      "mode": "100644",
+      "sha": "9b04b6d924a7baf5284cab38f8840501e14b6faa",
+      "size": 389194
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-Os.sig",
+      "mode": "100644",
+      "sha": "499c4ff16ab94239ff4f664e3d1092b1b6a81b68",
+      "size": 416468
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.71.0-Oz.sig",
+      "mode": "100644",
+      "sha": "a26e9f5ac5cc54c3f4086b0fe64d944e4c03576e",
+      "size": 416592
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-O0.sig",
+      "mode": "100644",
+      "sha": "9e82ddaa8bc02ee272b7a2a524c7496909fb9978",
+      "size": 565945
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-O1.sig",
+      "mode": "100644",
+      "sha": "c66d0d8d952270b7936491f48ebc2a68c2d073cb",
+      "size": 435612
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-O2.sig",
+      "mode": "100644",
+      "sha": "53f03e4f1b6da16436bb058320b65326faadcf3e",
+      "size": 403997
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-O3.sig",
+      "mode": "100644",
+      "sha": "71b24ba06d9a0042aee298f101d33346328ae597",
+      "size": 399069
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-Os.sig",
+      "mode": "100644",
+      "sha": "a39151fb5861121d66777816c49439955a5cde52",
+      "size": 423996
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.72.0-Oz.sig",
+      "mode": "100644",
+      "sha": "e0680e65d5e8ade08ad119600d761bba4507d9a4",
+      "size": 424213
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-O0.sig",
+      "mode": "100644",
+      "sha": "b1cf5e5ab2f956dcb60ad1fbb51f61d1336f9c60",
+      "size": 566125
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-O1.sig",
+      "mode": "100644",
+      "sha": "a2aaffcb2c2fe83d5aa901062737ce7ee182696f",
+      "size": 433589
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-O2.sig",
+      "mode": "100644",
+      "sha": "cc2f83640225208c4ce7e4dd9c0e1d049b75eda5",
+      "size": 401855
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-O3.sig",
+      "mode": "100644",
+      "sha": "7811deaa51c8841ed672d5417c7257acd31c47c3",
+      "size": 396176
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-Os.sig",
+      "mode": "100644",
+      "sha": "18dad98ac9bc5892e36cc147b1278b7f502ec785",
+      "size": 422919
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.73.0-Oz.sig",
+      "mode": "100644",
+      "sha": "22ed19bcaa1572ca98189fbad77058e082edc927",
+      "size": 423011
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-O0.sig",
+      "mode": "100644",
+      "sha": "70daa3fc71cf7f0ec513f3d5ff5133dc496ea96d",
+      "size": 547073
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-O1.sig",
+      "mode": "100644",
+      "sha": "d7790fbdd11c8ea03c35db7a21a9f2202dafe376",
+      "size": 417535
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-O2.sig",
+      "mode": "100644",
+      "sha": "fa8740d1129a8f9f4d3d0793cdd579badf384c60",
+      "size": 385635
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-O3.sig",
+      "mode": "100644",
+      "sha": "e1376ee1672f38f957a49c4aaa2211a37c3174b6",
+      "size": 380144
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-Os.sig",
+      "mode": "100644",
+      "sha": "2ca8895469b62c9ba8b6e3a703c41918b4f80fce",
+      "size": 407427
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.74.0-Oz.sig",
+      "mode": "100644",
+      "sha": "af68c8be25032ee87a7b1da61f03ce4d7e7823c3",
+      "size": 407227
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-O0.sig",
+      "mode": "100644",
+      "sha": "7561960343c7526aa55901a2004f255b989fdca3",
+      "size": 536019
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-O1.sig",
+      "mode": "100644",
+      "sha": "346c90d726b86cc4636b64dedfc7b5b60f647a93",
+      "size": 406730
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-O2.sig",
+      "mode": "100644",
+      "sha": "96f2ecc0614edc863d10d2f3af1a956ae26541c9",
+      "size": 375675
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-O3.sig",
+      "mode": "100644",
+      "sha": "3d9391757493889eda8ab6a978788a0088018c0a",
+      "size": 367994
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-Os.sig",
+      "mode": "100644",
+      "sha": "a72d5a9c22675e1dccc63868b171d382228ffb00",
+      "size": 396764
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.75.0-Oz.sig",
+      "mode": "100644",
+      "sha": "1617a9b4eb94afe9ebfd6481a3b4b522a0faf92a",
+      "size": 396425
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-O0.sig",
+      "mode": "100644",
+      "sha": "42884b17a57b7a10e1f6d8b8cffa6b6a82642ece",
+      "size": 530360
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-O1.sig",
+      "mode": "100644",
+      "sha": "94ae1bc9af49d96c8342eeb85544563dd3197dcb",
+      "size": 407062
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-O2.sig",
+      "mode": "100644",
+      "sha": "5053bc1aa7087cf4b55cb313e8be0b2cf66c4167",
+      "size": 375547
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-O3.sig",
+      "mode": "100644",
+      "sha": "da5e9389a8c344f2d7bf58958b8cf428de5c19ee",
+      "size": 367761
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-Os.sig",
+      "mode": "100644",
+      "sha": "8b1cddb73dd3e759c203e2a49fa191bb8aa8fec1",
+      "size": 396661
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.76.0-Oz.sig",
+      "mode": "100644",
+      "sha": "d6a4d47d2f5156a3dfb723b02026d3e4a380d54e",
+      "size": 396493
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-O0.sig",
+      "mode": "100644",
+      "sha": "361ea642fa4096c74d7a4b53b3101d593feefd6d",
+      "size": 536646
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-O1.sig",
+      "mode": "100644",
+      "sha": "7a244fdc53e0d03c71a4cd7374136a18d91b2339",
+      "size": 414257
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-O2.sig",
+      "mode": "100644",
+      "sha": "c5c37ae17d7d801d5b7f79e787e8523a0ec9c338",
+      "size": 380817
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-O3.sig",
+      "mode": "100644",
+      "sha": "1914697fc4893c2a1e28f1caf07ad6aae838d1c5",
+      "size": 371921
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-Os.sig",
+      "mode": "100644",
+      "sha": "110ed1c35b322b852ced596a292271ee66c599d0",
+      "size": 401783
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.77.0-Oz.sig",
+      "mode": "100644",
+      "sha": "2feb8394e33baff34b68c84055593bdf918a3fde",
+      "size": 401851
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-O0.sig",
+      "mode": "100644",
+      "sha": "fd790ea86af824705418c96a05a965e9fb0b3eb7",
+      "size": 546599
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-O1.sig",
+      "mode": "100644",
+      "sha": "63b54f78d67166ec0147b0b5eba04ea45ebc39f5",
+      "size": 433419
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-O2.sig",
+      "mode": "100644",
+      "sha": "23e6ef5cab94d27ecba27d72dc47e8cf1d438806",
+      "size": 399879
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-O3.sig",
+      "mode": "100644",
+      "sha": "5e787ed32afc409c553965d33f967e363e274067",
+      "size": 391831
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-Os.sig",
+      "mode": "100644",
+      "sha": "62103a9dd22f8ce6c8c8805724f6072640e88ca0",
+      "size": 421406
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.78.0-Oz.sig",
+      "mode": "100644",
+      "sha": "533be9b16769ddcadc472a04f56395a06d025141",
+      "size": 421567
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-O0.sig",
+      "mode": "100644",
+      "sha": "a9f43df47b4bef69499e50a1a898be2b6193a767",
+      "size": 546255
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-O1.sig",
+      "mode": "100644",
+      "sha": "99c115400edef3e4c99644d5ba6499f5441fba53",
+      "size": 435583
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-O2.sig",
+      "mode": "100644",
+      "sha": "05d953a9c211ba752d793c9dc0efce26c4524c4b",
+      "size": 399238
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-O3.sig",
+      "mode": "100644",
+      "sha": "f42453445f29436ffd48c7245287a2d4e1230cbd",
+      "size": 390406
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-Os.sig",
+      "mode": "100644",
+      "sha": "d5c5f92f2f7936b10660c020326050cfcf53b8a7",
+      "size": 422894
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.79.0-Oz.sig",
+      "mode": "100644",
+      "sha": "aed799be0c64edb86b8b407be36cbd96657e4e6f",
+      "size": 423047
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-O0.sig",
+      "mode": "100644",
+      "sha": "f9d2e4b13ed3fa3b0234f75d06f60fdf317c5c6f",
+      "size": 540420
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-O1.sig",
+      "mode": "100644",
+      "sha": "a757c4605b96617c14889e7f1bcc00967aafc3f4",
+      "size": 430000
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-O2.sig",
+      "mode": "100644",
+      "sha": "246b5f808272b5fe56b8fc6ea8a3e746a01e83d3",
+      "size": 393796
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-O3.sig",
+      "mode": "100644",
+      "sha": "c0e7f7dec1f2952d18e3a1df4054d4c26ccf4161",
+      "size": 384027
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-Os.sig",
+      "mode": "100644",
+      "sha": "65235bf02025b930ac8072f5a19483b1f6d5ef9d",
+      "size": 417386
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.80.0-Oz.sig",
+      "mode": "100644",
+      "sha": "8ae91b3a3ffcbe01f093800fe7ae33ccb3536b06",
+      "size": 417526
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-O0.sig",
+      "mode": "100644",
+      "sha": "72b00b0c1c08bcc1550ada0488081926a243ee1d",
+      "size": 519950
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-O1.sig",
+      "mode": "100644",
+      "sha": "a415ec10dfcb300cc0436619911d5683fd299610",
+      "size": 409482
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-O2.sig",
+      "mode": "100644",
+      "sha": "23b91b995154b76251d8e3da1dd032b60b0a3c51",
+      "size": 371600
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-O3.sig",
+      "mode": "100644",
+      "sha": "019b1ba013df90be85008f83a77888cf9b144ce6",
+      "size": 363862
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-Os.sig",
+      "mode": "100644",
+      "sha": "d760bef964fe54c2b26d7992003169ac2f0ebad5",
+      "size": 397149
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.81.0-Oz.sig",
+      "mode": "100644",
+      "sha": "a8d55b7f0daf35f1af9e027f16e0f32d8fad6a63",
+      "size": 397612
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-O0.sig",
+      "mode": "100644",
+      "sha": "85e09ee9c19be97dd27c2e796cc4a82a72e880fd",
+      "size": 513567
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-O1.sig",
+      "mode": "100644",
+      "sha": "1bf46788ae7a360c38c45fe02ab7598a1ec8dbc0",
+      "size": 405105
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-O2.sig",
+      "mode": "100644",
+      "sha": "1d71cb28824e80a2b77faf8c43bf76c30a9cd70a",
+      "size": 371981
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-O3.sig",
+      "mode": "100644",
+      "sha": "da6e4602c133b8f6e50b0bc000896976ff32996c",
+      "size": 364211
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-Os.sig",
+      "mode": "100644",
+      "sha": "e8015dc754c906ab521e178dfc0d42ad463bf5b6",
+      "size": 396240
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.82.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b1f616769bd17c6c1aba0dd4f6aa4d8ef825c899",
+      "size": 396396
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-O0.sig",
+      "mode": "100644",
+      "sha": "000e76ac2c25f2424b12204de35b42e26f8fddf0",
+      "size": 516123
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-O1.sig",
+      "mode": "100644",
+      "sha": "eacd34623155694f058846528c9b7ba5528abf56",
+      "size": 406282
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-O2.sig",
+      "mode": "100644",
+      "sha": "326eab7567db28b284033adf5abd4fa8bcf56dc6",
+      "size": 375496
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-O3.sig",
+      "mode": "100644",
+      "sha": "c6adb26f2f555c7ea0e9cf1b0d7a6d0a35b1f41d",
+      "size": 367378
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-Os.sig",
+      "mode": "100644",
+      "sha": "6136ba832313c856191c8f0a112bdc712ed0209c",
+      "size": 399580
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.83.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b51343eed6f62ea8ab705c894804b960000e1684",
+      "size": 399928
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-O0.sig",
+      "mode": "100644",
+      "sha": "64d34a5cb82d09dbc8e32d38a28eca28348019d1",
+      "size": 533887
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-O1.sig",
+      "mode": "100644",
+      "sha": "c35a75461b90026256bcdfaddf34df8a5d316089",
+      "size": 417019
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-O2.sig",
+      "mode": "100644",
+      "sha": "89e987aa96090e5765f79d7bfd7d35f5f4862b15",
+      "size": 385241
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-O3.sig",
+      "mode": "100644",
+      "sha": "abbae92db2f79f80a6b8b46b200a4cd9194497c6",
+      "size": 374169
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-Os.sig",
+      "mode": "100644",
+      "sha": "a89935a8f242d6c3520d764a77456465526eba4c",
+      "size": 409524
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.84.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0d2b2738b5c4a4e6a986b852119037130921794e",
+      "size": 409690
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-O0.sig",
+      "mode": "100644",
+      "sha": "90f3caa93a35789f607d697b70f5bd75e830ff9d",
+      "size": 527810
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-O1.sig",
+      "mode": "100644",
+      "sha": "c75c562df21efb7831303a771499d5080c376b79",
+      "size": 416259
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-O2.sig",
+      "mode": "100644",
+      "sha": "b1e3c6507daabea638cd816f32da955284eeb6e8",
+      "size": 382246
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-O3.sig",
+      "mode": "100644",
+      "sha": "a870b8f2d8459644048cb39bf8b3a98f0278cc7c",
+      "size": 372413
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-Os.sig",
+      "mode": "100644",
+      "sha": "49e5a755ad9429fe44cfb91d12a2017c19e7577d",
+      "size": 408304
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.85.0-Oz.sig",
+      "mode": "100644",
+      "sha": "75dd7f095086bb31180c9dbba341cd7927c6390a",
+      "size": 408249
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-O0.sig",
+      "mode": "100644",
+      "sha": "56de9664d8563e377d8c77c5e203fd8328cd2f71",
+      "size": 525114
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-O1.sig",
+      "mode": "100644",
+      "sha": "1f87baed672d137703e330ac0acc15717ff3a1df",
+      "size": 412405
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-O2.sig",
+      "mode": "100644",
+      "sha": "bda7b589b21145d1d321cab9638f0e77fae795d1",
+      "size": 379139
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-O3.sig",
+      "mode": "100644",
+      "sha": "9c472acf8a98b58c4e0af78a0dd67eae041415fe",
+      "size": 368794
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-Os.sig",
+      "mode": "100644",
+      "sha": "dab07e7ceadf25d5527e9221c1ada41fa5c0baca",
+      "size": 403904
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.86.0-Oz.sig",
+      "mode": "100644",
+      "sha": "35e6fa1bf1583d3dd878abcde707291975f97163",
+      "size": 403733
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-O0.sig",
+      "mode": "100644",
+      "sha": "7e55ab2cec6767c167cdd6124a7af3c5a5cce998",
+      "size": 523505
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-O1.sig",
+      "mode": "100644",
+      "sha": "c0de8fb3018495e15a40bb2fd8cb7f21b69a58fc",
+      "size": 406992
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-O2.sig",
+      "mode": "100644",
+      "sha": "f4d559c9da734f941592493720100915d5c9bb55",
+      "size": 385521
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-O3.sig",
+      "mode": "100644",
+      "sha": "980c5172d0bc7c658617006841d446dd7db408a4",
+      "size": 372326
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-Os.sig",
+      "mode": "100644",
+      "sha": "6ca402a018ab6aa38f244ba0ff02917ee2df16fe",
+      "size": 398432
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.87.0-Oz.sig",
+      "mode": "100644",
+      "sha": "0b1f782d9c111de690c742fc22be47ff109bb475",
+      "size": 398620
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-O0.sig",
+      "mode": "100644",
+      "sha": "3428066c25a508bc936e4e81fa66bd291dfbbc48",
+      "size": 522255
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-O1.sig",
+      "mode": "100644",
+      "sha": "a27de2e873eb1395ed6c110353011b95e07ea643",
+      "size": 405934
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-O2.sig",
+      "mode": "100644",
+      "sha": "87f6f963a11a0bfb649dc79ba5ee926899785f31",
+      "size": 385059
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-O3.sig",
+      "mode": "100644",
+      "sha": "8235b7601f1bb55f6e2c4eb93f2ed3d8958337d9",
+      "size": 371063
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-Os.sig",
+      "mode": "100644",
+      "sha": "412b51d465747bb03aebd6f1e8bb773577a0b0f1",
+      "size": 398702
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.88.0-Oz.sig",
+      "mode": "100644",
+      "sha": "2eb43a5770401cde4c73598ef58076762f502d24",
+      "size": 398688
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-O0.sig",
+      "mode": "100644",
+      "sha": "3fcfaf5b8463c54fb85c7ce8f57a7726c5f6b0a7",
+      "size": 525885
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-O1.sig",
+      "mode": "100644",
+      "sha": "9e5c166f5830f7295b4514b77dc74505adfd3d06",
+      "size": 410082
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-O2.sig",
+      "mode": "100644",
+      "sha": "93d8b122e8e15860965fe2f65e91a2355c8e742b",
+      "size": 389765
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-O3.sig",
+      "mode": "100644",
+      "sha": "4b31eb86785e67a3cdaa1d818b65b1a5dfeca684",
+      "size": 374976
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-Os.sig",
+      "mode": "100644",
+      "sha": "7dc1e95f346e90633e40d9f9225401641410a081",
+      "size": 403063
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.89.0-Oz.sig",
+      "mode": "100644",
+      "sha": "b4433ff2b4a8e73d2b43358f6984f54aeef53aa3",
+      "size": 403119
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-O0.sig",
+      "mode": "100644",
+      "sha": "ec774382763598102f26d56cd7272cb48236e75f",
+      "size": 525721
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-O1.sig",
+      "mode": "100644",
+      "sha": "e66b324e0da069f1660ef24832f482f3c55a652e",
+      "size": 411298
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-O2.sig",
+      "mode": "100644",
+      "sha": "efe4343b4f8e76035d63184ca6d272dc4db340a2",
+      "size": 389438
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-O3.sig",
+      "mode": "100644",
+      "sha": "8d89765dbec9db6ce7b67484e35fead110c3f218",
+      "size": 375467
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-Os.sig",
+      "mode": "100644",
+      "sha": "fa35ad0ecd9c6dac69b7aa044dacfec1cf748ba3",
+      "size": 403936
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.90.0-Oz.sig",
+      "mode": "100644",
+      "sha": "c4ab9da02e9203e7dec207f7dcb41de1842282ee",
+      "size": 404176
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-O0.sig",
+      "mode": "100644",
+      "sha": "796b80dea718fc2605179275d90895fbdbbb2bdc",
+      "size": 525764
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-O1.sig",
+      "mode": "100644",
+      "sha": "c65cae32dd7b1c0f656887300cd74e79ed8d2dc2",
+      "size": 408145
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-O2.sig",
+      "mode": "100644",
+      "sha": "6663efd5688c5a287d10d27a1ec5f19b8ae8fa2f",
+      "size": 386733
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-O3.sig",
+      "mode": "100644",
+      "sha": "e4553a28aa63618dec1fd1bc047132b665e6cda2",
+      "size": 373121
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-Os.sig",
+      "mode": "100644",
+      "sha": "ebc0b2f1d7bdab156be00cdd153188a9f2c684d9",
+      "size": 402966
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.91.0-Oz.sig",
+      "mode": "100644",
+      "sha": "191fa027416c4b73f53c167bff881783dc787650",
+      "size": 402884
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-O0.sig",
+      "mode": "100644",
+      "sha": "32a781e6523eff6901c0248149d543ef47c50ae1",
+      "size": 523345
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-O1.sig",
+      "mode": "100644",
+      "sha": "ce808421a0538cab0a7753939aa65ebc6a636528",
+      "size": 403003
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-O2.sig",
+      "mode": "100644",
+      "sha": "3bc555015ff726881d4948c0a089f6b50eb78928",
+      "size": 363298
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-O3.sig",
+      "mode": "100644",
+      "sha": "5e1c71f4a6dd4e39ac3a67a37345e527bcd335ca",
+      "size": 354411
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-Os.sig",
+      "mode": "100644",
+      "sha": "f2007d2b0382d000c987224ce864fa8ffb2d1eca",
+      "size": 396239
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.92.0-Oz.sig",
+      "mode": "100644",
+      "sha": "16911de773e7c22c05f8b8453f3311fa1ff6e4c1",
+      "size": 397733
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-O0.sig",
+      "mode": "100644",
+      "sha": "8b8197de3e76a61384832940e8cfcebacf7e857b",
+      "size": 644191
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-O1.sig",
+      "mode": "100644",
+      "sha": "9ebf15612c48f7c7141a3644e910e1edf7f28a9c",
+      "size": 503749
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-O2.sig",
+      "mode": "100644",
+      "sha": "723cb11013eb72d4f3f9ebb058c54f13beb0db48",
+      "size": 448441
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-O3.sig",
+      "mode": "100644",
+      "sha": "bc6e709ab728e847e20dd17ae2256f93bec1457d",
+      "size": 431152
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-Os.sig",
+      "mode": "100644",
+      "sha": "30331d09d7c4d567e71df369c8342aa086c24d8d",
+      "size": 494817
+    },
+    {
+      "path": "x86_64/linux/rust/no-inline/1.93.0-Oz.sig",
+      "mode": "100644",
+      "sha": "7ac6b441203a03f16499a011bf0e9ce6617d6e2a",
+      "size": 494833
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++.meta",
+      "mode": "100644",
+      "sha": "c95d8d067d1f63a1fad5a4796b0f6dd0cff62f87",
+      "size": 1393
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++.sig",
+      "mode": "100644",
+      "sha": "78907c1fc5f5bf41d007c7db982dec85ed4b0d40",
+      "size": 129365
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++experimental.meta",
+      "mode": "100644",
+      "sha": "33644e3a6a107a325e46df07d06231e7ee4bb9e1",
+      "size": 1089
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++experimental.sig",
+      "mode": "100644",
+      "sha": "2a79d1fa604a6919d9bf0353c9674ea041b3d7a1",
+      "size": 1034
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++fs.meta",
+      "mode": "100644",
+      "sha": "7215c57aae3ab2adf67e52273087df4aae91d622",
+      "size": 729
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_clang++_7_libc++fs.sig",
+      "mode": "100644",
+      "sha": "f3939336481970a01b1d540fb4e0935a17cf9e2a",
+      "size": 10000
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libstdc++.meta",
+      "mode": "100644",
+      "sha": "aa6c9c29941c3500e210701d40926cffe5d7822b",
+      "size": 1249
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libstdc++.sig",
+      "mode": "100644",
+      "sha": "3e8d574da57d687706c849b563b7898b6f793387",
+      "size": 299691
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libstdc++fs.meta",
+      "mode": "100644",
+      "sha": "08f79e3eed084cd8fb3c8a361c7d8cf7c53c933c",
+      "size": 782
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libstdc++fs.sig",
+      "mode": "100644",
+      "sha": "a0338a8dad4e7376cc7b1c0da1e4b02ac97392d5",
+      "size": 78126
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libsupc++.meta",
+      "mode": "100644",
+      "sha": "8be8dbc6447e9bd1e08399836f6c9bb97281853e",
+      "size": 785
+    },
+    {
+      "path": "x86_64/linux/ubuntu_1804_gcc_8_libsupc++.sig",
+      "mode": "100644",
+      "sha": "6f46e0f7a4739d0cd85ef0ff925bdeb204f8b4fb",
+      "size": 13469
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_gcc_9_libstdc++.meta",
+      "mode": "100644",
+      "sha": "ca4a43cfc0b6c979c180fb9fac869467d4cd1ae3",
+      "size": 1355
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_gcc_9_libstdc++.sig",
+      "mode": "100644",
+      "sha": "3d13a74687aaff467a0586244159873e98fe3e06",
+      "size": 346773
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_gcc_9_libstdc++fs.meta",
+      "mode": "100644",
+      "sha": "b603f4130627d1c47d1d2206c5d17c37e06be787",
+      "size": 772
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_gcc_9_libstdc++fs.sig",
+      "mode": "100644",
+      "sha": "7b281de7ead08d7487751da1cc3cf56adb182448",
+      "size": 43188
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_libc.meta",
+      "mode": "100644",
+      "sha": "5ba5f0e5f1ab30e0c54c7c3a8ee6a8f5fc31f690",
+      "size": 1675
+    },
+    {
+      "path": "x86_64/linux/ubuntu_2004_libc.sig",
+      "mode": "100644",
+      "sha": "85c7e20e8b12249fca9e149779ab3d814a92c2b2",
+      "size": 93345
+    }
+  ],
+  "url": "https://api.github.com/repositories/370191558/tarball/eaf9234448ced5800497d8ec2c565b186c9f65e4"
+}

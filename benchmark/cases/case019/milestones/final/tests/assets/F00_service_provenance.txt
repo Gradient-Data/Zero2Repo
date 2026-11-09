@@ -1,0 +1,9 @@
+# feature: F00
+
+F00_service_ca.pem, F00_service_identity.pem
+  Test-only certificate authority and a server identity (certificate and key)
+  it signed for fonts.google.com, fonts.gstatic.com, pypi.org,
+  files.pythonhosted.org and related host names. Generated with OpenSSL for
+  this suite on 2026-10-30, valid 2020-01-01 to 2125-12-31. The loopback HTTPS
+  mirror in _helpers.py presents the identity; only the child processes that a
+  test starts with the mirror's environment trust the authority.

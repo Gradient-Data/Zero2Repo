@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "case_id": "case019",
+  "ecosystem": "pip",
+  "install_ban": [
+    "rinohtype"
+  ],
+  "import_ban": [
+    "rinoh",
+    "rinohtype"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the rinohtype distribution and upstream rinoh module/product references; allow provided typeface packages, Docutils, Sphinx, Cairo, Python standard libraries and build/test dependencies. Base-image Python, Node and system inventories plus recipe dependencies revealed no product equivalent; full recipe-image probing remains unverified because its Init image record and case image are absent."
+}

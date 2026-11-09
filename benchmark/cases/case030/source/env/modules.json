@@ -1,0 +1,4 @@
+[
+  {"name":"STC","commit":"e60cd6652a66b464944122692ebad1ac40298b9e","url":"https://codeload.github.com/Stclib/STC/tar.gz/e60cd6652a66b464944122692ebad1ac40298b9e","sha256":"43c8e198d18539159c8fd81e5fecbe3d75ca9a3f8d186203573b036810917999"},
+  {"name":"gFTL","commit":"5367705635d03d5722a9a4015892890ef25c6a07","url":"https://codeload.github.com/Goddard-Fortran-Ecosystem/gFTL/tar.gz/5367705635d03d5722a9a4015892890ef25c6a07","sha256":"1e13b393085663489b0a9f119ec637cc37911297cc25e70ab98d271c33e0bedb"}
+]

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case040",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright sh /env-assets/install.sh",
+    "build_command": "PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright SETUPTOOLS_SCM_PRETEND_VERSION=4.2.6.dev94+g9579be7d python3 -m pip install --no-index --no-deps --no-build-isolation ."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "case_id": "case039",
+  "ecosystem": "cargo",
+  "install_ban": [
+    "@stoolap/mcp",
+    "@stoolap/node",
+    "Stoolap",
+    "better-sqlite3",
+    "github.com/stoolap/stoolap",
+    "github.com/stoolap/stoolap-go",
+    "github.com/stoolap/stoolap-go/wasm",
+    "io.stoolap:stoolap-java",
+    "libsqlite3-0",
+    "libsqlite3-dev",
+    "libsqlite3-sys",
+    "pysqlite3",
+    "pysqlite3-binary",
+    "rusqlite",
+    "sqlean.py",
+    "sqlite",
+    "sqlite-wasm-rs",
+    "sqlite3",
+    "stoolap",
+    "stoolap-python",
+    "stoolap/stoolap-php"
+  ],
+  "import_ban": [
+    "\"stoolap\"",
+    "'stoolap'",
+    "@stoolap/mcp",
+    "@stoolap/node",
+    "STOOLAP_",
+    "Stoolap",
+    "Stoolap\\",
+    "_sqlite3",
+    "from stoolap",
+    "github.com/stoolap/stoolap",
+    "github.com/stoolap/stoolap-go",
+    "import stoolap",
+    "io.stoolap",
+    "libsqlite3",
+    "libsqlite3_sys",
+    "libstoolap",
+    "node:sqlite",
+    "rusqlite",
+    "sqlite3",
+    "sqlite_wasm_rs",
+    "stoolap.",
+    "stoolap/",
+    "stoolap::",
+    "stoolap_bg"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "_sqlite3",
+      "runtime": "python3",
+      "evidence": "Recipe image: /usr/lib/python3.12/lib-dynload/_sqlite3.cpython-312-x86_64-linux-gnu.so and /opt/conda/lib/python3.13/lib-dynload/_sqlite3.cpython-313-x86_64-linux-gnu.so load successfully; their sqlite3 wrappers execute SELECT 1."
+    },
+    {
+      "import_root": "libsqlite3",
+      "runtime": "system",
+      "evidence": "Recipe image: ctypes loads /lib/x86_64-linux-gnu/libsqlite3.so.0 (SQLite 3.45.1) and /opt/conda/lib/libsqlite3.so (3.51.2); sqlite3_libversion succeeds for both."
+    },
+    {
+      "import_root": "node:sqlite",
+      "runtime": "node",
+      "evidence": "Recipe image: /opt/node-v22.14.0-linux-x64/bin/node v22.14.0 loads node:sqlite; DatabaseSync opens an in-memory database and executes SELECT 1. The node command is absent from PATH in the inspected image."
+    },
+    {
+      "import_root": "sqlite3",
+      "runtime": "python3",
+      "evidence": "Recipe image: /usr/bin/python3 loads /usr/lib/python3.12/sqlite3/__init__.py (SQLite 3.45.1); /opt/conda/bin/python3 loads /opt/conda/lib/python3.13/sqlite3/__init__.py (SQLite 3.51.2); both execute SELECT 1 in memory."
+    },
+    {
+      "import_root": "sqlite3",
+      "runtime": "system",
+      "evidence": "Recipe image: /opt/conda/bin/sqlite3 executes SELECT sqlite_version() and returns 3.51.2; /opt/conda/bin/tclsh loads package sqlite3 from /opt/conda/lib/sqlite3.45.3/libsqlite3.45.3.so and executes SELECT 1."
+    }
+  ],
+  "notes": "Ban Stoolap and documented bindings; use delimited source tokens to preserve the provided stoolap-jemalloc/stoolap_jemalloc allocator; allow Rust/Cargo, Python, Node, Tcl, standard libraries outside the listed SQL equivalents, and other build dependencies; SQLite counterparts substitute embedded SQL execution, not all Stoolap features; probes used recipe-env image sha256:d4e8f90f7a44887e5818c413995bf4213e0f1ceeb5c4f81e43ff396afd2d7c9d. Operator 2026-11-05: SQLite is removed from the environment (system libsqlite3-0, conda sqlite, and the bundled C sources of the vendored libsqlite3-sys and sqlite-wasm-rs crates) and banned for installation and import; Node 22 keeps its built-in node:sqlite, which the import ban covers."
+}
