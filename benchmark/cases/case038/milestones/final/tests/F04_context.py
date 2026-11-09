@@ -122,8 +122,8 @@ def test_rootless_static_atomic_and_missing_context():
     assert datatype_expression('. + 5', context=XPathContext(item=12)) == 17
     assert result_items(select(None, '. + 5', item=12)) == [17]
     element = ET.fromstring('<r><a k="1">t</a></r>')
-    assert select(None, 'a/text()', item=element) == ['t']
-    assert select(None, 'a/@k', item=element) == ['1']
+    assert result_items(select(None, 'a/text()', item=element)) == ['t']
+    assert result_items(select(None, 'a/@k', item=element)) == ['1']
     datatype_rejection(XPathContext, error_class=VelunaraTypeError)
     for expression in ('.', 'position()', '/r', '..', 'parent::*', 'v', '@a'):
         datatype_failure(expression, MissingContextError, 'XPDY0002')
@@ -154,7 +154,7 @@ def test_focus_tree_boundary_position_and_size():
         assert observe(prepared.iter_select, root, consume=True).value == [1, 1]
         assert select(root, '(name(.), position(), last())', item=root[0],
                       position=2, size=5) == ['group', 2, 5]
-        assert select(root, '/r/other/text()', item=root[0]) == ['outside']
+        assert result_items(select(root, '/r/other/text()', item=root[0])) == ['outside']
         assert select(root[0], '/r/other/text()') == []
 
 
@@ -182,7 +182,7 @@ def test_static_namespaces_and_base_uri_are_used():
         parser = XPath2Parser(namespaces={'p': uri}, base_uri='https://example.org/a/b/')
         assert context_results('p:v/text()', parser=parser,
                                    context=XPathContext(root)) == expected
-        assert select(root, 'p:v/text()', namespaces={'p': uri}) == expected
+        assert result_items(select(root, 'p:v/text()', namespaces={'p': uri})) == expected
         assert str(datatype_expression('resolve-uri("../c.xml")', parser=parser)) == \
             'https://example.org/a/c.xml'
     parser = XPath2Parser(base_uri='https://example.org/other/')

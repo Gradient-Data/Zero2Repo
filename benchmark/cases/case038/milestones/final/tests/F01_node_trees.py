@@ -36,8 +36,8 @@ def test_supported_tree_inputs_and_reuse():
 
 
 def test_invalid_tree_roots_are_refused():
-    assert select(get_node_tree(ET.fromstring('<r><a>live</a></r>')),
-                  'a/text()') == ['live']
+    assert result_items(select(get_node_tree(ET.fromstring('<r><a>live</a></r>')),
+                               'a/text()')) == ['live']
     invalid = [None, 7, '<r/>', {}, [], object()]
     for module in (ET, LE):
         invalid.extend([module.Comment('note'), module.ProcessingInstruction('go', 'data')])
