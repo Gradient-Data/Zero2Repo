@@ -10,6 +10,18 @@ from velnora.infer.inspect import get_dependencies, get_model_relations, render_
 from velnora.util import format_shapes
 
 
+def drop_empty_self(mapping):
+    """Ignore a site listed as its own dependency with no coupling group.
+
+    The documents describe a dependency mapping as the sites a site is coupled
+    with; an empty self entry carries no such coupling and is never required.
+    A non-empty self entry (plate coupling) survives and is still compared.
+    """
+    return {name: {other: groups for other, groups in targets.items()
+                   if other != name or groups}
+            for name, targets in mapping.items()}
+
+
 def test_f15_t01():
     def collider(observation):
         a = velnora.sample('parent_a', dist.Normal())
@@ -22,12 +34,11 @@ def test_f15_t01():
              'child': {'child': set(), 'parent_a': set(), 'parent_b': set()}}
     for observation in (None, .7):
         result = call_public(get_dependencies, collider, model_kwargs={'observation': observation})
-        assert result['prior_dependencies'] == prior
-        posterior = result['posterior_dependencies']
+        assert drop_empty_self(result['prior_dependencies']) == drop_empty_self(prior)
+        posterior = drop_empty_self(result['posterior_dependencies'])
         assert set(posterior) == ({'parent_a', 'parent_b', 'unrelated', 'child'}
                                   if observation is None else {'parent_a', 'parent_b', 'unrelated'})
-        expected = {frozenset((n,)): set() for n in posterior}
-        expected[frozenset(('parent_a', 'parent_b'))] = set()
+        expected = {frozenset(('parent_a', 'parent_b')): set()}
         child_edges = {frozenset(('parent_a', 'child')): set(),
                        frozenset(('parent_b', 'child')): set()}
         if observation is None:
@@ -47,13 +58,14 @@ def test_f15_t01():
     for aggregate in (False, True):
         result = call_public(get_dependencies, grouped, (jnp.array([.2, -.4, 1.1]),),
                              {'aggregate': aggregate})
-        assert result['prior_dependencies'] == {
+        assert drop_empty_self(result['prior_dependencies']) == drop_empty_self({
             'effects': {'effects': set()},
-            'measurements': {'effects': set(), 'measurements': set()}}
+            'measurements': {'effects': set(), 'measurements': set()}})
         latent = {'effects': {'subjects'} if aggregate else set()}
         # The entry toward the observed site is optional; present, it carries no group.
-        assert result['posterior_dependencies'] in (
-            {'effects': latent}, {'effects': {**latent, 'measurements': set()}})
+        assert drop_empty_self(result['posterior_dependencies']) in (
+            drop_empty_self({'effects': latent}),
+            drop_empty_self({'effects': {**latent, 'measurements': set()}}))
 
 
 def test_f15_t02():

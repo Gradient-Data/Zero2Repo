@@ -36,7 +36,7 @@ def test_definition_and_inspection(schema_client):
         r = schema_run(schema_client, {
             'create': ('E', create),
             'describe': ('Q', 'DESCRIBE detail'),
-            'one': ('Q', "INSERT INTO detail (code) VALUES ('alpha')"),
+            'one': ('E', "INSERT INTO detail (code) VALUES ('alpha')"),
             'two': ('E', "INSERT INTO detail (code) VALUES ('beta')"),
             'rows': ('Q', 'SELECT id,code,qty,active,price,note,born FROM detail ORDER BY code'),
             'duplicate_pk': ('X', "INSERT INTO detail (id,code) SELECT id,'gamma' FROM detail WHERE code='alpha'"),
@@ -97,7 +97,7 @@ def test_defaults_and_generated_keys(schema_client, tmp_path):
     r = schema_run(schema_client, {
         'create': ('E', "CREATE TABLE defaults (id INTEGER PRIMARY KEY AUTO_INCREMENT, label TEXT, i INTEGER DEFAULT -9, f FLOAT DEFAULT 3.25, s TEXT DEFAULT 'seed', b BOOLEAN DEFAULT FALSE, n TEXT DEFAULT NULL, absent INTEGER, stamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"),
         'other': ('E', 'CREATE TABLE other (id INTEGER PRIMARY KEY AUTO_INCREMENT, label TEXT)'),
-        'first': ('Q', "INSERT INTO defaults (label) VALUES ('first')"),
+        'first': ('E', "INSERT INTO defaults (label) VALUES ('first')"),
         'other_first': ('E', "INSERT INTO other (label) VALUES ('one')"),
         'second': ('E', "INSERT INTO defaults (label) VALUES ('second')"),
         'initial': ('Q', 'SELECT * FROM defaults ORDER BY id'),

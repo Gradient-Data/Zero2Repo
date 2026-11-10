@@ -189,8 +189,15 @@ def cli_terminal(binary, directory, dsn, commands):
         os.close(master)
 
 
-def cli_affected(result):
-    cli_ok(result)
+def cli_affected(result, check_stderr=True):
+    """Read the affected-row line from stdout.
+
+    Without -q the documents leave the connection message's stream open, so a
+    non-quiet run is only required to succeed, not to keep standard error empty.
+    """
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    if check_stderr:
+        assert not result.stderr, (result.stdout, result.stderr)
     lines = result.stdout.decode("utf-8").splitlines()
     counts = [int(match[1]) for line in lines
               if (match := re.fullmatch(r"([+-]?[0-9]+) rows affected", line))]

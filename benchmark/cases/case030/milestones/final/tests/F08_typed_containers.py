@@ -54,7 +54,9 @@ def select(i: int):
         good, _ = compile_source(tmp_path / language / 'good', template.replace('INDEX', '1'), language=language)
         assert good.returncode == 0, (good.stdout, good.stderr)
         bad, path = compile_source(tmp_path / language / 'bad', template.replace('INDEX', 'i'), language=language)
-        require_source_error(bad, path, 'semantic', {4})
+        # FP-01 pins a line only for the four enumerated diagnostic kinds; this
+        # refusal is not one of them and Interface_Contract.md:7 lets the location be absent.
+        require_source_error(bad, path, 'semantic', None)
 
 
 def test_list_operations_and_readonly_boundary(tmp_path):

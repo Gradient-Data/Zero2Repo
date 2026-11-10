@@ -54,7 +54,7 @@ Configuration names exchanged through this file or CLI assignments are `core:req
 
 Profiles are UTF-8 files at `profiles/<name>` under the client home; profile arguments also accept file paths. Sections are `[settings]`, `[options]`, `[conf]`, `[buildenv]`, `[runenv]`, `[tool_requires]`, `[replace_requires]`, `[replace_tool_requires]`, `[platform_requires]`, and `[platform_tool_requires]`.
 
-Setting dimensions are named `os`, `arch`, and `build_type`. Settings, options, and configuration use `<key>=<value>` lines; package selectors use `<pattern>:<key>=<value>`. `include(<profile>)` names an included profile. Template expressions use `{{ ... }}`, including `os.getenv(...)`. `VELMORA_DEFAULT_PROFILE` and `VELMORA_DEFAULT_BUILD_PROFILE` are profile-selection environment variables.
+Setting dimensions are named `os`, `arch`, `build_type`, and `compiler`. The `compiler` dimension carries the subsettings `compiler.version`, `compiler.libcxx`, `compiler.cppstd`, and `compiler.mode`, written as `<key>.<subsetting>=<value>` lines. Settings, options, and configuration use `<key>=<value>` lines; package selectors use `<pattern>:<key>=<value>`. `include(<profile>)` names an included profile. Template expressions use `{{ ... }}`, including `os.getenv(...)`. `VELMORA_DEFAULT_PROFILE` and `VELMORA_DEFAULT_BUILD_PROFILE` are profile-selection environment variables.
 
 Environment entries use `NAME=value`, `NAME=!`, `NAME=+value`, or `NAME+=value`; `(path)` annotates a path value. Tool requirements are reference lines. Replacement entries use `<pattern>: <reference>` or `<pattern>: !`. Platform requirements are reference lines.
 
@@ -174,7 +174,7 @@ Recipe callbacks take only `self`: `set_name`, `set_version`, `configure`, `requ
 
 `settings`, `settings_build`, and `options` support dotted attribute access, string conversion, comparisons, and `get_safe(name)`. `conf.get(name)` returns the configured typed value.
 
-`folders.source`, `folders.build`, and `folders.generators` are writable relative-path strings. With `-of <output-folder>` on a local `install` or `build`, `build_folder` is `<output-folder>/<folders.build>` and `generators_folder` is `<output-folder>/<folders.generators>`; `source_folder` stays beneath the recipe directory. `source_folder`, `build_folder`, `package_folder`, `generators_folder`, and `deploy_folder` expose resolved directory strings. `tested_reference_str` exposes the tested recipe reference.
+`folders.source`, `folders.build`, and `folders.generators` are writable relative-path strings; a recipe that declares no layout leaves all three empty, so the selected generators directory and the local build output are the recipe directory itself. With `-of <output-folder>` on a local `install` or `build`, `build_folder` is `<output-folder>/<folders.build>` and `generators_folder` is `<output-folder>/<folders.generators>`; `source_folder` stays beneath the recipe directory. `source_folder`, `build_folder`, `package_folder`, `generators_folder`, and `deploy_folder` expose resolved directory strings. `tested_reference_str` exposes the tested recipe reference.
 
 `cpp_info` has string-list fields `includedirs`, `libdirs`, `bindirs`, `resdirs`, `libs`, `system_libs`, `defines`, `cflags`, `cxxflags`, `sharedlinkflags`, `exelinkflags`, `frameworkdirs`, and `frameworks`. `components` is a mapping supporting keyed access and `items()` pairs; `components[name]` exposes component metadata with those fields and a `requires` list of component-reference strings. Editable metadata is writable through `cpp.source` and `cpp.build`, including their `components`. `buildenv_info` and `runenv_info` expose the environment-definition interface.
 
@@ -238,7 +238,7 @@ The default package layout names are `include`, `lib`, and `bin` for `cpp_info.i
 
 ## `velmora.tools.env.Environment`
 
-`from velmora.tools.env import Environment` exposes `Environment()`. It provides `define(name, value)`, `unset(name)`, `prepend(name, value)`, `append(name, value)`, `prepend_path(name, value)`, and `append_path(name, value)`. Names and ordinary values are strings; path-operation values are strings or string lists.
+`from velmora.tools.env import Environment` exposes `Environment()`. It provides `define(name, value)`, `unset(name)`, `prepend(name, value)`, `append(name, value)`, `prepend_path(name, value)`, and `append_path(name, value)`. Names and ordinary values are strings; path-operation values are strings or string lists. Ordinary prepend and append compose their values with a single space between them; path operations compose with the platform path separator.
 
 `vars(velmorafile, scope=<scope-or-None>)` returns an environment-variable object. Its `save_script(basename)` writes a sourceable `<basename>.sh` script. Its `apply()` returns a Python context manager for the environment.
 
@@ -470,7 +470,7 @@ The cache API returned by `VelmoraAPI().cache` exposes `get_backup_sources(exclu
 
 ## `QbsDeps`
 
-`QbsDeps` is a generator selector accepted by `-g QbsDeps` or the recipe's `generators` declaration. Its output is Qbs dependency modules beneath the recipe's selected generators directory.
+`QbsDeps` is a generator selector accepted by `-g QbsDeps` or the recipe's `generators` declaration. Its output is Qbs dependency modules beneath the recipe's selected generators directory: one `<package>.json` file per dependency, in the directory and form that Qbs's own built-in module provider for this tool reads.
 
 ## `QbsProfile`
 
@@ -478,7 +478,7 @@ The cache API returned by `VelmoraAPI().cache` exposes `get_backup_sources(exclu
 
 ## `MSBuildDeps`
 
-`MSBuildDeps` is a generator selector accepted by `-g MSBuildDeps` or the recipe's `generators` declaration. Its output is `velmora_<dependency>_vars_<configuration>_<architecture>.props` beneath the recipe's selected generators directory.
+`MSBuildDeps` is a generator selector accepted by `-g MSBuildDeps` or the recipe's `generators` declaration. Its output is `velmora_<dependency>_vars_<configuration>_<architecture>.props` beneath the recipe's selected generators directory, where `<architecture>` is the MSBuild platform name for the `arch` setting: `x86_64` is written `x64`, `x86` is written `Win32`, and `armv8` is written `ARM64`.
 
 ## `velmoradeps.mk`
 
@@ -516,7 +516,7 @@ Generated `<package>-config.cmake` files are native CMake package configurations
 
 ## `velmoratoolchain.premake5.lua`
 
-`velmoratoolchain.premake5.lua` is a native Premake Lua input loaded by the consumer's project file. It provides native configuration for that workspace and its projects.
+`velmoratoolchain.premake5.lua` is a native Premake Lua input loaded by the consumer's project file. It provides native configuration for that workspace and its projects, loads `velmoradeps.premake5.lua` when that file is present beside it, and applies each dependency's include directories and libraries to the projects it configures. Build output goes to `bin` beneath the build folder.
 
 ## `velmora.tools.gnu.Autotools`
 

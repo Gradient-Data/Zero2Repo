@@ -124,7 +124,15 @@ def test_f18_t03():
         parts = invoke(view.parts, consume=True, max_items=100).value
         expected_map = {p: tuple(np.unravel_index(int(selected[p]), data.shape))
                         for p in np.ndindex(expected.shape)}
-        assert_projected_coordinates([part.projection for part in parts], edges, expected_map)
+        # Destination frame of a part projection is not fixed by the documents: accept the
+        # view's own coordinates or positions counted from zero, consistently for all parts.
+        origin = view.transform.domain.inclusive_min
+        framed = {tuple(c + o for c, o in zip(p, origin)): s for p, s in expected_map.items()}
+        projections = [part.projection for part in parts]
+        try:
+            assert_projected_coordinates(projections, edges, expected_map)
+        except AssertionError:
+            assert_projected_coordinates(projections, edges, framed)
         assembled = np.empty(expected.shape, dtype=data.dtype)
         coverage = np.zeros(expected.shape, dtype=np.int32)
         for part in reversed(parts):

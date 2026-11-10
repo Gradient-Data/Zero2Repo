@@ -1199,7 +1199,7 @@ Import `Asn1Value` from `cobaltform.core`. `Asn1Value.load(encoded_data)` accept
 
 `copy()` returns another ASN.1 object with the same public value type and field-access and serialization interfaces.
 
-`retag(tagging)` accepts a dictionary containing `explicit` or `implicit` and returns a tagged value object. `untag()` returns a value object without special tagging. Tag syntax is an integer tag, a `(class, tag)` pair, or, for nested `explicit` tagging, a tuple of such pairs. The numeric class codes are `0` for universal, `1` for application, `2` for context-specific and `3` for private.
+`retag(tagging)` accepts a dictionary containing `explicit` or `implicit` and returns a tagged value object. `untag()` returns a value object without special tagging. Tag syntax is an integer tag, a `(class, tag)` pair, or, for nested `explicit` tagging, a tuple of such pairs; in that tuple the first pair is the innermost tag and the last pair the outermost. The numeric class codes are `0` for universal, `1` for application, `2` for context-specific and `3` for private.
 
 Document rejection, including incomplete documents and incompatible ASN.1 types, is signalled by `ValueError`. The exception may arise when constructing or loading the object, reading interpreted fields, or serializing it.
 

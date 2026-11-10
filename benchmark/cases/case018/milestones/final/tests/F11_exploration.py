@@ -23,7 +23,7 @@ def test_selected_groups_and_state_operations(tmp_path):
     assert m.parked[0].addr == symbol_address(p, 'chain2')
     assert m.parked[0].history.block_count == 0
     m.move(from_stash='active', to_stash='selected',
-           filter_func=lambda s: s.solver.eval_one(s.regs.rax) == 1)
+           filter_func=lambda s: 'selected' if s.solver.eval_one(s.regs.rax) == 1 else None)
     assert len(m.selected) == len(m.active) == 1
     m.step(stash='selected')
     assert m.selected[0].addr == symbol_address(p, 'chain2')

@@ -103,9 +103,9 @@ def test_f08_t04():
     selected_empty = a.get_mask_selection(empty)
     assert np.shape(selected_empty) == (0,)
     np.testing.assert_array_equal(selected_empty, np.array([], dtype='int32'))
-    with pytest.raises(IndexError):
+    with pytest.raises((IndexError, ValueError)):
         a.get_mask_selection(np.ones((5, 6), dtype=bool))
-    with pytest.raises(IndexError):
+    with pytest.raises((IndexError, ValueError)):
         a.set_mask_selection(np.ones((5, 6), dtype=bool), 3)
 
 

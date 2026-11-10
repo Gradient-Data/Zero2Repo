@@ -57,6 +57,10 @@ def distribution_index(root, wheels):
         filename = wheel.name.removeprefix("F04_") if wheel == backend else wheel.name
         name, _, _, _ = parse_wheel_filename(filename)
         target = artifacts / filename
+        if target.exists():
+            # One filename names one artifact; the first listed wins, so a later
+            # copy can never replace bytes whose digest is already linked.
+            continue
         shutil.copyfile(wheel, target)
         digest = hashlib.sha256(target.read_bytes()).hexdigest()
         links.setdefault(name, []).append(f'<a href="/files/{filename}#sha256={digest}">{filename}</a>')

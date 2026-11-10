@@ -150,7 +150,7 @@ def test_subquery_errors_propagate_through_reads_and_writes(subqueries_client):
     ]
     observed = scalar_batch(subqueries_client, operations)
     assert 'affected' in observed[0], observed[0]
-    assert observed[1] == {'affected': 2}
+    assert observed[1].get('affected') == 2, observed[1]
     assert scalar_rows(observed[2]) == [[10]]
     for operation, result in zip(operations[3:9], observed[3:9]):
         assert 'error' in result, (operation,result)

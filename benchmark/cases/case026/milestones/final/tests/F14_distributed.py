@@ -18,9 +18,9 @@ def test_combined_local_remote_and_mixed_catalogs(tmp_path):
         var b=itemCatalog(new Item("shared",3,7,"x",true),new Item("remote",4,11,"y",true));
         try(var na=new QueryNode(a);var ne=new QueryNode(empty);var nb=new QueryNode(b)) {
             var builders=List.of(
-                distributed(Path.of("local"),2).node("a",a).node("empty",empty).node("b",b),
-                distributed(Path.of("remote"),2).node("a",na.uri()).node("empty",ne.uri()).node("b",nb.uri()),
-                distributed(Path.of("mixed"),2).node("a",a).node("empty",ne.uri()).node("b",nb.uri()));
+                distributed(Files.createDirectories(Path.of("local")),2).node("a",a).node("empty",empty).node("b",b),
+                distributed(Files.createDirectories(Path.of("remote")),2).node("a",na.uri()).node("empty",ne.uri()).node("b",nb.uri()),
+                distributed(Files.createDirectories(Path.of("mixed")),2).node("a",a).node("empty",ne.uri()).node("b",nb.uri()));
             for(var builder:builders) {
                 var engine=builder.build();
                 distributedBag(engine,"SELECT label AS label, value AS value FROM items",Map.of(),
@@ -42,8 +42,8 @@ def test_bindings_reuse_remote_text_interpretation_and_headers(tmp_path):
             new Item("literal",7,"1e3","x",true));
         String sql="SELECT label AS label FROM items WHERE value = :needle";
         try(var node=new QueryNode(catalog)) {
-            var local=distributed(Path.of("local"),2).node("local",catalog).build();
-            var remote=distributed(Path.of("remote"),2).node("remote",node.uri()).build();
+            var local=distributed(Files.createDirectories(Path.of("local")),2).node("local",catalog).build();
+            var remote=distributed(Files.createDirectories(Path.of("remote")),2).node("remote",node.uri()).build();
             distributedBag(local,sql,Map.of("needle",42),queryRow("label","number"));
             distributedBag(local,sql,Map.of("needle","42"),queryRow("label","text"));
             Object[] bindings={"42","true","3.125","null","水 & = + %","1e3",42};
@@ -119,7 +119,7 @@ def test_cross_node_joins_multiplicity_and_numeric_representations(tmp_path):
         String chain="SELECT l.label AS leftName, r.label AS rightName, t.label AS tailName FROM lhs l "
             +"JOIN rhs r ON l.link = r.link JOIN tail t ON r.label = t.link";
         try(var na=new QueryNode(a);var nb=new QueryNode(b)) {
-            var engine=distributed(Path.of("join"),3).node("a",na.uri()).node("b",nb.uri()).build();
+            var engine=distributed(Files.createDirectories(Path.of("join")),3).node("a",na.uri()).node("b",nb.uri()).build();
             eq(rowBag(expected),rowBag(distributedRows(engine,sql,Map.of())));
             eq(rowBag(chained),rowBag(distributedRows(engine,chain,Map.of())));
         }
@@ -146,7 +146,7 @@ def test_distributed_grouping_summary_family_and_empty_inputs(tmp_path):
         var ca=new Catalog().add("measures",a,measureSchema()).add("words",textA,measureSchema());
         var cb=new Catalog().add("measures",b,measureSchema()).add("words",textB,measureSchema());
         try(var na=new QueryNode(ca);var nb=new QueryNode(cb)) {
-            var engine=distributed(Path.of("aggregate"),2).node("a",na.uri()).node("b",nb.uri()).build();
+            var engine=distributed(Files.createDirectories(Path.of("aggregate")),2).node("a",na.uri()).node("b",nb.uri()).build();
             distributedSummary(engine,"SELECT "+SUMMARIES+" FROM measures WHERE included = true",
                 summary(8,6,26,26d/6,-4,12,34,true));
             var one=summary(5,4,20,5,-4,12,28,false);one.put("bucket","one");
@@ -175,7 +175,7 @@ def test_global_order_and_ordered_or_unordered_limits(tmp_path):
             queryRow("label","tie","value",5),queryRow("label","tie","value",5),
             queryRow("label","d","value",8),queryRow("label","a","value",9));
         try(var nb=new QueryNode(b)) {
-            var engine=distributed(Path.of("order"),2).node("a",a).node("b",nb.uri()).build();
+            var engine=distributed(Files.createDirectories(Path.of("order")),2).node("a",a).node("b",nb.uri()).build();
             String select="SELECT label AS label, value AS value FROM items";
             orderedRows(ascending,distributedRows(engine,select+" ORDER BY value ASC",Map.of()));
             List<Map<String,Object>> descending=new ArrayList<>(ascending);Collections.reverse(descending);
@@ -222,7 +222,7 @@ def test_result_count_incremental_iteration_stream_and_immutable_rows(tmp_path):
     run_distributed_scenario(tmp_path, r'''
         Map<String,Item> data=new LinkedHashMap<>();
         for(int i=0;i<73;i++) data.put("key"+i,new Item("label"+i,i,i,"x",true));
-        var engine=distributed(Path.of("result"),4).node("a",new Catalog().add("items",data,itemSchema())).build();
+        var engine=distributed(Files.createDirectories(Path.of("result")),4).node("a",new Catalog().add("items",data,itemSchema())).build();
         String sql="SELECT value AS value FROM items";
         for(boolean streaming:new boolean[]{false,true}) {
             try(var result=engine.query(sql)) {
@@ -344,7 +344,7 @@ def test_over_allowance_duplicate_joins_and_independent_early_close(tmp_path):
 def test_distributed_configuration_validation(tmp_path):
     run_distributed_scenario(tmp_path, r'''
         var catalog=itemCatalog(new Item("working",1,5,"x",true));
-        var valid=distributed(Path.of("valid"),1).node("Az09._-",catalog).build();
+        var valid=distributed(Files.createDirectories(Path.of("valid")),1).node("Az09._-",catalog).build();
         distributedBag(valid,"SELECT label AS label FROM items",Map.of(),queryRow("label","working"));
         rejects(IllegalStateException.class,()->DistributedQueryEngine.builder().build());
         rejects(IllegalStateException.class,()->DistributedQueryEngine.builder()

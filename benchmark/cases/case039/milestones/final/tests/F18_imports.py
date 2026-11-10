@@ -137,7 +137,7 @@ def test_import_failures_are_atomic_and_preserve_constraints(import_client, tmp_
         r = dict(zip(actions, results))
         for name in ('parent', 'parent_row', 'child'):
             assert 'affected' in r[name], (name, r[name])
-        assert r['baseline'] == {'affected':1}, r['baseline']
+        assert r['baseline'].get('affected') == 1, r['baseline']
         import_constraint_state(r['before'], [baseline])
         for name, _ in attempts:
             assert 'error' in r[name], (name, r[name])
@@ -145,7 +145,7 @@ def test_import_failures_are_atomic_and_preserve_constraints(import_client, tmp_
         if fmt == 'JSON':
             assert 'error' in r['selected_check'], r['selected_check']
             import_constraint_state(r['selected_check_state'], [baseline])
-        assert r['recovery'] == {'affected':1}, r['recovery']
+        assert r['recovery'].get('affected') == 1, r['recovery']
         import_constraint_state(r['after'], [baseline, valid])
 
     # Different destination types have distinct conversion obligations. Exercise

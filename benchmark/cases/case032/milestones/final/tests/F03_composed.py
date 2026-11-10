@@ -191,7 +191,9 @@ def test_f03_t06():
         result = read_array(law.log_prob(points))
     assert not records
     close(result, np.log([oracle.cdf(.8), oracle.cdf(.8), oracle.sf(.8), oracle.sf(.8), 1-(oracle.cdf(.8+4e-6)-oracle.cdf(.8))]))
-    bad_points = jnp.array([[.8, -.2], [-.2, .8], [.8, .2], [.8, .2], [-.2, -.2], [.8, .8]])
+    # Every row is a refusal the PRD states: an endpoint outside the base support,
+    # or unordered interval endpoints. Equal endpoints are ordered and are not one.
+    bad_points = jnp.array([[.8, -.2], [-.2, .8], [.8, .2], [.8, .2], [-.2, -.2], [.8, -.2]])
     bad = dist.IntervalCensoredDistribution(base, jnp.array([1, 0, 0, 1, 0, 1], dtype=bool), jnp.array([0, 1, 0, 1, 0, 1], dtype=bool), validate_args=True)
     with pytest.warns(UserWarning):
         result = read_array(bad.log_prob(bad_points))

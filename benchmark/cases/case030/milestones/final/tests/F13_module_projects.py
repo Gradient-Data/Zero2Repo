@@ -70,8 +70,11 @@ def test_project_dependency_errors(tmp_path):
     records = dependency_records(cycle)
     assert records, (cycle.stdout, cycle.stderr)
     for participant in (root / 'pkg/one', root / 'pkg/two'):
-        assert any(information_contains(message, str(participant))
-                   for _, message in records), (participant, cycle.stdout)
+        # The identifier may be spelled as given on the command line (relative to the
+        # invocation directory) or resolved; both are the caller's own identifier.
+        spellings = (str(participant), str(participant.relative_to(root)))
+        assert any(information_contains(message, spelling)
+                   for _, message in records for spelling in spellings), (participant, cycle.stdout)
 
     root = session.root / 'missing'
     root.mkdir()

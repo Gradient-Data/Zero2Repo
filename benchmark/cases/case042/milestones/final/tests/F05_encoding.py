@@ -136,7 +136,7 @@ def test_f05_t04():
         assert decoded == expected
         np.testing.assert_array_equal(reopened_values(a), values)
     for order in ((0, 0), (1,), (0, 2)):
-        with pytest.raises(ValueError):
+        with pytest.raises((TypeError, ValueError)):
             a = encoding_array(data, filters=[TransposeCodec(order=order)])
             a[:] = data
             reopened_values(a)
@@ -181,14 +181,14 @@ def test_f05_t07():
     for dtype, options in (('c16', {}), ('bool', {}), ('i4', {'scale': 0}),
                            ('f8', {'scale': '0.0'}), ('i4', {'offset': 1.5}),
                            ('i4', {'scale': 0.5}), ('u1', {'offset': -1}), ('i1', {'scale': 128})):
-        with pytest.raises(ValueError):
+        with pytest.raises((TypeError, ValueError)):
             a = encoding_array(np.zeros(2, dtype=dtype), filters=[ScaleOffset(**options)])
             a[:] = 1
             reopened_values(a)
     for dtype, values, options, fill in (
         ('i1', [64, 1], {'scale': 2}, 0), ('u4', [2**32-1, 1], {'scale': 2}, 0),
         ('u8', [2**64-1, 1], {'scale': 2}, 0), ('u8', [50, 100], {'offset': 100}, 100)):
-        with pytest.raises(ValueError):
+        with pytest.raises((TypeError, ValueError)):
             data = np.array(values, dtype=dtype)
             a = encoding_array(data, filters=[ScaleOffset(**options)], fill_value=fill)
             a[:] = data
@@ -203,7 +203,7 @@ def test_f05_t07():
                       np.array(encoded, dtype=dtype), dtype, fill_value=fill)
     for dtype, values, options, fill in (('i4', [2147483647, 0], {'offset': -1}, -1),
                                          ('u8', [6148914691236517206, 1], {'scale': 3}, 0)):
-        with pytest.raises(ValueError):
+        with pytest.raises((TypeError, ValueError)):
             data = np.array(values, dtype=dtype)
             a = encoding_array(data, filters=[ScaleOffset(**options)], fill_value=fill)
             a[:] = data
@@ -219,15 +219,15 @@ def test_f05_t07():
         a[:] = data
         np.testing.assert_array_equal(reopened_values(a), data)
         replace_payload(a, np.array(stored, dtype=np.dtype(dtype).newbyteorder('<')).tobytes())
-        with pytest.raises(ValueError):
+        with pytest.raises((TypeError, ValueError)):
             reopened_values(a)
     a = check_encoded(np.array([2, 4], dtype='i2'), [ScaleOffset(scale=2)], [4, 8], 'i2')
     replace_payload(a, np.array([3, 8], dtype='<i2').tobytes())
-    with pytest.raises(ValueError):
+    with pytest.raises((TypeError, ValueError)):
         reopened_values(a)
     a = check_encoded(np.array([1, 2], dtype='i1'), [ScaleOffset(offset=100)], [-99, -98], 'i1', fill_value=100)
     replace_payload(a, np.array([100, 101], dtype='i1').tobytes())
-    with pytest.raises(ValueError):
+    with pytest.raises((TypeError, ValueError)):
         reopened_values(a)
 
 

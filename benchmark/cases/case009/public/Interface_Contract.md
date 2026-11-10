@@ -71,7 +71,7 @@ Keys are read from every Git configuration file and, for the keys marked `.lfsco
 | `lfs.extension.<name>.clean` / `.smudge` | command line | extension commands (FP-16) | no |
 | `lfs.extension.<name>.priority` | non-negative integer | extension priority (FP-16) | no |
 
-Keys `filter.lfs.clean`, `filter.lfs.smudge`, `filter.lfs.process`, and `filter.lfs.required` are the Git filter definition that `install` writes and `uninstall` removes. Their values are commands that run `git-orbulk` (exact argv free).
+Keys `filter.lfs.clean`, `filter.lfs.smudge`, `filter.lfs.process`, and `filter.lfs.required` are the Git filter definition that `install` writes and `uninstall` removes. The values of the first three are commands that run `git-orbulk` (exact argv free); `filter.lfs.required` is a Boolean key whose value is `true`.
 
 ### Environment variables
 

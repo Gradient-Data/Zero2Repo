@@ -52,15 +52,17 @@ The product is a batch document processor and a programmatic PDF library. It tur
 
 - Apply caller-defined style rules to document elements selected by element type, style label, attributes, direct parent or more distant ancestor context. Rules can target inline text separately from surrounding block content.
 
-- Higher selector priority takes precedence over specificity; ordinary selectors have priority zero. At equal priority, more matching style-label constraints take precedence; if those counts are equal, more matching ordinary attribute constraints take precedence over element-type constraints. With otherwise identical constraints, an exact element type outranks a broader type, and additional matching ancestor constraints increase specificity.
+- Higher selector priority takes precedence over specificity; ordinary selectors have priority zero. At equal priority, more matching style-label constraints take precedence; if those counts are equal, more matching ordinary attribute constraints take precedence over element-type constraints. With otherwise identical constraints, an exact element type outranks a broader type, and additional matching ancestor constraints increase specificity. When a derived style sheet and the sheet it extends both carry a matching rule of equal specificity, the derived sheet's rule is selected.
 
-- A style sheet can extend another style sheet. A derived definition overrides the properties it supplies and retains the remaining properties of the corresponding base definition. A caller can instead reset that definition to the element's default style.
+- A style sheet can extend another style sheet. A derived definition overrides the properties it supplies and retains the remaining properties of the corresponding base definition. A caller can instead reset that definition to the element's default style. When a derived definition also names a base style, that named base supplies the properties the definition leaves unspecified, in place of the corresponding base-sheet definition.
+
+- A style object supplied directly on an element takes the properties it sets; the properties it leaves unset come from the style-sheet rule that matches that element.
 
 - Styles can inherit properties from a named base style. Inline text inherits unspecified properties from its containing text or paragraph; block elements do not inherit their parent's properties unless parent inheritance is explicitly selected for compatible element types. An explicitly selected lower-priority matching style supplies properties left unspecified by the higher-priority rule.
 
 - Style variables supply reusable property values. Redefining a variable in a derived style sheet changes every inherited definition that refers to that variable, while literal property values retain their specified values.
 
-- Load style sheets from caller-supplied files or select the included book and article styles, each available with either TeX Gyre text faces or PDF core text faces. The TeX Gyre versions use Pagella for serif text, Heros for sans-serif text and Cursor for monospaced text; the PDF core versions use Times, Helvetica and Courier for those respective roles. Relative references to a base style sheet are resolved relative to the style sheet containing the reference.
+- Load style sheets from caller-supplied files or select the included book and article styles, each available with either TeX Gyre text faces or PDF core text faces. The TeX Gyre versions use Pagella for serif text, Heros for sans-serif text and Cursor for monospaced text; the PDF core versions use Times, Helvetica and Courier for those respective roles. Relative references to a base style sheet are resolved relative to the style sheet containing the reference. The included style sheets, and any style sheet created without a base sheet or an explicit selector mapping, carry the default label mapping, in which the label `body` selects ordinary paragraphs.
 
 - Styling can set text size and color, block margins and padding, border width and color, and background color. Per-side borders and nonzero per-side padding override the corresponding general border or padding setting. An omitted per-side padding or a directly supplied numeric zero retains the general padding. Zero-valued physical-length objects are outside this zero-padding guarantee. Marking an element hidden removes its rendered content; an explicitly hidden list label leaves the item body visible.
 
@@ -108,9 +110,9 @@ The product is a batch document processor and a programmatic PDF library. It tur
 
 - A paragraph can require a minimum number of its lines to remain in the current page or column when it must continue elsewhere. If fewer than that minimum fit the remaining space, move that portion to the next area, provided the minimum fits a fresh area. By default no minimum is imposed.
 
-- Repeated page headers and footers display caller-supplied content outside the body. Distinct left, right and chapter-opening page settings change the corresponding pages' decorations and chapter-title placement.
+- Repeated page headers and footers display caller-supplied content outside the body. Distinct left, right and chapter-opening page settings change the corresponding pages' decorations and chapter-title placement. Configured chapter-title content replaces the chapter's own top-level heading, which is then not rendered elsewhere.
 
-- Callers can select and reorder document parts and omit parts. Empty parts configured for omission contribute no pages. Callers can place additional content at a selected position in an existing named part.
+- Callers can select and reorder document parts and omit parts. Empty parts configured for omission contribute no pages. Callers can place additional content at a selected position in an existing named part. A part named `<part>` lays out its pages with the page templates named `<part>_page`, `<part>_left_page` and `<part>_right_page`.
 
 - Each document part can restart page numbering with a selected numbering format or continue the preceding part's numbering. A required ending page side introduces the blank page needed to make the next part start on the opposite side.
 
@@ -140,7 +142,7 @@ The product is a batch document processor and a programmatic PDF library. It tur
 
 - An image file that cannot be opened makes rendering unsuccessful and identifies the unavailable image. Any resulting document displays the supplied alternative text, or a visible image-error indication when no alternative text was supplied.
 
-- Caller-supplied lines, polygons and rectangles appear with the requested geometry, stroke width, stroke color and fill color. Omitting a stroke or fill suppresses that part of the drawing while retaining the other requested part.
+- Caller-supplied lines, polygons and rectangles appear with the requested geometry, stroke width, stroke color and fill color. Omitting a stroke or fill suppresses that part of the drawing while retaining the other requested part. Drawing coordinates are measured from the top-left corner of the containing area, with the second coordinate increasing downwards.
 
 ### FP-11: Tables and tabular pagination
 

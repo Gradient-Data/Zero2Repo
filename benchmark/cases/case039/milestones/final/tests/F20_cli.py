@@ -29,10 +29,10 @@ def test_command_results_and_display_limit(cli_binary, tmp_path):
         assert len({tuple(row) for row in limited}) == len(limited), limited
         assert all(row in full for row in limited), limited
         cli_rows(cli_query(cli_binary, tmp_path, dsn, sql), ["id", "label"], expected)
-    written = cli_ok(cli_run(cli_binary, tmp_path, "-e",
-        "UPDATE items SET label='cedar' WHERE id IN (2,9)", dsn=dsn, quiet=False))
+    written = cli_run(cli_binary, tmp_path, "-e",
+        "UPDATE items SET label='cedar' WHERE id IN (2,9)", dsn=dsn, quiet=False)
     from F20_helpers import cli_affected
-    assert cli_affected(written) == 2
+    assert cli_affected(written, check_stderr=False) == 2
     expected = [[key, "cedar" if key in (2,9) else label] for key,label in expected]
     cli_rows(cli_query(cli_binary, tmp_path, dsn, sql), ["id", "label"], expected)
     updated = cli_json(cli_run(cli_binary, tmp_path, "-j", "-l", "0", "-e",

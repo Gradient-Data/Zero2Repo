@@ -37,9 +37,11 @@ async def test_f17_t01(tmp_path):
                  ('commit', '-m', 'Add review skill'), ('tag', 'selected')]:
         result = run_process(['git', '-C', str(source), *args])
         assert result.returncode == 0, result.stderr
-    with environment({'GIT_CONFIG_COUNT': '1',
+    with environment({'GIT_CONFIG_COUNT': '2',
         'GIT_CONFIG_KEY_0': f'url.{source.as_uri()}.insteadOf',
-        'GIT_CONFIG_VALUE_0': 'https://skills.invalid/library.git'}):
+        'GIT_CONFIG_VALUE_0': 'https://skills.invalid/library.git',
+        'GIT_CONFIG_KEY_1': f'url.{source.as_uri()}.insteadOf',
+        'GIT_CONFIG_VALUE_1': 'https://skills.invalid/library'}):
         for mode in ('local', 'git', 'on-demand'):
             capability = (Skills(lazy_from=LocalDirLazySkillSource(source=LocalDir(src=source)))
                 if mode == 'on-demand' else Skills(from_=(LocalDir(src=source) if mode == 'local'

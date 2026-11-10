@@ -326,18 +326,18 @@ def test_malformed_rules_in_an_ignore_file_option_and_suppression(tmp_path):
 def test_filters_plain_output_more_types_and_nested_diagnostics(tmp_path):
     from _helpers import make_sparse_file
     sel, body = _sel(tmp_path)
-    files = {"a.go": body, "b.toml": body, "c.java": body, "d.sh": body, "deep/e.go": body,
-             "large.go": body * 30, "plain.txt": body}
+    files = {"a.rs": body, "b.py": body, "c.js": body, "d.c": body, "deep/e.rs": body,
+             "large.rs": body * 30, "plain.txt": body}
     make_tree(tmp_path / "w", files)
-    for kind, name in (("go", "a.go"), ("toml", "b.toml"), ("java", "c.java"), ("sh", "d.sh")):
+    for kind, name in (("rust", "a.rs"), ("py", "b.py"), ("js", "c.js"), ("c", "d.c")):
         r = sel.run(["--max-depth", "1", "--max-filesize", str(len(body)), "-t", kind,
                      "-g", "*", sel.token, "w"])
         assert_exit(r, "match")
         assert out_lines(r) == [f"w/{name}:{sel.token}"]
-    make_tree(tmp_path / "w/deep", {".ignore": "[z-a]\n*.go\n"})
+    make_tree(tmp_path / "w/deep", {".ignore": "[z-a]\n*.rs\n"})
     r = sel.run([sel.token, "w"])
     assert any(path.endswith("deep/.ignore") and line == 1 for path, line in ignore_reports(r))
-    assert "w/deep/e.go:" not in r.out
+    assert "w/deep/e.rs:" not in r.out
     make_sparse_file(tmp_path / "sparse/inside.txt", 1_020_000_000)
     make_sparse_file(tmp_path / "sparse/outside.txt", 1_073_741_825)
     r = sel.run(["--files", "--max-filesize", "1G", "sparse"])

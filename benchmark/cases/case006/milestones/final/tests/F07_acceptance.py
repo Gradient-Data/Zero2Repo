@@ -1320,7 +1320,7 @@ def test_group_resource_stays_open_through_child_and_closes_after_invoke():
     assert probe.closed
     assert not probe.available
     text = _stdout(result)
-    assert text.find(child_hi) < text.find("OPEN:") or "OPEN:" in text
+    assert text.find(child_hi) < text.find("OPEN:")
 
 
 def test_resource_cleanup_runs_on_standalone_process_exit():

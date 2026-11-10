@@ -122,7 +122,10 @@ def test_f16_t03():
     result = invoke(source.intersect, IndexDomain((2, 2, 5), (9, 8, 6))).value
     assert result is not None
     retained, _ = result
-    assert_coordinate_mapping(retained, (10, 21), (13, 23),
+    # Dropping position 12 renumbers the first axis; the documents leave its new
+    # origin open, so it is checked relative to its own lower bound.
+    start = retained.domain.inclusive_min[0]
+    assert_coordinate_mapping(retained, (start, 21), (start + 3, 23),
                               [(x, y, 5) for x in (8, 2, 2) for y in (3, 6)])
     assert source.intersect(IndexDomain((30, 2, 5), (40, 8, 6))) is None
     assert source.intersect(IndexDomain((2, 2, 6), (9, 8, 7))) is None

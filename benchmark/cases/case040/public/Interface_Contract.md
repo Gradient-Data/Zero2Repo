@@ -248,7 +248,7 @@ Alignment strings are `top`, `middle`, and `bottom`; natural height uses `pack`.
 
 `velnora.Columns(widget_list, dividechars=..., min_width=..., *, select_navigation=...)` accepts a child iterable, optional integer gap and minimum width, and an optional boolean navigation setting.
 
-Child declarations are a widget, `(amount, widget)`, `('pack', widget)`, `('given', amount, widget)`, or `('weight', amount, widget)`. `amount` is numeric. `contents` is a mutable sequence of `(widget, options)` pairs supporting indexing, replacement, append, deletion, and `len`.
+Child declarations are a widget, `(amount, widget)`, `('pack', widget)`, `('given', amount, widget)`, or `('weight', amount, widget)`. `amount` is numeric; the two-element form is the given form, so `(amount, widget)` and `('given', amount, widget)` declare the same allocation. `contents` is a mutable sequence of `(widget, options)` pairs supporting indexing, replacement, append, deletion, and `len`.
 
 `options(width_type, width_amount)` also accepts omitted arguments and returns an option tuple suitable for `contents`. Its size-kind strings are `pack`, `given`, and `weight`. Invalid allocation declarations raise `ColumnsError`.
 
@@ -262,7 +262,7 @@ The widget entries `render`, `keypress`, and `mouse_event` use the widget protoc
 
 `velnora.Pile(widget_list, focus_item=..., *, select_navigation=...)` accepts a child iterable, an optional initial focus index, and an optional boolean navigation setting.
 
-Child declarations are a widget, `(amount, widget)`, `('pack', widget)`, `('given', amount, widget)`, or `('weight', amount, widget)`. `amount` is numeric. `contents` is a mutable sequence of `(widget, options)` pairs supporting indexing, replacement, append, deletion, and `len`.
+Child declarations are a widget, `(amount, widget)`, `('pack', widget)`, `('given', amount, widget)`, or `('weight', amount, widget)`. `amount` is numeric; the two-element form is the given form, so `(amount, widget)` and `('given', amount, widget)` declare the same allocation. `contents` is a mutable sequence of `(widget, options)` pairs supporting indexing, replacement, append, deletion, and `len`.
 
 `options(height_type, height_amount)` also accepts omitted arguments and returns an option tuple suitable for `contents`. Its size-kind strings are `pack`, `given`, and `weight`. Invalid allocation declarations raise `PileError`.
 

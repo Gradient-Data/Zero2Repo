@@ -133,7 +133,7 @@ def test_explicit_conversions(scalar_client):
     out=scalar_values(scalar_client,["CAST('2031-08-19' AS TIMESTAMP)",
         "CAST('2031-08-19T04:05:06+02:00' AS TIMESTAMP)",
         "CAST(-419 AS TEXT)","CAST(TRUE AS TEXT)","CAST(FALSE AS TEXT)",
-        "CAST(TIMESTAMP '2031-08-19 02:05:06' AS TEXT)"])
+        "CAST(CAST('2031-08-19 02:05:06' AS TIMESTAMP) AS TEXT)"])
     assert utc_instant(out[0]) == dt.datetime(2031,8,19,tzinfo=dt.timezone.utc)
     expected=dt.datetime(2031,8,19,2,5,6,tzinfo=dt.timezone.utc)
     assert utc_instant(out[1]) == expected

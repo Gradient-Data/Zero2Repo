@@ -223,20 +223,22 @@ def test_context_clock_and_implicit_timezone():
                            'string(xs:time("12:00:00") - xs:time("12:00:00Z"))'):
             assert datatype_expression(expression, context=zoned) == expected_difference
     assert time.timezone == 0, 'The acceptance clock-default check requires a UTC host'
+    # A supplied current date-time is shared across the three queries (checked
+    # above). With none supplied the documents only require the host clock, so
+    # each query is checked against the window it was read in rather than
+    # against the other two.
     before = dt.datetime.now()
     local = XPathContext(item=1)
     observed = datatype_expression('current-dateTime()', context=local)
+    date_value = datatype_expression('current-date()', context=local)
+    time_value = datatype_expression('current-time()', context=local)
     after = dt.datetime.now()
     sample = dt.datetime(observed.year, observed.month, observed.day, observed.hour,
                          observed.minute, observed.second, observed.microsecond)
     assert before <= sample <= after
-    date_value = datatype_expression('current-date()', context=local)
-    time_value = datatype_expression('current-time()', context=local)
-    assert (date_value.year, date_value.month, date_value.day) == \
-        (sample.year, sample.month, sample.day)
-    assert (time_value.hour, time_value.minute, time_value.second, time_value.microsecond) == \
-        (sample.hour, sample.minute, sample.second, sample.microsecond)
-    assert datatype_expression('current-dateTime()', context=local) == observed
+    assert before.date() <= dt.date(date_value.year, date_value.month, date_value.day) <= after.date()
+    clock = dt.time(time_value.hour, time_value.minute, time_value.second, time_value.microsecond)
+    assert before.date() != after.date() or before.time() <= clock <= after.time()
     assert datatype_expression('seconds-from-duration(implicit-timezone())', context=local) == 0
     assert datatype_expression('string(adjust-time-to-timezone(xs:time("12:00:00+02:00")))',
                                    context=XPathContext(item=1, timezone='+05:30')) == \

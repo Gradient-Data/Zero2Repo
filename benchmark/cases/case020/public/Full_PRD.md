@@ -16,7 +16,7 @@ Velmora is a decentralized C and C++ package manager for sharing binary artifact
 
 - Package-pattern assignments apply only to matching packages. Matching package-specific settings override unscoped settings, and later matching assignments to the same setting override earlier ones.
 
-- Settings are checked against the installed setting definitions, including caller-provided extensions. The supplied definitions accept Linux, Windows, Macos and FreeBSD operating-system selections; x86, x86_64 and armv8 architecture selections; and Debug, Release, RelWithDebInfo and MinSizeRel build configurations. Unknown settings and values outside a declared domain are refused. Missing settings required by a recipe make the package configuration invalid; graph inspection reports the invalid configuration and installation refuses it.
+- Settings are checked against the installed setting definitions, including caller-provided extensions. The supplied definitions accept Linux, Windows, Macos and FreeBSD operating-system selections; x86, x86_64 and armv8 architecture selections; Debug, Release, RelWithDebInfo and MinSizeRel build configurations; and gcc, clang and intel-cc compiler selections, each carrying a version, a standard-library selection, a language-standard selection and, where the family offers one, a driver-mode selection. Unknown settings and values outside a declared domain are refused. Missing settings required by a recipe make the package configuration invalid; graph inspection reports the invalid configuration and installation refuses it.
 
 - Profile detection records the detected operating system, architecture and available compiler information as a starting profile. An existing profile is protected from replacement unless the caller explicitly requests replacement.
 
@@ -204,7 +204,7 @@ Velmora is a decentralized C and C++ package manager for sharing binary artifact
 
 - Package listing can select recipe versions, recipe revisions, binary identities and package revisions, either explicitly, by patterns or by latest-revision selection. It exposes the selected binaries and their settings and options. A missing exact reference is identified as missing rather than substituted with another reference.
 
-- Binary queries combine setting and option conditions with conjunction, disjunction and grouping. Results contain only matching configurations; a malformed query is refused as an invalid selection.
+- Binary queries combine setting and option conditions with conjunction, disjunction and grouping. Results contain only matching configurations; a malformed query is refused as an invalid selection. When a package listing carries such a refusal, or names an exact reference that is missing, the listing itself succeeds and reports the refusal as an error entry against the searched location rather than failing the command.
 
 - Local selections can be restricted to artifacts unused for longer than a caller-specified duration. Using a package as a dependency refreshes its last-use time. An age-based selection against a remote is refused as unsupported.
 

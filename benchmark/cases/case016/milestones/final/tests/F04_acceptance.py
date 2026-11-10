@@ -142,10 +142,25 @@ def test_contract_does_not_say_it_applies_to_source_code(level):
 @pytest.mark.parametrize("level", ["lite", "full", "strict"])
 def test_on_level_contract_is_more_than_the_banned_word_list(level):
     with workspace() as ws:
+        ws.write_mode_flag("full")
+        full_text = session_text(session_start(ws))
+        full_paths = workspace_paths(ws)
+    with workspace() as ws:
         ws.write_mode_flag(level)
         text = session_text(session_start(ws))
+        paths = workspace_paths(ws)
     require_banned_list(text)
-    print(f"[F04] {level} banned-list is the graded contract body", flush=True)
+    # The contract carries stated shell parts beyond the vocabulary list: the
+    # source-code scope sentence at every level, and the per-level scoring and
+    # cleanup targets.
+    require_not_source_code_scope(text, *paths)
+    if level == "full":
+        require_full_scoring(text, *paths)
+    elif level == "lite":
+        require_lite_omits_scoring(text, full_text, *paths, *full_paths)
+    else:
+        require_strict_cleanup(text, full_text, *paths, *full_paths)
+    print(f"[F04] {level} contract carries its non-vocabulary parts", flush=True)
 
 
 # ===========================================================================

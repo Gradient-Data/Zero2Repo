@@ -13,6 +13,26 @@ from F05_helpers import finite_state_evidence
 from F13_helpers import (make_gaussian, scalar_system, linear_joint,
     conditional_normal, matern_cov, check_temporal, learn_temporal)
 
+STANDARD_SMOOTHNESS = (.5, 1.5, 2.5)
+
+
+def check_temporal_any_smoothness(model, targets, mean, covariance_for_nu, future, **kwargs):
+    """check_temporal against every standard Matern order, accepting the first match.
+
+    The public documents fix no smoothness for the internal Matern noise of
+    GenericLGSSMWithGPNoiseModel, so any of the standard orders is a faithful
+    reading. A covariance that is wrong for a different reason still fails all
+    three.
+    """
+    failures = []
+    for nu in STANDARD_SMOOTHNESS:
+        try:
+            check_temporal(model, targets, mean, covariance_for_nu(nu), future, **kwargs)
+            return
+        except AssertionError as exc:
+            failures.append('nu={}: {}'.format(nu, exc))
+    raise AssertionError('no standard Matern order matches; ' + ' | '.join(failures))
+
 
 def test_f13_t01():
     with isolated_state(dtype=torch.float64):
@@ -293,10 +313,15 @@ def test_f13_t09():
                     np.repeat(b[None],6,0),np.zeros((6,2)),np.repeat(r[None],6,0))
                 mean,cov = mean[:-2],cov[:-2,:-2]
                 if gp:
-                    for j in range(2):
-                        idx = np.arange(j,12,2)
-                        cov[np.ix_(idx,idx)] += matern_cov(np.arange(6),1.5,model.kernel.length_scale[j].item(),model.kernel.kernel_scale[j].item())
-                check_temporal(model,targets,mean,cov,2,check_covariance=not gp)
+                    def gp_covariance(nu, base=cov, m=model):
+                        c = base.copy()
+                        for j in range(2):
+                            idx = np.arange(j,12,2)
+                            c[np.ix_(idx,idx)] += matern_cov(np.arange(6),nu,m.kernel.length_scale[j].item(),m.kernel.kernel_scale[j].item())
+                        return c
+                    check_temporal_any_smoothness(model,targets,mean,gp_covariance,2,check_covariance=False)
+                else:
+                    check_temporal(model,targets,mean,cov,2)
             if gp:
                 # The original omits posterior cross-component covariance.
                 # Its covariance is dependable when the linear contribution is
@@ -304,10 +329,13 @@ def test_f13_t09():
                 with torch.no_grad():
                     observation.zero_()
                 cov = np.kron(np.eye(6),np.diag(model.obs_noise_scale.detach().numpy()**2))
-                for j in range(2):
-                    idx = np.arange(j,12,2)
-                    cov[np.ix_(idx,idx)] += matern_cov(np.arange(6),1.5,model.kernel.length_scale[j].item(),model.kernel.kernel_scale[j].item())
-                check_temporal(model,targets,np.zeros(12),cov,2)
+                def gp_only_covariance(nu, base=cov, m=model):
+                    c = base.copy()
+                    for j in range(2):
+                        idx = np.arange(j,12,2)
+                        c[np.ix_(idx,idx)] += matern_cov(np.arange(6),nu,m.kernel.length_scale[j].item(),m.kernel.kernel_scale[j].item())
+                    return c
+                check_temporal_any_smoothness(model,targets,np.zeros(12),gp_only_covariance,2)
 
 
 def test_f13_t10():

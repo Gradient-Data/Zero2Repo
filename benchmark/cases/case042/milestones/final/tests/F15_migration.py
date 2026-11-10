@@ -40,7 +40,7 @@ def test_f15_t01(tmp_path):
         before = array_storage_bytes(store)
         output = LocalStore(destination)
         if command_line:
-            require_cli(migration_cli('migrate', 'v3', source, destination, '--remove-v2-metadata'))
+            require_cli(migration_cli('migrate', 'v3', source, destination))
         else:
             invoke(migrate_v2_to_v3, call_kwargs={'input_store': store, 'output_store': output})
         assert array_storage_bytes(store) == before
@@ -141,7 +141,7 @@ def test_f15_t03(tmp_path):
             for path, (values, _) in expected.items():
                 assert_saved_values(group[path], values)
 
-    # The migration option removes source metadata only at the output location.
+    # The migration option removes the source's format 2 metadata (Full_PRD.md:227), here in place.
     location = tmp_path / 'migration-removes'
     store, expected = migration_hierarchy(location)
     before = array_storage_bytes(store)

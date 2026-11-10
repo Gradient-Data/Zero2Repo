@@ -36,7 +36,8 @@ fn explain_without_execution() {
             let arm=diagnostic_sales_fixture();
             history_expect(&arm,"SELECT id,dept,amount FROM sales",expected.clone());
             let statement=if explain {format!("EXPLAIN {sql}")} else {sql.to_string()};
-            let rows=read_rows(&arm,&statement).unwrap();
+            // EXPLAIN yields rows; the bare statement yields an affected-row count.
+            let rows=if explain {read_rows(&arm,&statement).unwrap()} else {exec(&arm,&statement);Vec::new()};
             if explain {
                 assert!(!rows.is_empty(),"EXPLAIN must return its plan");
                 let plan:Vec<String>=rows.iter().map(|r|r.get_by_name("plan").unwrap()).collect();
@@ -251,7 +252,7 @@ fn vacuum_history() {
         history_expect(&db,&history,vec![history_row![1,10],history_row![2,20]]);
         assert_eq!(values(&db),vec![(1,30)]);
     }
-    read_rows(&db,"VACUUM t").unwrap();
+    exec(&db,"VACUUM t");
     history_expect(&db,&history,vec![]);
     history_expect(&db,&other_history,vec![history_row![8,80]]);
     assert_eq!(values(&db),vec![(1,30)]);
@@ -265,13 +266,13 @@ fn vacuum_history() {
     history_commit(&db,"DELETE FROM t WHERE id=2");
     history_commit(&db,"INSERT INTO t VALUES (3,70)");
     for sql in ["VACUUM t","VACUUM"] {
-        read_rows(&db,sql).unwrap();
+        exec(&db,sql);
         assert_eq!(tx_values(&mut tx),vec![(1,40),(2,60)]);
         assert_eq!(values(&db),vec![(1,50),(3,70)]);
         history_expect(&db,&protected_history,vec![history_row![1,40],history_row![2,60]]);
     }
     tx.commit().unwrap();drop(tx);drop(reader);
-    read_rows(&db,"VACUUM").unwrap();
+    exec(&db,"VACUUM");
     history_expect(&db,&protected_history,vec![]);
     history_expect(&db,&other_history,vec![]);
     assert_eq!(values(&db),vec![(1,50),(3,70)]);

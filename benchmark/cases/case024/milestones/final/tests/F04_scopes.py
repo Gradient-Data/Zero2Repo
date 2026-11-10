@@ -158,10 +158,10 @@ def main():
     return [leaf(), leaf.update_context(tool={"deep": {"scope": 300}})()]
 ''')
     result = execute_client(VelnoraClient(), ["velnora", "run", "--context-file", "run.json",
-        "--context", "tool.deep.entry=200", "--context", "tool.deep.scope=250",
+        "--context", "tool.deep.entry=entryvalue", "--context", "tool.deep.scope=scopevalue",
         "--context", "tool.from_entry=entry", str(workflow), "f04.cli.main"], cwd=tmp_path)
     assert result.exception is None, result.exception
     assert result.value == [
-        {"deep": {"file": 10, "entry": 200, "scope": scope, "keep": 4},
+        {"deep": {"file": 10, "entry": "entryvalue", "scope": scope, "keep": 4},
          "outside": "config", "from_file": "file", "from_entry": "entry"}
-        for scope in [250, 300]]
+        for scope in ["scopevalue", 300]]

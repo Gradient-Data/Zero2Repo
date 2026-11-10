@@ -754,7 +754,8 @@ def test_file_failures_identify_the_path():
     )
     require_usage_names_path(miss_a, greeting, missing_a)
     require_usage_names_path(miss_b, greeting, missing_b)
-    assert missing_a not in miss_b.stderr_text or missing_b in miss_b.stderr_text
+    assert missing_a not in miss_b.stderr_text
+    assert missing_b not in miss_a.stderr_text
     assert miss_a.stderr_text != miss_b.stderr_text
     require_general_file_error_names_path(lazy_a, dir_a, greeting)
     require_general_file_error_names_path(lazy_b, dir_b, greeting)

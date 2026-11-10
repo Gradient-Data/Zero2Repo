@@ -309,7 +309,7 @@ assert list(Dataset.from_dict({'value': [7, -2]}, features=Features({'value': Va
     {'value': 7}, {'value': -2}]
 manager = DownloadManager(download_config=DownloadConfig(cache_dir=str(root / 'base-runtime-extraction')))
 for source, member in [('records.jsonl.lz4', None), ('records.jsonl.zst', None),
-                       ('bundle.7z', 'chosen/train.jsonl')]:
+                       ('bundle.7z', 'chosen/first.jsonl')]:
     try:
         recovered = Path(manager.extract(str(root / source)))
     except ImportError:

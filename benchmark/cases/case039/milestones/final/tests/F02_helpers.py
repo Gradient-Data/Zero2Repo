@@ -34,7 +34,10 @@ fn main() {
         if parts[0]=="S" { std::thread::sleep(std::time::Duration::from_millis(sql.parse().unwrap())); println!("S"); continue; }
         let before=std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64();
         if parts[0]=="E" {
-            match db.execute(&sql,params) {Ok(n)=>println!("A\t{n}"),Err(e)=>println!("ERR\t{}",hex(&e.to_string()))}
+            match db.execute(&sql,params) {Ok(n)=>{
+                let after=std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64();
+                println!("A\t{n}\t{before}\t{after}")
+            },Err(e)=>println!("ERR\t{}",hex(&e.to_string()))}
         } else {
             let result=db.query(&sql,params).and_then(|r|r.collect_vec());
             match result { Ok(rows)=> {
@@ -78,7 +81,7 @@ def scalar_batch(binary, operations):
         elif head[0] == 'S':
             observations.append({'slept': True})
         elif head[0] == 'A':
-            observations.append({'affected': int(head[1])})
+            observations.append({'affected': int(head[1]), 'window': (float(head[2]), float(head[3]))})
         else:
             assert head[0] == 'ROWS', head
             rows = []

@@ -9,15 +9,15 @@ HISTORY_CASES = r'''
 fn transaction_history() {
     let db=Database::open_in_memory().unwrap();
     exec(&db,"CREATE TABLE t (id INTEGER PRIMARY KEY, v INTEGER, note TEXT)");
-    let empty=history_commit(&db,"SELECT 1");
+    let empty=history_commit(&db,"DELETE FROM t WHERE id=-1");
     let first=history_commit(&db,"INSERT INTO t VALUES (1,12,'seed'),(2,24,'steady')");
     let second=history_commit(&db,"UPDATE t SET v=37,note='middle' WHERE id=1");
     // A committed point with no new row version tests 'at or before', not equality.
-    let between=history_commit(&db,"SELECT 1");
+    let between=history_commit(&db,"DELETE FROM t WHERE id=-1");
     let third=history_commit(&db,"UPDATE t SET v=-8,note='latest' WHERE id=1");
     let added=history_commit(&db,"INSERT INTO t VALUES (3,59,'late')");
     let deleted=history_commit(&db,"DELETE FROM t WHERE id=1");
-    let after=history_commit(&db,"SELECT 1");
+    let after=history_commit(&db,"DELETE FROM t WHERE id=-1");
     let initial=vec![history_row![1,12,"seed"],history_row![2,24,"steady"]];
     let middle=vec![history_row![1,37,"middle"],history_row![2,24,"steady"]];
     let latest=vec![history_row![1,-8,"latest"],history_row![2,24,"steady"]];

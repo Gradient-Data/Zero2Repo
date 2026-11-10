@@ -132,9 +132,24 @@ def provisioning_environment(root, product_wheel):
 
 
 def provisioning_artifacts(root, env, wheels):
-    """Supply genuine runtime releases, including foreign-platform metadata."""
-    artifacts = [*wheels, *(root / 'runtime-wheels').glob('*.whl'),
-                 *Path('/opt/offline-wheels').glob('*.whl')]
+    """Supply genuine runtime releases, including foreign-platform metadata.
+
+    The documents never fix the product's own version, so its build may carry the
+    same version as a stored release. One published filename names one artifact:
+    the product's own build wins, matching how F19 reads the available releases.
+    """
+    artifacts = []
+    published = set()
+
+    def publish(artifact):
+        if artifact.name in published:
+            return
+        published.add(artifact.name)
+        artifacts.append(artifact)
+
+    for artifact in [*(root / 'runtime-wheels').glob('*.whl'), *wheels,
+                     *Path('/opt/offline-wheels').glob('*.whl')]:
+        publish(artifact)
     assets = Path(__file__).with_name('F12_assets')
     destination = root / 'foreign-releases'
     destination.mkdir()
@@ -143,7 +158,7 @@ def provisioning_artifacts(root, env, wheels):
         assert hashlib.sha256(source.read_bytes()).hexdigest() == record['sha256']
         artifact = destination / record['filename']
         shutil.copyfile(source, artifact)
-        artifacts.append(artifact)
+        publish(artifact)
     return artifacts
 
 

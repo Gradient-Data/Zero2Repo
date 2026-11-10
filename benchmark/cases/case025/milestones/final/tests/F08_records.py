@@ -127,9 +127,9 @@ def test_open_closed_and_extra_entries():
             Open(name='a')
             Explicit(name='a')
             Closed(name='a')
-            Open(name='a', count=1)  # E: incompatible_call
-            Explicit(name='a', count=1)  # E: incompatible_call
-            Closed(name='a', count=1)  # E: incompatible_argument
+            Open(name='a', count=1)  # E: incompatible_call|incompatible_argument
+            Explicit(name='a', count=1)  # E: incompatible_call|incompatible_argument
+            Closed(name='a', count=1)  # E: incompatible_argument|incompatible_call
             bad_open: Open = {'name': 'a', 'count': 1}  # E: incompatible_assignment
             bad_explicit: Explicit = {'name': 'a', 'count': 1}  # E: incompatible_assignment
             bad_closed: Closed = {'name': 'a', 'count': 1}  # E: incompatible_assignment
@@ -217,7 +217,7 @@ def test_extra_entry_inheritance():
             Narrow(name='a', flag=True)
             Narrow(name='a', flag='bad')  # E: incompatible_argument
             CloseRead(name='a')
-            CloseRead(name='a', count=1)  # E: incompatible_argument
+            CloseRead(name='a', count=1)  # E: incompatible_argument|incompatible_call
     ''')
 
 

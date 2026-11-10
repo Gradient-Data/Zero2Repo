@@ -138,9 +138,6 @@ def test_runtime_update_constraint_release_and_source_isolation(tmp_path, curren
     from F19_helpers import published_runtime_releases, installed_release
 
     releases = published_runtime_releases(tmp_path / 'releases')
-    wheel = next(w for w in releases if w.name.startswith('velnora-2.5.0-'))
-    payload = {name: hashlib.sha256(data).hexdigest() for name, data in read_zip(wheel).items()
-               if name.startswith('velnora/') and name.endswith('.py')}
     with managed_runtime(tmp_path / 'runtime', current_product_wheel, releases) as (project, env, config, wheels):
         from packaging.utils import parse_wheel_filename
         from packaging.specifiers import SpecifierSet
@@ -161,15 +158,28 @@ def test_runtime_update_constraint_release_and_source_isolation(tmp_path, curren
                                       for name, data in contents.items()
                                       if name.startswith('velnora/') and name.endswith('.py')}
         latest = max(candidates)
+        # Update to a stored stable release other than the one already installed.
+        # The documents never fix the product's own version, so it may be any of them.
+        installed_now = Version(runtime_packages(project, env)[0]['velnora'])
+        release_wheel = next(w for w in releases
+                             if parse_wheel_filename(w.name)[0] == 'velnora'
+                             and not parse_wheel_filename(w.name)[1].is_prerelease
+                             and parse_wheel_filename(w.name)[1] != installed_now)
+        chosen = parse_wheel_filename(release_wheel.name)[1]
+        payload = {name: hashlib.sha256(data).hexdigest()
+                   for name, data in read_zip(release_wheel).items()
+                   if name.startswith('velnora/') and name.endswith('.py')}
+        major, minor, micro = chosen.release[:3]
         project_before = snapshot_tree(project)
         sources = read_toml(config / 'pyproject.toml')['tool'][legacy_key()]['source']
-        report = succeeded(self_cli(project, env, 'update', '>=2.5.0,<2.5.1'))
+        report = succeeded(self_cli(project, env, 'update',
+                                    f'>={chosen},<{major}.{minor}.{micro + 1}'))
         observed = installed_release(project, env)
-        assert Version(observed['version']) == Version('2.5.0')
+        assert Version(observed['version']) == chosen
         assert observed['files'] == payload
         startup = succeeded(project_cli(project, env, '--version'))
         match = re.fullmatch(r'Velnora \(version ([^)]+)\)\n?', startup.stdout)
-        assert match and Version(match[1]) == Version('2.5.0'), startup
+        assert match and Version(match[1]) == chosen, startup
         installed = runtime_packages(project, env)[0]
         for text in observed['requirements']:
             requirement = Requirement(text)
