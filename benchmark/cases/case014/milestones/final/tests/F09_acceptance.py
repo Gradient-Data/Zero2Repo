@@ -70,7 +70,6 @@ from F09_helpers import (
     snap_at,
     suite_hygiene_langs,
     window_mean,
-    window_min,
     wrap_pi,
     write_outlier_replay_dataset,
 )
@@ -580,57 +579,125 @@ def test_persistent_yaw_offset_downweighted_not_rejected():
 def test_persistent_mag_heading_error_downweighted_not_rejected():
     lat, lon, h, origin = _site()
     pad_yaw = runtime_heading_rad()
-    mild_yaw = wrap_pi(pad_yaw + 0.55)
     harsh_yaw = runtime_yaw_outlier_rad(pad_yaw)
     mag_ned = ned_field_from_independent_wmm(lat, lon, WMM_YEAR)
     mag_pad = body_mag_for_yaw(0.0, 0.0, pad_yaw, mag_ned)
-    mag_mild = body_mag_for_yaw(0.0, 0.0, mild_yaw, mag_ned)
     mag_harsh = body_mag_for_yaw(0.0, 0.0, harsh_yaw, mag_ned)
-    mild_var = (6.0, 6.0, 6.0)
-    print(f"F09 mag mild={mild_yaw} harsh={harsh_yaw} pad={pad_yaw}", flush=True)
+    # Direction checks (hard reject, override pull) use a persistent heading
+    # error of 0.7-0.9 rad: small enough that a linearised update of a
+    # heading or of the 3-D field vector turns yaw toward it (beyond ~90 deg
+    # a vector update may legitimately turn the other way), and at a 0.25
+    # uT^2 field variance still an outlier under any plausible gate.
+    frac = min(max((abs(angle_diff_rad(harsh_yaw, pad_yaw)) - 1.6) / 0.8, 0.0), 1.0)
+    off_yaw = wrap_pi(pad_yaw + 0.7 + 0.2 * frac)
+    mag_off = body_mag_for_yaw(0.0, 0.0, off_yaw, mag_ned)
+    off_var = (0.25, 0.25, 0.25)
+    h_field = math.hypot(mag_ned[0], mag_ned[1])
+    resid_ut = 2.0 * h_field * math.sin(0.5 * abs(angle_diff_rad(off_yaw, pad_yaw)))
+    resid_sigma = resid_ut / math.sqrt(off_var[0])
+    print(
+        f"F09 mag harsh={harsh_yaw} offset={off_yaw} pad={pad_yaw} "
+        f"horizontal field={h_field} uT offset residual={resid_ut} uT = {resid_sigma} sigma",
+        flush=True,
+    )
+    assert resid_sigma > 10.0, (
+        f"scenario: offset residual {resid_sigma:.1f} sigma is not an outlier for every gate"
+    )
     kw = dict(arm_wmm=False, auto_zupt_disable=True)
 
-    def _arms(mag_after, mag_var, chi2):
+    def _arms(mag_after, chi2, duration_s, mag_var=MAG_VAR, **site_kw):
         pad = hygiene_pad(
             origin, mag=mag_pad, mag_var=mag_var, yaw_rad=pad_yaw, yaw_std=math.radians(8.0)
         )
         stream = _continue(
-            list(pad), origin, origin, duration_s=SHORT_WINDOW_S, mag=mag_after, mag_var=mag_var
+            list(pad), origin, origin, duration_s=duration_s, mag=mag_after, mag_var=mag_var
         )
-        return run_fn(hygiene_site(lat, lon, h, stream, chi2_disable=chi2, **kw))
+        return run_fn(hygiene_site(lat, lon, h, stream, chi2_disable=chi2, **kw, **site_kw))
 
     for kind, run_fn in _LANGS:
-        skip = _arms(mag_pad, mild_var, False)
-        down_m = _arms(mag_mild, mild_var, False)
-        down_h = _arms(mag_harsh, MAG_VAR, False)
-        full_h = _arms(mag_harsh, MAG_VAR, True)
-        e_skip = abs(angle_diff_rad(skip.last().att[2], mild_yaw))
-        e_down_m = abs(angle_diff_rad(down_m.last().att[2], mild_yaw))
-        e_down_h = abs(angle_diff_rad(down_h.last().att[2], harsh_yaw))
-        e_full_h = abs(angle_diff_rad(full_h.last().att[2], harsh_yaw))
         t_pad = hygiene_pad(origin)[-1].t_us
-        # The magnetometer is fused at its default 1 s interval, so the 2 s
-        # window holds only a couple of fusions: score the closest approach
-        # of each arm to the harsh heading rather than one final instant.
-        m_down_h = window_min(down_h.snaps, t_pad, None, _yaw_err(harsh_yaw), f"{kind} mag down")
-        m_full_h = window_min(full_h.snaps, t_pad, None, _yaw_err(harsh_yaw), f"{kind} mag full")
+        # Downweighted, not rejected: the persistent offset heading is an
+        # outlier (checked above), so the default arm counts downweights.
+        # Rejection means the samples have no effect: with every other input
+        # equal and the filter deterministic, a rejecting default arm
+        # publishes exactly the no-offset twin's yaw. A downweighted fusion
+        # changes it. Which way a heavily downweighted vector update leaves
+        # yaw over a long window depends on attitude/bias coupling the PRD
+        # does not state, so only the difference is scored, at its largest
+        # over the window.
+        long_kw = dict(mag_var=off_var, mag_delay_ms=MAG_EVERY_SAMPLE_MS)
+        skip_l = _arms(mag_pad, False, LONG_WINDOW_S, **long_kw)
+        down_l = _arms(mag_off, False, LONG_WINDOW_S, **long_kw)
+        e_skip_l = abs(angle_diff_rad(skip_l.last().att[2], off_yaw))
+        e_down_l = abs(angle_diff_rad(down_l.last().att[2], off_yaw))
+        twin_yaw = {
+            sn.t_us: sn.att[2] for sn in skip_l.snaps if sn.t_us > t_pad and sn.att is not None
+        }
+        devs = [
+            abs(angle_diff_rad(sn.att[2], twin_yaw[sn.t_us]))
+            for sn in down_l.snaps
+            if sn.t_us in twin_yaw and sn.att is not None
+        ]
+        assert devs, f"{kind}: no published yaw to compare after the pad"
+        max_dev = max(devs)
+        dw_skip = skip_l.last().n_downweighted - last_at_or_before(skip_l, t_pad).n_downweighted
+        dw_down = down_l.last().n_downweighted - last_at_or_before(down_l, t_pad).n_downweighted
+        # Override counter on the default-rate short window.
+        down_h = _arms(mag_harsh, False, SHORT_WINDOW_S)
+        full_h = _arms(mag_harsh, True, SHORT_WINDOW_S)
+        # Override weight: the same every-sample stream with the switch on.
+        # Both arms start from the same state and fuse the same samples, so
+        # at the first fusion of the offset heading the only difference is
+        # the weight: nominal variance must pull further toward it than a
+        # downweighted fusion, whatever the gate or downweight law. Each
+        # arm's pull is measured against the no-offset twin at the same
+        # instant, so any non-magnetometer dynamics cancel. A filter that
+        # keeps downweighting under the override pulls exactly as far.
+        full_l = _arms(mag_off, True, LONG_WINDOW_S, **long_kw)
+        dw_full = full_l.last().n_downweighted - last_at_or_before(full_l, t_pad).n_downweighted
+        yaw_err = _yaw_err(off_yaw)
+        twin = {sn.t_us: sn for sn in skip_l.snaps if sn.t_us > t_pad and sn.att is not None}
+        full_at = {sn.t_us: sn for sn in full_l.snaps if sn.t_us > t_pad and sn.att is not None}
+        t_first = None
+        pull_down = pull_full = 0.0
+        for sn in down_l.snaps:
+            if sn.t_us not in twin or sn.t_us not in full_at or sn.att is None:
+                continue
+            e_twin = yaw_err(twin[sn.t_us])
+            pull_down = e_twin - yaw_err(sn)
+            pull_full = e_twin - yaw_err(full_at[sn.t_us])
+            if max(abs(pull_down), abs(pull_full)) > 1.0e-6:
+                t_first = sn.t_us
+                break
+        assert t_first is not None, (
+            f"{kind}: neither the default nor the override arm moved toward the offset heading"
+        )
         print(
-            f"{kind} mag mild e_skip={e_skip} e_down={e_down_m} "
-            f"harsh e_down={e_down_h} e_full={e_full_h} "
-            f"dw mild={down_m.last().n_downweighted} harsh={down_h.last().n_downweighted} "
-            f"full={full_h.last().n_downweighted} skip={skip.last().n_downweighted} "
-            f"harsh closest approach down={m_down_h} full={m_full_h}",
+            f"{kind} mag long every-sample e_skip={e_skip_l} e_down={e_down_l} "
+            f"max|yaw_down-yaw_twin|={max_dev} "
+            f"dw skip=+{dw_skip} down=+{dw_down} | "
+            f"short dw down={down_h.last().n_downweighted} full={full_h.last().n_downweighted} | "
+            f"first offset fusion t={t_first} pull down={pull_down} full={pull_full} "
+            f"long override dw=+{dw_full}",
             flush=True,
         )
-        assert down_m.last().n_downweighted > skip.last().n_downweighted, (
+        assert dw_down > dw_skip, (
             f"{kind}: persistent mag error was not scored as a downweight"
         )
-        assert e_down_m + 0.012 < e_skip, f"{kind}: mag heading error was a hard reject"
+        # 1e-4 rad is three orders above float32 heading resolution (~1e-7
+        # rad), which is all a rejecting filter's identical trajectory could
+        # differ by.
+        assert max_dev > 1.0e-4, (
+            f"{kind}: mag heading error was a hard reject (default arm yaw stayed "
+            f"within {max_dev} rad of the no-offset twin)"
+        )
         assert down_h.last().n_downweighted > full_h.last().n_downweighted, (
             f"{kind}: harsh mag override still incremented downweight"
         )
-        assert m_full_h + 0.04 < m_down_h, (
-            f"{kind}: override did not follow the mag heading more than default"
+        # Strictly further, above float32 heading resolution (~1e-7 rad).
+        assert pull_full > pull_down + 1.0e-5, (
+            f"{kind}: override did not fuse the offset mag heading at more than "
+            f"the downweighted weight (pull {pull_full} vs {pull_down} rad)"
         )
 
 

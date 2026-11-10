@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "case_id": "case018",
+  "ecosystem": "pip",
+  "install_ban": [
+    "angr",
+    "clarirs",
+    "clarirs-core",
+    "clarirs-num",
+    "clarirs-vsa",
+    "clarirs-z3"
+  ],
+  "import_ban": [
+    "angr",
+    "clarirs",
+    "clarirs_core",
+    "clarirs_num",
+    "clarirs_vsa",
+    "clarirs_z3"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "angr",
+      "runtime": "python3",
+      "evidence": "In the recipe image selected by casebox --image original, /opt/product-env/bin/python -B -c \"import angr; print(angr.__file__); print(angr.__version__)\" successfully loads /opt/cb-warm/angr/__init__.py, version 10.0.6.dev0."
+    }
+  ],
+  "notes": "Ban upstream angr and its same-repository Clarirs solver packages and module roots; allow recipe-provided angr-data, archinfo, cle, pyvex, capstone, pypcode, unicorn, Z3, external claripy, and Python/Rust toolchains. Recipe-image probes found a preinstalled angr copy in the product Python environment; other Python environments, Node built-ins, Java modules, Perl module paths and system package/binary inventories revealed no additional equivalent."
+}

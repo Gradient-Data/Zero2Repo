@@ -1,0 +1,130 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_framing.py",
+    "tests/F01_helpers.py",
+    "tests/F02_helpers.py",
+    "tests/F02_values.py",
+    "tests/F03_helpers.py",
+    "tests/F03_structures.py",
+    "tests/F04_times.py",
+    "tests/F05_helpers.py",
+    "tests/F05_pem.py",
+    "tests/F06_algorithms.py",
+    "tests/F06_helpers.py",
+    "tests/F07_helpers.py",
+    "tests/F07_keys.py",
+    "tests/F08_helpers.py",
+    "tests/F08_names.py",
+    "tests/F09_certificates.py",
+    "tests/F09_helpers.py",
+    "tests/F10_helpers.py",
+    "tests/F10_identities.py",
+    "tests/F11_crls.py",
+    "tests/F11_helpers.py",
+    "tests/F12_helpers.py",
+    "tests/F12_requests.py",
+    "tests/F13_helpers.py",
+    "tests/F13_ocsp.py",
+    "tests/F14_cms.py",
+    "tests/F14_helpers.py",
+    "tests/F15_helpers.py",
+    "tests/F15_pkcs12.py",
+    "tests/F16_helpers.py",
+    "tests/F16_timestamps.py",
+    "tests/F17_helpers.py",
+    "tests/F17_pdf.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "PYTHONPATH=\"$PWD\" python3 -m pytest tests/F01_framing.py tests/F01_helpers.py tests/F02_helpers.py tests/F02_values.py tests/F03_helpers.py tests/F03_structures.py tests/F04_times.py tests/F05_helpers.py tests/F05_pem.py tests/F06_algorithms.py tests/F06_helpers.py tests/F07_helpers.py tests/F07_keys.py tests/F08_helpers.py tests/F08_names.py tests/F09_certificates.py tests/F09_helpers.py tests/F10_helpers.py tests/F10_identities.py tests/F11_crls.py tests/F11_helpers.py tests/F12_helpers.py tests/F12_requests.py tests/F13_helpers.py tests/F13_ocsp.py tests/F14_cms.py tests/F14_helpers.py tests/F15_helpers.py tests/F15_pkcs12.py tests/F16_helpers.py tests/F16_timestamps.py tests/F17_helpers.py tests/F17_pdf.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "PYTHONPATH=\"$PWD\" python3 -m pytest {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_framing.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_values.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_structures.py"
+    ],
+    "F04": [
+      "tests/F04_times.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_pem.py"
+    ],
+    "F06": [
+      "tests/F06_algorithms.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_keys.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_names.py"
+    ],
+    "F09": [
+      "tests/F09_certificates.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_identities.py"
+    ],
+    "F11": [
+      "tests/F11_crls.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_requests.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_ocsp.py"
+    ],
+    "F14": [
+      "tests/F14_cms.py",
+      "tests/F14_helpers.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_pkcs12.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_timestamps.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_pdf.py"
+    ]
+  },
+  "support_files": [
+    "tests/F06_vectors.json",
+    "tests/F07_vectors.json",
+    "tests/F08_vectors.json",
+    "tests/F09_vectors.json",
+    "tests/F11_vectors.json",
+    "tests/F12_vectors.json",
+    "tests/F13_vectors.json",
+    "tests/F14_vectors.json",
+    "tests/F15_vectors.json",
+    "tests/F16_vectors.json",
+    "tests/F17_vectors.json"
+  ]
+}

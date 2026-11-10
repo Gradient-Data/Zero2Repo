@@ -2,7 +2,8 @@
 
 Users bring their own credentials and may supply a local AgentSpec file
 (``.json`` or ``.yaml`` when PyYAML is installed). Built-in backends
-(``codex``, ``opencode``, ``claude-code``, ``cursor``, ``openhands``) are predefined specs.
+(``codex``, ``opencode``, ``claude-code``, ``cursor``, ``openhands``, ``dsh``) are
+predefined specs.
 """
 
 from __future__ import annotations
@@ -12,16 +13,18 @@ import importlib
 import json
 import os
 import shlex
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
+from . import claude_resume
 from .agent_hooks import claude_code_env, opencode_env
 from .codex_config import (
     CODEX_GATEWAY_WEBSOCKETS_ENV,
     GATEWAY_MODEL_PROVIDER_LINE,
     GATEWAY_PROVIDER_TABLE,
 )
+from .submit import CONTAINER_SUBMIT_PATH, SUBMIT_TOKEN
 
 __all__ = [
     "AGENT_USER",
@@ -35,9 +38,16 @@ __all__ = [
     "resolve_agent",
 ]
 
-BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands")
+BACKENDS = ("codex", "opencode", "claude-code", "cursor", "openhands", "dsh")
 CODEX_REASONING_EFFORT_ENV = "CBRUN_CODEX_REASONING_EFFORT"
 CODEX_REASONING_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh"})
+# Claude Code's --effort levels. Unset leaves the CLI's own default.
+CLAUDE_EFFORT_ENV = "CBRUN_CLAUDE_EFFORT"
+CLAUDE_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
+# dsh's reasoningEffort for the session model. Unset leaves dsh's own default.
+DSH_REASONING_EFFORT_ENV = "CBRUN_DSH_REASONING_EFFORT"
+DSH_HOME = "/root/.dsh"
+DSH_MODEL_PATCH = "/tmp/cbrun/dsh-model.yml"
 
 AGENT_USER = "cbagent"
 AGENT_USER_HOME = "/home/cbagent"
@@ -78,6 +88,9 @@ class AgentSpec:
     # usage. Shell-expanded in the solve env; archived after every trial so
     # usage survives a killed process.
     usage_paths: tuple[str, ...] = ()
+    # The built-in CLI the agent image must carry, one of BACKENDS. None installs
+    # no built-in CLI; the spec's own install_script brings what it runs.
+    image_backend: str | None = None
 
     def spec_hash(self) -> str:
         payload = json.dumps(self.to_dict(), sort_keys=True)
@@ -99,6 +112,8 @@ class AgentSpec:
         }
         if self.usage_paths:
             out["usage_paths"] = list(self.usage_paths)
+        if self.image_backend is not None:
+            out["image_backend"] = self.image_backend
         return out
 
     @classmethod
@@ -121,6 +136,11 @@ class AgentSpec:
         usage_paths = data.get("usage_paths") or []
         if not isinstance(usage_paths, list):
             raise ValueError(f"AgentSpec {name!r}: usage_paths must be a list")
+        image_backend = _optional_str(data.get("image_backend"))
+        if image_backend is not None and image_backend not in BACKENDS:
+            raise ValueError(
+                f"AgentSpec {name!r}: image_backend must be one of {BACKENDS}, got {image_backend!r}"
+            )
         return cls(
             name=name,
             command=command,
@@ -134,6 +154,7 @@ class AgentSpec:
             python_hook=_optional_str(data.get("python_hook")),
             runtime=_optional_str(data.get("runtime")),
             usage_paths=tuple(str(p) for p in usage_paths if str(p).strip()),
+            image_backend=image_backend,
         )
 
 
@@ -224,6 +245,7 @@ def resolve_agent(
 
     environ = os.environ if environ is None else environ
     _validate_codex_effort(resolved_spec, environ)
+    claude_effort = _claude_effort(resolved_spec, environ)
     env, env_keys = _resolve_env(resolved_spec, model=model, environ=environ)
     resolved_model = _resolve_model(resolved_spec, model)
     ctx = {
@@ -237,6 +259,7 @@ def resolve_agent(
         "workdir": CONTAINER_WORKDIR,
         "workdir_quoted": shlex.quote(CONTAINER_WORKDIR),
         "home": _home_for(resolved_spec),
+        "claude_effort_args": f" --effort {claude_effort}" if claude_effort else "",
     }
     command = _render_template(resolved_spec.command, ctx)
     setup = _render_optional(resolved_spec.setup_script, ctx)
@@ -271,6 +294,18 @@ def _validate_codex_effort(spec: AgentSpec, environ: dict[str, str]) -> None:
         raise ValueError(
             f"{CODEX_REASONING_EFFORT_ENV} must be one of {allowed}, got {raw!r}"
         )
+
+
+def _claude_effort(spec: AgentSpec, environ: dict[str, str]) -> str | None:
+    if spec.name != "claude-code":
+        return None
+    raw = (environ.get(CLAUDE_EFFORT_ENV) or "").strip()
+    if not raw:
+        return None
+    if raw not in CLAUDE_EFFORTS:
+        allowed = ", ".join(sorted(CLAUDE_EFFORTS))
+        raise ValueError(f"{CLAUDE_EFFORT_ENV} must be one of {allowed}, got {raw!r}")
+    return raw
 
 
 def _home_for(spec: AgentSpec) -> str:
@@ -347,6 +382,13 @@ def _resolve_env(
             out["LLM_REASONING_EFFORT"] = effort
         for key in ("LLM_MODEL", "OPENHANDS_SUPPRESS_BANNER", "LLM_TIMEOUT", "LLM_REASONING_EFFORT"):
             if key not in keys and key in out:
+                keys.append(key)
+    if spec.name == "dsh":
+        # danger-full-access is dsh's mode without approval prompts, the
+        # counterpart of the other harnesses' bypass flags.
+        for key, value in (("DSH_HOME", DSH_HOME), ("DSH_PERMISSION_MODE", "danger-full-access")):
+            out[key] = value
+            if key not in keys:
                 keys.append(key)
     if spec.run_as == "nonroot":
         home = _home_for(spec)
@@ -547,7 +589,35 @@ path.write_text(text.replace(marker, inject, 1), encoding="utf-8")
 PY
 """
 
-_BUILTIN_SPECS: dict[str, AgentSpec] = {
+# Agent setup writes these files into the container; the Claude Code command
+# runs under the resume runner.
+CONTAINER_HELPERS: dict[str, bytes] = {
+    claude_resume.CONTAINER_PATH: Path(claude_resume.__file__).read_bytes(),
+}
+
+
+# dsh is configured by profile patch layers. The patch picks the session model,
+# and the DeepSeek provider's endpoint and effort when they are set. The API key
+# is read by dsh itself from DEEPSEEK_API_KEY.
+_DSH_SETUP = f"""set -eu
+mkdir -p /tmp/cbrun "$DSH_HOME"
+model={{model_quoted}}
+{{
+  printf '%s\\n' '- id: agent-default-model' '  config:' '    provider: deepseek-official'
+  printf '    model: "%s"\\n' "$model"
+  if [ -n "${{{DSH_REASONING_EFFORT_ENV}:-}}" ]; then
+    printf '    reasoningEffort: "%s"\\n' "${DSH_REASONING_EFFORT_ENV}"
+  fi
+  if [ -n "${{DEEPSEEK_BASE_URL:-}}" ]; then
+    printf '%s\\n' '- id: llm-deepseek' '  config:'
+    printf '    baseURL: "%s"\\n' "$DEEPSEEK_BASE_URL"
+  fi
+}} > {DSH_MODEL_PATCH}
+cat {DSH_MODEL_PATCH}
+dsh --version
+"""
+
+_BASE_SPECS: dict[str, AgentSpec] = {
     "codex": AgentSpec(
         name="codex",
         env_passthrough=(
@@ -600,13 +670,14 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
         runtime="node",
         usage_paths=("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects",),
         command=(
-            "cat {instruction_quoted} | claude --print --verbose --output-format stream-json "
+            f"python3 {claude_resume.CONTAINER_PATH} {{log_quoted}} {{instruction_quoted}} "
+            f"{CONTAINER_SUBMIT_PATH} {SUBMIT_TOKEN} -- "
+            "claude --print --verbose --output-format stream-json "
             "--permission-mode bypassPermissions "
             "--model {model_quoted} "
             # Stream thinking summaries: a gateway that forwards nothing while the
             # model thinks otherwise outlasts Claude Code's stream idle timeout.
-            "--thinking-display summarized "
-            "2>&1 | stdbuf -oL tee {log_quoted}"
+            "--thinking-display summarized{claude_effort_args}"
         ),
     ),
     "cursor": AgentSpec(
@@ -645,4 +716,25 @@ _BUILTIN_SPECS: dict[str, AgentSpec] = {
             "2>&1 | stdbuf -oL tee {log_quoted}"
         ),
     ),
+}
+
+_BASE_SPECS["dsh"] = AgentSpec(
+    name="dsh",
+    env_passthrough=("DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", DSH_REASONING_EFFORT_ENV),
+    setup_script=_DSH_SETUP,
+    run_as="root",
+    model_prefix="keep",
+    home="/root",
+    runtime="node",
+    # Session files; token usage is read from the step_end events in agent.log.
+    usage_paths=(DSH_HOME,),
+    command=(
+        f"dsh --profile headless --patch {DSH_MODEL_PATCH} --json "
+        "< {instruction_quoted} "
+        "2>&1 | stdbuf -oL tee {log_quoted}"
+    ),
+)
+
+_BUILTIN_SPECS: dict[str, AgentSpec] = {
+    name: replace(spec, image_backend=name) for name, spec in _BASE_SPECS.items()
 }

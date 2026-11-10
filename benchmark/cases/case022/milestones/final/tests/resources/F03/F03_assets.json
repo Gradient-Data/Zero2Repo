@@ -1,0 +1,21 @@
+[
+  {
+    "file": "F03_elasticsearch_client.whl",
+    "source": "https://pypi.org/project/elasticsearch/7.17.12/",
+    "sha256": "468fd5eef703c0d9238e29bcaf3a6fe4d6b092f917959fbf41f48f8fea3df2f8",
+    "purpose": "External Elasticsearch client dependency, supplied offline; no product implementation."
+  },
+  {
+    "file": "F03_urllib3.whl",
+    "source": "https://pypi.org/project/urllib3/1.26.20/",
+    "sha256": "0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e",
+    "purpose": "External Elasticsearch client dependency, supplied offline; no product implementation."
+  },
+  {
+    "file": "F03_elasticsearch.tar.gz",
+    "source": "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.29-linux-x86_64.tar.gz",
+    "sha512": "0b3c84966b0af346233c56e96cb87578c2afe37809ff3c375b771589405de796214542bbb9f2294fb4786e52c4a5d7ac79924fe64bee9e6c76788d700ea81e26",
+    "checksum_source": "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.29-linux-x86_64.tar.gz.sha512",
+    "purpose": "Unmodified official real service distribution including its JDK and license notices; extracted and started offline by a non-root test user."
+  }
+]

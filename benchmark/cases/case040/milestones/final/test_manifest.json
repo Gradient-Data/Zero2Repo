@@ -1,0 +1,131 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_encoding.py",
+    "tests/F01_helpers.py",
+    "tests/F02_canvas.py",
+    "tests/F02_helpers.py",
+    "tests/F03_attributes.py",
+    "tests/F03_helpers.py",
+    "tests/F04_helpers.py",
+    "tests/F04_signals.py",
+    "tests/F05_commands.py",
+    "tests/F06_helpers.py",
+    "tests/F06_text.py",
+    "tests/F07_ansi.py",
+    "tests/F07_helpers.py",
+    "tests/F08_decoration.py",
+    "tests/F09_containers.py",
+    "tests/F09_helpers.py",
+    "tests/F10_editing.py",
+    "tests/F11_choices.py",
+    "tests/F11_helpers.py",
+    "tests/F12_helpers.py",
+    "tests/F12_lists.py",
+    "tests/F13_helpers.py",
+    "tests/F13_scrolling.py",
+    "tests/F14_helpers.py",
+    "tests/F14_popups.py",
+    "tests/F15_dropdown.py",
+    "tests/F15_helpers.py",
+    "tests/F16_helpers.py",
+    "tests/F16_visuals.py",
+    "tests/F17_display.py",
+    "tests/F17_helpers.py",
+    "tests/F17_input.py",
+    "tests/F18_helpers.py",
+    "tests/F18_lifecycle.py",
+    "tests/F19_helpers.py",
+    "tests/F19_terminal.py",
+    "tests/F20_helpers.py",
+    "tests/F20_web.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright PYTHONPATH=. python3 -m pytest -o addopts= -p no:cacheprovider -p asyncio -p pytest_cov -p timeout tests/F01_encoding.py tests/F01_helpers.py tests/F02_canvas.py tests/F02_helpers.py tests/F03_attributes.py tests/F03_helpers.py tests/F04_helpers.py tests/F04_signals.py tests/F05_commands.py tests/F06_helpers.py tests/F06_text.py tests/F07_ansi.py tests/F07_helpers.py tests/F08_decoration.py tests/F09_containers.py tests/F09_helpers.py tests/F10_editing.py tests/F11_choices.py tests/F11_helpers.py tests/F12_helpers.py tests/F12_lists.py tests/F13_helpers.py tests/F13_scrolling.py tests/F14_helpers.py tests/F14_popups.py tests/F15_dropdown.py tests/F15_helpers.py tests/F16_helpers.py tests/F16_visuals.py tests/F17_display.py tests/F17_helpers.py tests/F17_input.py tests/F18_helpers.py tests/F18_lifecycle.py tests/F19_helpers.py tests/F19_terminal.py tests/F20_helpers.py tests/F20_web.py tests/_helpers.py",
+  "test_command_template": "PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright PYTHONPATH=. python3 -m pytest -o addopts= -p no:cacheprovider -p asyncio -p pytest_cov -p timeout {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_encoding.py",
+      "tests/F01_helpers.py"
+    ],
+    "F02": [
+      "tests/F02_canvas.py",
+      "tests/F02_helpers.py"
+    ],
+    "F03": [
+      "tests/F03_attributes.py",
+      "tests/F03_helpers.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_signals.py"
+    ],
+    "F05": [
+      "tests/F05_commands.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_text.py"
+    ],
+    "F07": [
+      "tests/F07_ansi.py",
+      "tests/F07_helpers.py"
+    ],
+    "F08": [
+      "tests/F08_decoration.py"
+    ],
+    "F09": [
+      "tests/F09_containers.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_editing.py"
+    ],
+    "F11": [
+      "tests/F11_choices.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_lists.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_scrolling.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_popups.py"
+    ],
+    "F15": [
+      "tests/F15_dropdown.py",
+      "tests/F15_helpers.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_visuals.py"
+    ],
+    "F17": [
+      "tests/F17_display.py",
+      "tests/F17_helpers.py",
+      "tests/F17_input.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_lifecycle.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_terminal.py"
+    ],
+    "F20": [
+      "tests/F20_helpers.py",
+      "tests/F20_web.py"
+    ]
+  }
+}

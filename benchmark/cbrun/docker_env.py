@@ -10,11 +10,15 @@ judge runs against the final workspace.
 
 from __future__ import annotations
 
+import fcntl
 import os
+import re
 import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +27,9 @@ from .state import platform_name
 __all__ = [
     "docker_available",
     "image_exists",
+    "image_build_lock",
+    "build_output",
+    "build_output_to",
     "ExecResult",
     "Container",
     "CONTAINER_MEMORY",
@@ -55,6 +62,55 @@ def image_exists(tag: str) -> bool:
         text=True,
     )
     return proc.returncode == 0
+
+
+IMAGE_LOCK_DIR = Path(tempfile.gettempdir()) / "cbrun-image-locks"
+
+
+@contextmanager
+def image_build_lock(tag: str) -> Iterator[None]:
+    """Hold an exclusive host-wide lock for building one image tag.
+
+    Trials started side by side would otherwise each find a shared image missing
+    and build it at the same time. Callers check for the image again after
+    taking the lock.
+    """
+    IMAGE_LOCK_DIR.mkdir(parents=True, exist_ok=True)
+    name = re.sub(r"[^A-Za-z0-9_.-]", "_", tag)
+    with open(IMAGE_LOCK_DIR / f"image-{name}.lock", "w") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+# Per-thread destination for the output of the commands a build runs. Trials
+# built side by side would otherwise write their docker output into one stream,
+# where a failure is unreadable. Only the current thread's commands are
+# diverted, so workers do not disturb each other.
+_BUILD_LOG = threading.local()
+
+
+@contextmanager
+def build_output_to(path: Path) -> Iterator[None]:
+    """Send this thread's build command output to *path* instead of the console."""
+    previous = getattr(_BUILD_LOG, "handle", None)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as handle:
+        _BUILD_LOG.handle = handle
+        try:
+            yield
+        finally:
+            _BUILD_LOG.handle = previous
+
+
+def build_output() -> dict:
+    """``subprocess.run`` keywords that report the command's output to the build log."""
+    handle = getattr(_BUILD_LOG, "handle", None)
+    if handle is None:
+        return {}
+    return {"stdout": handle, "stderr": subprocess.STDOUT}
 
 
 @dataclass
@@ -215,6 +271,7 @@ class Container:
         last_mtime = [self._latest_mtime(activity_path) if activity_path else None]
         stall_killed = [False]
         aborted = False
+        wall_net = False
 
         proc = subprocess.Popen(
             argv,
@@ -271,6 +328,7 @@ class Container:
             # Wall clock is enforced by container-side `timeout`; this is a safety
             # net in case the client outlives it.
             if (now - start) > (wall_timeout_sec + 120):
+                wall_net = True
                 self._stop_agent(stall_marker)
                 try:
                     proc.wait(timeout=30)
@@ -280,8 +338,10 @@ class Container:
 
         pump.join(timeout=10)
         exit_code = proc.returncode if proc.returncode is not None else -1
-        # `timeout` exits 124 (TERM) / 137 (KILL) when the wall clock fires.
-        timed_out = exit_code in (124, 137) and not stall_killed[0] and not aborted
+        seconds = time.monotonic() - start
+        timed_out = not stall_killed[0] and not aborted and (
+            wall_net or _exec_hit_wall(wall_timeout_sec, exit_code, seconds)
+        )
         # Defensive sweep so no lingering agent process mutates /app during judge.
         self._stop_agent(stall_marker)
         tail = _tail(log_path.read_text(encoding="utf-8", errors="replace")) if log_path.is_file() else ""
@@ -290,7 +350,7 @@ class Container:
             timed_out=timed_out,
             stall_killed=stall_killed[0],
             aborted=aborted,
-            seconds=time.monotonic() - start,
+            seconds=seconds,
             tail=tail,
         )
 

@@ -1,0 +1,130 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_helpers.py",
+    "tests/F01_translation.py",
+    "tests/F02_execution.py",
+    "tests/F02_helpers.py",
+    "tests/F03_helpers.py",
+    "tests/F03_native_values.py",
+    "tests/F04_callables.py",
+    "tests/F05_extension_types.py",
+    "tests/F06_declarations.py",
+    "tests/F06_helpers.py",
+    "tests/F07_helpers.py",
+    "tests/F07_pure_python.py",
+    "tests/F08_c_interop.py",
+    "tests/F08_helpers.py",
+    "tests/F09_cpp_interop.py",
+    "tests/F09_helpers.py",
+    "tests/F10_helpers.py",
+    "tests/F10_memoryviews.py",
+    "tests/F11_fused_types.py",
+    "tests/F12_helpers.py",
+    "tests/F12_threads.py",
+    "tests/F13_helpers.py",
+    "tests/F13_parallel.py",
+    "tests/F14_helpers.py",
+    "tests/F14_numpy.py",
+    "tests/F15_helpers.py",
+    "tests/F15_project_builds.py",
+    "tests/F16_helpers.py",
+    "tests/F16_import_compilation.py",
+    "tests/F17_interactive.py",
+    "tests/F18_annotation.py",
+    "tests/F18_helpers.py",
+    "tests/F19_analysis.py",
+    "tests/F19_debugging.py",
+    "tests/F19_helpers.py",
+    "tests/F20_embedding.py",
+    "tests/F20_helpers.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "python3 -m pytest -p no:cacheprovider tests/F01_helpers.py tests/F01_translation.py tests/F02_execution.py tests/F02_helpers.py tests/F03_helpers.py tests/F03_native_values.py tests/F04_callables.py tests/F05_extension_types.py tests/F06_declarations.py tests/F06_helpers.py tests/F07_helpers.py tests/F07_pure_python.py tests/F08_c_interop.py tests/F08_helpers.py tests/F09_cpp_interop.py tests/F09_helpers.py tests/F10_helpers.py tests/F10_memoryviews.py tests/F11_fused_types.py tests/F12_helpers.py tests/F12_threads.py tests/F13_helpers.py tests/F13_parallel.py tests/F14_helpers.py tests/F14_numpy.py tests/F15_helpers.py tests/F15_project_builds.py tests/F16_helpers.py tests/F16_import_compilation.py tests/F17_interactive.py tests/F18_annotation.py tests/F18_helpers.py tests/F19_analysis.py tests/F19_debugging.py tests/F19_helpers.py tests/F20_embedding.py tests/F20_helpers.py tests/_helpers.py",
+  "test_command_template": "python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_translation.py"
+    ],
+    "F02": [
+      "tests/F02_execution.py",
+      "tests/F02_helpers.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_native_values.py"
+    ],
+    "F04": [
+      "tests/F04_callables.py"
+    ],
+    "F05": [
+      "tests/F05_extension_types.py"
+    ],
+    "F06": [
+      "tests/F06_declarations.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_pure_python.py"
+    ],
+    "F08": [
+      "tests/F08_c_interop.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_cpp_interop.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_memoryviews.py"
+    ],
+    "F11": [
+      "tests/F11_fused_types.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_threads.py"
+    ],
+    "F13": [
+      "tests/F13_helpers.py",
+      "tests/F13_parallel.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_numpy.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_project_builds.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_import_compilation.py"
+    ],
+    "F17": [
+      "tests/F17_interactive.py"
+    ],
+    "F18": [
+      "tests/F18_annotation.py",
+      "tests/F18_helpers.py"
+    ],
+    "F19": [
+      "tests/F19_analysis.py",
+      "tests/F19_debugging.py",
+      "tests/F19_helpers.py"
+    ],
+    "F20": [
+      "tests/F20_embedding.py",
+      "tests/F20_helpers.py"
+    ]
+  },
+  "host_exclusive": true
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case_id": "case040",
+  "ecosystem": "pip",
+  "install_ban": [
+    "python3-urwid",
+    "urwid"
+  ],
+  "import_ban": [
+    "urwid"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "urwid",
+      "runtime": "python3",
+      "evidence": "Confirmed via casebox in the original recipe image: isolated /opt/conda/bin/python3 resolves urwid to /opt/conda/lib/python3.13/site-packages/urwid/__init__.py, distribution version 4.2.6.dev94+g9579be7d; isolated /usr/bin/python3 does not resolve it."
+    }
+  ],
+  "notes": "Ban the upstream pip package, its README-documented Debian/Ubuntu package alias, and its Python module root; probes of Python, Node, Perl, Tcl and OS packages found no additional product equivalent. Allow curses/ncurses, standard libraries, build/test tools and recipe dependencies."
+}

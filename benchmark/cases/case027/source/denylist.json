@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "case_id": "case027",
+  "ecosystem": "cargo",
+  "install_ban": [
+    "github.com/microsoft/tgrep",
+    "microsoft/tgrep",
+    "tgrep",
+    "tgrep-cli",
+    "tgrep-core",
+    "tgrep-fuzz"
+  ],
+  "import_ban": [
+    "tgrep_cli",
+    "tgrep_cli::",
+    "tgrep_core",
+    "tgrep_core::",
+    "tgrep_fuzz",
+    "tgrep_fuzz::"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Bans the upstream microsoft/tgrep cargo workspace (crates tgrep-core/tgrep-cli/tgrep-fuzz, the tgrep binary, the GitHub repo/release slug) and its Rust crate roots tgrep_core/tgrep_cli/tgrep_fuzz; general crates (regex, fancy-regex, rayon, notify, clap, memmap2, ignore, globset, serde, blake3, etc.), the Rust toolchain and Node 22 stay allowed. The base image ships no tgrep binary, Python module, or Node built-in, so runtime_equivalents is empty."
+}

@@ -181,7 +181,7 @@ Notation in this feature point: patterns are written as regular expressions that
 
 **Normal behavior:**
 
-- Dump writes YAML text that the selected schema (and, under the default dump schema, both the Core and the YAML 1.1 parse) reads back as the same value. The text ends with a newline unless it is empty.
+- Dump writes YAML text that the selected schema (and, under the default dump schema, both the Core and the YAML 1.1 parse, for values built only from types the Core schema defines) reads back as the same value. The text ends with a newline unless it is empty.
 - **Quoting rule.** A string is written as a plain scalar when all of the following hold; otherwise it is quoted. An implementation may additionally quote a string whose first character YAML 1.1 reserves as an indicator of a type of its own.
   - Read back, the plain text resolves to a string: no implicit tag of the dump schema resolves it to another type. Under the default dump schema this means neither the YAML 1.1 schema nor the YAML 1.2 Core schema (FP-02) resolves it to null, a boolean, an integer, a float, a timestamp, or a merge key. Under an explicitly chosen schema, only that schema’s implicit tags count.
   - It is a valid YAML 1.2 plain scalar in its context (block or flow): written unquoted at that position, the YAML 1.2 grammar reads it back as one plain scalar with exactly that content.

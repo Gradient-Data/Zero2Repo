@@ -22,6 +22,8 @@ from pathlib import Path
 import tomli_w
 
 from ._leakage import scan_leakage
+from .test_assets import MANIFEST_NAME as TEST_ASSETS_MANIFEST
+from .test_assets import materialize as materialize_test_assets
 from .brand import AUTHOR_NAME, TASK_NAMESPACE
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -553,6 +555,11 @@ def _copy_final_tests(case: CaseAssets, task_tests_dir: Path) -> None:
         src = acceptance_src / extra
         if src.is_file():
             shutil.copy2(src, final_out / extra)
+
+    # Large third-party files the tests read come from their official URLs.
+    if (acceptance_src / TEST_ASSETS_MANIFEST).is_file():
+        shutil.copy2(acceptance_src / TEST_ASSETS_MANIFEST, final_out / TEST_ASSETS_MANIFEST)
+        materialize_test_assets(acceptance_src, final_out)
 
     harbor_manifest = _harbor_manifest(
         acceptance.test_manifest, acceptance_src, CONTAINER_TESTS_FINAL

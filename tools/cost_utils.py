@@ -28,28 +28,6 @@ PRICING_MODEL_ALIASES: dict[str, str] = {
     "anthropic/claude-opus-4-8": "anthropic/claude-opus-4.6",
 }
 
-# First path segment of a catalog pricing key. Any other prefix is a gateway
-# alias and is removed before pricing lookup.
-_PRICING_VENDORS = frozenset(
-    {
-        "anthropic",
-        "bytedance-seed",
-        "cohere",
-        "deepseek",
-        "gemini",
-        "google",
-        "meta-llama",
-        "mistralai",
-        "moonshot",
-        "openai",
-        "qwen",
-        "stepfun",
-        "tencent",
-        "x-ai",
-        "z-ai",
-    }
-)
-
 
 def _ensure_calllmcost_importable() -> None:
     vendor = str(VENDOR_CALLLMCOST)
@@ -91,22 +69,26 @@ def normalize_pricing_model_id(model: str | None, backend: str = "") -> str:
     if not model or not str(model).strip():
         return "anthropic/claude-sonnet-4.6"
     slug = str(model).strip()
-    if "/" in slug:
-        vendor, rest = slug.split("/", 1)
-        if vendor in _PRICING_VENDORS:
-            normalized = slug
-            return PRICING_MODEL_ALIASES.get(normalized, normalized)
-        slug = rest
-    slug = slug.replace("claude-opus-4-6", "claude-opus-4.6")
-    slug = slug.replace("claude-opus-4-8", "claude-opus-4.6")
-    slug = slug.replace("claude-sonnet-4-6", "claude-sonnet-4.6")
-    slug = slug.replace("claude-haiku-4-5-20251001", "claude-haiku-4.5")
-    if slug.startswith("claude-"):
-        normalized = f"anthropic/{slug}"
-    elif backend == "opencode" and "/" not in slug:
-        normalized = f"anthropic/{slug}"
-    else:
+    if "/" in slug and not slug.startswith("gateway/"):
         normalized = slug
+    elif slug.startswith("gateway/"):
+        slug = slug.split("/", 1)[1]
+        slug = slug.replace("claude-opus-4-6", "claude-opus-4.6")
+        slug = slug.replace("claude-opus-4-8", "claude-opus-4.6")
+        slug = slug.replace("claude-sonnet-4-6", "claude-sonnet-4.6")
+        slug = slug.replace("claude-haiku-4-5-20251001", "claude-haiku-4.5")
+        normalized = f"anthropic/{slug}" if slug.startswith("claude-") else slug
+    else:
+        slug = slug.replace("claude-opus-4-6", "claude-opus-4.6")
+        slug = slug.replace("claude-opus-4-8", "claude-opus-4.6")
+        slug = slug.replace("claude-sonnet-4-6", "claude-sonnet-4.6")
+        slug = slug.replace("claude-haiku-4-5-20251001", "claude-haiku-4.5")
+        if slug.startswith("claude-"):
+            normalized = f"anthropic/{slug}"
+        elif backend == "opencode" and "/" not in slug:
+            normalized = f"anthropic/{slug}"
+        else:
+            normalized = slug
     return PRICING_MODEL_ALIASES.get(normalized, normalized)
 
 

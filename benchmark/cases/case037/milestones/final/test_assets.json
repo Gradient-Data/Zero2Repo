@@ -1,0 +1,10 @@
+{
+  "assets": [
+    {
+      "path": "tests/F06_pynacl.whl",
+      "url": "https://files.pythonhosted.org/packages/7f/81/d60984052df5c97b1d24365bc1e30024379b42c4edcd79d2436b1b9806f2/pynacl-1.6.2-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "22de65bb9010a725b0dac248f353bb072969c94fa8d6b1f34b87d7953cf7bbe4",
+      "size": 1399174
+    }
+  ]
+}

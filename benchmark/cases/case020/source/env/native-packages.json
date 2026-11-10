@@ -1,0 +1,241 @@
+{
+  "distribution": "ubuntu-24.04",
+  "architecture": "amd64",
+  "roots": [
+    "autoconf",
+    "automake",
+    "libtool",
+    "clang",
+    "g++",
+    "make",
+    "binutils",
+    "libc6-dev"
+  ],
+  "base_packages": {
+    "binutils": "2.42-4ubuntu2.10",
+    "binutils-common:amd64": "2.42-4ubuntu2.10",
+    "binutils-x86-64-linux-gnu": "2.42-4ubuntu2.10",
+    "cpp": "4:13.2.0-7ubuntu1",
+    "cpp-13": "13.3.0-6ubuntu2~24.04.1",
+    "cpp-13-x86-64-linux-gnu": "13.3.0-6ubuntu2~24.04.1",
+    "cpp-x86-64-linux-gnu": "4:13.2.0-7ubuntu1",
+    "debianutils": "5.17build1",
+    "dpkg": "1.22.6ubuntu6.6",
+    "g++": "4:13.2.0-7ubuntu1",
+    "g++-13": "13.3.0-6ubuntu2~24.04.1",
+    "g++-13-x86-64-linux-gnu": "13.3.0-6ubuntu2~24.04.1",
+    "g++-x86-64-linux-gnu": "4:13.2.0-7ubuntu1",
+    "gcc": "4:13.2.0-7ubuntu1",
+    "gcc-13": "13.3.0-6ubuntu2~24.04.1",
+    "gcc-13-base:amd64": "13.3.0-6ubuntu2~24.04.1",
+    "gcc-13-x86-64-linux-gnu": "13.3.0-6ubuntu2~24.04.1",
+    "gcc-14-base:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "gcc-x86-64-linux-gnu": "4:13.2.0-7ubuntu1",
+    "libacl1:amd64": "2.3.2-1build1.1",
+    "libasan8:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libatomic1:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libbinutils:amd64": "2.42-4ubuntu2.10",
+    "libbz2-1.0:amd64": "1.0.8-5.1build0.1",
+    "libc-dev-bin": "2.39-0ubuntu8.7",
+    "libc6:amd64": "2.39-0ubuntu8.7",
+    "libc6-dev:amd64": "2.39-0ubuntu8.7",
+    "libcc1-0:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libcrypt-dev:amd64": "1:4.4.36-4build1",
+    "libcrypt1:amd64": "1:4.4.36-4build1",
+    "libctf-nobfd0:amd64": "2.42-4ubuntu2.10",
+    "libctf0:amd64": "2.42-4ubuntu2.10",
+    "libdb5.3t64:amd64": "5.3.28+dfsg2-7",
+    "libffi8:amd64": "3.4.6-1build1",
+    "libgcc-13-dev:amd64": "13.3.0-6ubuntu2~24.04.1",
+    "libgcc-s1:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libgdbm-compat4t64:amd64": "1.23-5.1build1",
+    "libgdbm6t64:amd64": "1.23-5.1build1",
+    "libgmp10:amd64": "2:6.3.0+dfsg-2ubuntu6.1",
+    "libgomp1:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libgprofng0:amd64": "2.42-4ubuntu2.10",
+    "libhwasan0:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libisl23:amd64": "0.26-3build1.1",
+    "libitm1:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libjansson4:amd64": "2.14-2build2",
+    "liblsan0:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "liblzma5:amd64": "5.6.1+really5.4.5-1ubuntu0.3",
+    "libmd0:amd64": "1.1.0-2build1.1",
+    "libmpc3:amd64": "1.3.1-1build1.1",
+    "libmpfr6:amd64": "4.2.1-1build1.1",
+    "libpcre2-8-0:amd64": "10.42-4ubuntu2.1",
+    "libperl5.38t64:amd64": "5.38.2-3.2ubuntu0.2",
+    "libquadmath0:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libselinux1:amd64": "3.5-2ubuntu2.1",
+    "libsframe1:amd64": "2.42-4ubuntu2.10",
+    "libstdc++-13-dev:amd64": "13.3.0-6ubuntu2~24.04.1",
+    "libstdc++6:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libtinfo6:amd64": "6.4+20240113-1ubuntu2",
+    "libtsan2:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libubsan1:amd64": "14.2.0-4ubuntu2~24.04.1",
+    "libzstd1:amd64": "1.5.5+dfsg2-2build1.1",
+    "linux-libc-dev:amd64": "6.8.0-124.124",
+    "make": "4.3-4.1build2",
+    "perl": "5.38.2-3.2ubuntu0.2",
+    "perl-base": "5.38.2-3.2ubuntu0.2",
+    "perl-modules-5.38": "5.38.2-3.2ubuntu0.2",
+    "rpcsvc-proto": "1.4.2-0ubuntu7",
+    "tar": "1.35+dfsg-3build1",
+    "zlib1g:amd64": "1:1.3.dfsg-3.1ubuntu2.1"
+  },
+  "packages": [
+    {
+      "name": "libbsd0",
+      "version": "0.12.1-1build1.1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/libb/libbsd/libbsd0_0.12.1-1build1.1_amd64.deb",
+      "sha256": "f3857b0863ac5cfd4263e9bf6cfb1d4be88d5321e4070d5bc2b62b0949e6c86f"
+    },
+    {
+      "name": "libicu74",
+      "version": "74.2-1ubuntu3.1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/i/icu/libicu74_74.2-1ubuntu3.1_amd64.deb",
+      "sha256": "c9a70989678660eed9a1e904c74fa043da8bec8e2036856fc16e31ced79b04f8"
+    },
+    {
+      "name": "libxml2",
+      "version": "2.9.14+dfsg-1.3ubuntu3.10",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/libx/libxml2/libxml2_2.9.14+dfsg-1.3ubuntu3.10_amd64.deb",
+      "sha256": "c5a065f85c1e6f605741e365e40cad71c3ceb0e85e2791400bd35b8896e12ad1"
+    },
+    {
+      "name": "libmagic-mgc",
+      "version": "1:5.45-3build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/f/file/libmagic-mgc_5.45-3build1_amd64.deb",
+      "sha256": "f0ed0e314a63ae1b7e5403d7e43a26c6e0c0ee69e9a305babcf9c6775607377a"
+    },
+    {
+      "name": "libmagic1t64",
+      "version": "1:5.45-3build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/f/file/libmagic1t64_5.45-3build1_amd64.deb",
+      "sha256": "fc2319f342c437e044ccf854e0c95bd472a7eb0b9363e1f76ad1524ab04df68e"
+    },
+    {
+      "name": "file",
+      "version": "1:5.45-3build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/f/file/file_5.45-3build1_amd64.deb",
+      "sha256": "17dae1d6e803d0304e318f451c8abf62cbd5bb2a0068300cdeea77c62075b895"
+    },
+    {
+      "name": "libedit2",
+      "version": "3.1-20230828-1build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/libe/libedit/libedit2_3.1-20230828-1build1_amd64.deb",
+      "sha256": "3afbc8ddf835049dd4d88275b9d13680e4c4cdd59e191cbd63424152cc08e00e"
+    },
+    {
+      "name": "m4",
+      "version": "1.4.19-4build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/m/m4/m4_1.4.19-4build1_amd64.deb",
+      "sha256": "30ea715845a1863abd55d11e47ab91513130bf347852d4cdeae69e9d98fa795c"
+    },
+    {
+      "name": "autoconf",
+      "version": "2.71-3",
+      "architecture": "all",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/a/autoconf/autoconf_2.71-3_all.deb",
+      "sha256": "cc3f9f7a1e576173fb59c36652c0a67c6426feae752b352404ba92dfcb1b26c9"
+    },
+    {
+      "name": "autotools-dev",
+      "version": "20220109.1",
+      "architecture": "all",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/a/autotools-dev/autotools-dev_20220109.1_all.deb",
+      "sha256": "d909f0327b09d9a9136239caca975df89782fa28efd721c4eb4caea422d3fc5a"
+    },
+    {
+      "name": "automake",
+      "version": "1:1.16.5-1.3ubuntu1",
+      "architecture": "all",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/a/automake-1.16/automake_1.16.5-1.3ubuntu1_all.deb",
+      "sha256": "5ae9a98e73545002cd891f028859941af2a3c760cb6190e635c7ef36953912de"
+    },
+    {
+      "name": "libllvm18",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/l/llvm-toolchain-18/libllvm18_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "af6197096ce3b89aab86de59f01c1b5feb008b2ae1514a03906c0664edb8b0b1"
+    },
+    {
+      "name": "libclang-cpp18",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/l/llvm-toolchain-18/libclang-cpp18_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "e91eda104813ee0468d145d010a4a4e142401f3f17f9a65596c66d416298d018"
+    },
+    {
+      "name": "libgc1",
+      "version": "1:8.2.6-1build1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/libg/libgc/libgc1_8.2.6-1build1_amd64.deb",
+      "sha256": "67d4d83f1c7f3bc240d44f4d9133e08d0da3e5069e50e6dd15ea998af7bccd06"
+    },
+    {
+      "name": "libobjc4",
+      "version": "14.2.0-4ubuntu2~24.04.1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/g/gcc-14/libobjc4_14.2.0-4ubuntu2%7e24.04.1_amd64.deb",
+      "sha256": "0c24f15d962c751bcca42450c418c33337b65f5f56c1bf46f69d9bf8d3a31cbe"
+    },
+    {
+      "name": "libobjc-13-dev",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/g/gcc-13/libobjc-13-dev_13.3.0-6ubuntu2%7e24.04.1_amd64.deb",
+      "sha256": "6757dc7e223f69c6c41f9aba133f0b54fe4babc8f38a9e1a51d9b03a9a28e8a6"
+    },
+    {
+      "name": "libclang-common-18-dev",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/l/llvm-toolchain-18/libclang-common-18-dev_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "d41631bb752815a8196261d1030c096591c59678c8adfbf2e6a740a691b49e80"
+    },
+    {
+      "name": "llvm-18-linker-tools",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/l/llvm-toolchain-18/llvm-18-linker-tools_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "50f0bcfa784e42f8bf0eac31aeb6a20798fb6174cc31efe021f12ae71af91b23"
+    },
+    {
+      "name": "libclang1-18",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/l/llvm-toolchain-18/libclang1-18_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "1ed67106d743ab4f12db2726c5fc11c436c5e1fba613e9f1006bf3fa05cc69bd"
+    },
+    {
+      "name": "clang-18",
+      "version": "1:18.1.3-1ubuntu1",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/l/llvm-toolchain-18/clang-18_18.1.3-1ubuntu1_amd64.deb",
+      "sha256": "628b16701014ef7ad648380b20ea74b90dd543857f933b3e34d2fc042783de25"
+    },
+    {
+      "name": "clang",
+      "version": "1:18.0-59~exp2",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/universe/l/llvm-defaults/clang_18.0-59%7eexp2_amd64.deb",
+      "sha256": "54de2f039144ab5f3f8324bdec766023cc27c1e22b66998c841e863234764119"
+    },
+    {
+      "name": "libtool",
+      "version": "2.4.7-7build1",
+      "architecture": "all",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261107T002444Z/pool/main/libt/libtool/libtool_2.4.7-7build1_all.deb",
+      "sha256": "9d1d707179675d38e024bb13613b1d99e0d33fa6c45e5f3bcba19340781781d3"
+    }
+  ]
+}

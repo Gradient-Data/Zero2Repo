@@ -1,0 +1,5 @@
+FreeEuro Type1 font and matching AFM, copied without alteration from GNU groff 1.23.0 font/devps/freeeuro.pfa and freeeuro.afm.
+Created by Werner Lemberg; serif shapes are based on Omega fonts by Yannis Haralambous.
+Distributed under the GNU GPL version 3 or later, as recorded in the accompanying groff copyright and GPL text.
+The input uses an explicit Unicode-to-glyph mapping for the font-specific Euro.serif glyph. The independent observer converts that original glyph outline to a TrueType curve representation for MuPDF; this is an oracle only, not the product input.
+The font has no space glyph. The explicit mapping also supplies the same real glyph for the renderer's unused space-metric query; the rendered input contains only the Euro character and no spaces.

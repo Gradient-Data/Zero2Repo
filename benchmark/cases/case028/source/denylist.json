@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "case_id": "case028",
+  "ecosystem": "go",
+  "install_ban": [
+    "github.com/mvm-sh/mvm",
+    "github.com/mvm-sh/mvm/cmd/mvmlint"
+  ],
+  "import_ban": [
+    "github.com/mvm-sh/mvm",
+    "libmvm.a",
+    "libmvm.h"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the upstream Go module, its lint companion and C embedding artifacts; allow the provided Go toolchain, standard libraries and unrelated dependencies. Recipe-image probes of both Python installations, Node built-ins and global packages, Perl, Tcl, system executables and Go module storage found no bundled equivalent Go interpreter."
+}

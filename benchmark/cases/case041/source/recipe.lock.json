@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case041",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "python3 -c 'import sys, pytest; print(sys.version); print(\"pytest \" + pytest.__version__)' && python3 -m pytest --version",
+    "build_command": "true"
+  }
+}

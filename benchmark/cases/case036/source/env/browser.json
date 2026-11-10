@@ -1,0 +1,31 @@
+{
+  "architecture": "amd64",
+  "source": "https://deb.debian.org/debian/",
+  "provenance": "Debian bookworm main binary-amd64 Packages index",
+  "packages": [
+    {
+      "Package": "chromium",
+      "Version": "150.0.7871.100-1~deb12u1",
+      "Filename": "pool/main/c/chromium/chromium_150.0.7871.100-1~deb12u1_amd64.deb",
+      "SHA256": "9eb054fb52bbcd7a8c6407484be2337298ff8b1e19af14af2e7b497fa190ce4f"
+    },
+    {
+      "Package": "chromium-common",
+      "Version": "150.0.7871.100-1~deb12u1",
+      "Filename": "pool/main/c/chromium/chromium-common_150.0.7871.100-1~deb12u1_amd64.deb",
+      "SHA256": "31326f6b71ce20a52e7bea9792bf7135d4ff802e1cdbc250960b1b46729998d2"
+    },
+    {
+      "Package": "libdav1d6",
+      "Version": "1.0.0-2+deb12u1",
+      "Filename": "pool/main/d/dav1d/libdav1d6_1.0.0-2+deb12u1_amd64.deb",
+      "SHA256": "197f08108242177aeae4c04aac11825c39b7d18598191ab769f910687ccb387f"
+    },
+    {
+      "Package": "libjpeg62-turbo",
+      "Version": "1:2.1.5-2",
+      "Filename": "pool/main/libj/libjpeg-turbo/libjpeg62-turbo_2.1.5-2_amd64.deb",
+      "SHA256": "95ec30140789a342add8f8371ed018924de51b539056522b66f207b25cba9cad"
+    }
+  ]
+}

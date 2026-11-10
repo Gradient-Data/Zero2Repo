@@ -681,6 +681,10 @@ def _is_recipe_continuation(line: str) -> bool:
     """
     if not line or line[0] not in " \t":
         return False
+    # Make treats a tab-indented line as a recipe line whatever it contains,
+    # including text such as "Usage: make search" that looks like a target.
+    if line[0] == "\t":
+        return True
     if _MAKE_ASSIGN.match(line.lstrip()) is not None:
         return False
     if _MAKE_TARGET.match(line.lstrip()) is not None:

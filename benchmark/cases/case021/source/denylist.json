@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "case_id": "case021",
+  "ecosystem": "pip",
+  "install_ban": [
+    "cython"
+  ],
+  "import_ban": [
+    "Cython",
+    "cygdb",
+    "cython",
+    "cythonize",
+    "pyximport"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "Cython",
+      "runtime": "python3",
+      "evidence": "Original recipe image: /opt/conda/bin/python3.13 resolves Cython to /opt/cb-warm/Cython/__init__.py using importlib.util.find_spec."
+    },
+    {
+      "import_root": "cygdb",
+      "runtime": "system",
+      "evidence": "Original recipe image: /opt/conda/bin/cygdb imports Cython.Debugger.Cygdb.main."
+    },
+    {
+      "import_root": "cython",
+      "runtime": "python3",
+      "evidence": "Original recipe image: /opt/conda/bin/python3.13 resolves cython to /opt/cb-warm/cython.py using importlib.util.find_spec."
+    },
+    {
+      "import_root": "cython",
+      "runtime": "system",
+      "evidence": "Original recipe image: /opt/conda/bin/cython imports Cython.Compiler.Main.setuptools_main."
+    },
+    {
+      "import_root": "cythonize",
+      "runtime": "system",
+      "evidence": "Original recipe image: /opt/conda/bin/cythonize imports Cython.Build.Cythonize.main."
+    },
+    {
+      "import_root": "pyximport",
+      "runtime": "python3",
+      "evidence": "Original recipe image: /opt/conda/bin/python3.13 resolves pyximport to /opt/cb-warm/pyximport/__init__.py using importlib.util.find_spec."
+    }
+  ],
+  "notes": "Ban the Cython distribution, its bundled module roots and compiler/debugger commands; allow Python, Node.js, Perl, setuptools, NumPy, IPython and C/C++ toolchains. Recipe-image probes confirmed the upstream warm installation; Python 3.11 and 3.12 module probes, Node built-ins and module paths, Perl module paths and system command probes found no additional equivalent."
+}

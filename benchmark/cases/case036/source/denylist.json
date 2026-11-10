@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "case_id": "case036",
+  "ecosystem": "pip",
+  "install_ban": [
+    "robotframework"
+  ],
+  "import_ban": [
+    "libdoc",
+    "rebot",
+    "robot"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "libdoc",
+      "runtime": "system",
+      "evidence": "Recipe original image: /opt/conda/bin/libdoc imports libdoc_cli from robot.libdoc in the installed upstream distribution."
+    },
+    {
+      "import_root": "rebot",
+      "runtime": "system",
+      "evidence": "Recipe original image: /opt/conda/bin/rebot imports rebot_cli from robot in the installed upstream distribution."
+    },
+    {
+      "import_root": "robot",
+      "runtime": "python3",
+      "evidence": "Recipe original image: Python 3.13.13 resolves robot to /opt/conda/lib/python3.13/site-packages/robot/__init__.py; distribution metadata reports robotframework 7.5.1.dev1. System Python 3.12.3 has no robot module."
+    },
+    {
+      "import_root": "robot",
+      "runtime": "system",
+      "evidence": "Recipe original image: /opt/conda/bin/robot imports run_cli from robot in the installed upstream distribution."
+    }
+  ],
+  "notes": "Ban the upstream PyPI distribution, Python module root and installed CLI entry points; allow standard libraries, setuptools, pytest, Node tooling, Chromium and all declared environment dependencies. Recipe-image Python, Node built-ins/global packages, Perl module paths and OS package inventories revealed no additional product equivalent."
+}

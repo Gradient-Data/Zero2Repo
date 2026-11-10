@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case038",
+  "ecosystem": "pip",
+  "install_ban": [
+    "elementpath"
+  ],
+  "import_ban": [
+    "elementpath"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "elementpath",
+      "runtime": "python3",
+      "evidence": "Probed the original recipe image through casebox: Python 3.13.13 loads elementpath 5.1.4 from /opt/conda/lib/python3.13/site-packages/elementpath/__init__.py; evaluating for $x in (1, 2) return $x + 1 against an XML root returns [2, 3]. System Python 3.12 has no elementpath. Node 20 built-ins and global packages, Perl XML::XPath/XML::LibXML probes, and installed executable/package inventories revealed no additional implementation covering the target XPath 2.0/3.0/3.1 capabilities."
+    }
+  ],
+  "notes": "Ban only the upstream PyPI package and Python module root, including the preinstalled copy; allow the neutral product namespace, setuptools, wheel, pytest, xmlschema, lxml, libxml2, libxslt, xmllint and xml.etree as infrastructure. The latter XML tools provide limited path queries or XPath 1.0, not the target XPath 2.0/3.0/3.1 implementation."
+}

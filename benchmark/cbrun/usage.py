@@ -166,6 +166,13 @@ def _claude_model_usage(model_usage: dict) -> tuple[Buckets, dict[str, dict[str,
     return total, by_model
 
 
+def _add_by_model(into: dict[str, dict[str, int]], part: dict[str, dict[str, int]]) -> None:
+    for name, slot in part.items():
+        acc = into.setdefault(name, {k: 0 for k in slot})
+        for k, v in slot.items():
+            acc[k] = acc.get(k, 0) + v
+
+
 def _openai(usage: dict) -> Buckets:
     """OpenAI counts cached tokens inside ``input_tokens``; split them out."""
     cached = _int(usage.get("cached_input_tokens"))
@@ -192,9 +199,23 @@ def parse_usage_text(text: str) -> LogUsage:
     """Extract usage from one log or session file."""
     out = LogUsage()
     claude_msgs: dict[str, tuple[str, Buckets]] = {}
+    # Claude Code's result ``modelUsage`` and ``total_cost_usd`` are running
+    # totals for the whole session: one process can print many result lines,
+    # and a resumed process starts from the session's earlier total. Each
+    # session keeps only its latest result. A process killed before its result
+    # leaves only its messages.
+    session_usage: dict[str, tuple[Buckets, dict[str, dict[str, int]]]] = {}
+    session_cost: dict[str, float] = {}
+    turn_usage: Buckets | None = None
+    process_msgs: dict[str, tuple[str, Buckets]] = {}
+    reported: set[str] = set()
     opencode_calls: Buckets | None = None
     opencode_cost = 0.0
     saw_opencode_cost = False
+    # dsh reports each model step's usage on a status/step_end event.
+    dsh_calls: Buckets | None = None
+    dsh_steps = 0
+    dsh_reported = 0
 
     for event in _json_events(text):
         etype = event.get("type")
@@ -204,15 +225,20 @@ def parse_usage_text(text: str) -> LogUsage:
             if "inputTokens" in usage:
                 out.summary, out.summary_source = _cursor_result(usage), "cursor_result"
                 continue
+            session = str(event.get("session_id") or "")
             model_usage = event.get("modelUsage")
             if isinstance(model_usage, dict) and model_usage:
-                out.summary, out.by_model = _claude_model_usage(model_usage)
+                session_usage[session] = _claude_model_usage(model_usage)
             else:
-                out.summary = _anthropic(usage)
-            out.summary_source = "claude_result"
+                # Without modelUsage the result carries only this turn's usage.
+                turn_usage = turn_usage or Buckets()
+                turn_usage.add(_anthropic(usage))
             cost = event.get("total_cost_usd")
             if isinstance(cost, (int, float)) and not isinstance(cost, bool):
-                out.harness_cost_usd = float(cost)
+                session_cost[session] = float(cost)
+            out.summary_source = "claude_result"
+            reported.update(process_msgs)
+            process_msgs = {}
             continue
 
         if etype == "turn.completed" and usage is not None:
@@ -229,6 +255,22 @@ def parse_usage_text(text: str) -> LogUsage:
         if etype == "assistant" and isinstance(message, dict) and isinstance(message.get("usage"), dict):
             key = str(message.get("id") or event.get("requestId") or event.get("uuid") or len(claude_msgs))
             claude_msgs[key] = (str(message.get("model") or ""), _anthropic(message["usage"]))
+            process_msgs[key] = claude_msgs[key]
+            continue
+
+        if etype == "status" and event.get("phase") == "step_end":
+            dsh_steps += 1
+            if usage is not None:
+                step = Buckets(
+                    input_tokens=_int(usage.get("inputTokens")),
+                    cache_read_tokens=_int(usage.get("cacheReadTokens")),
+                    cache_write_tokens=_int(usage.get("cacheWriteTokens")),
+                    output_tokens=_int(usage.get("outputTokens")),
+                    reasoning_tokens=_int(usage.get("reasoningTokens")),
+                )
+                dsh_calls = dsh_calls or Buckets()
+                dsh_calls.add(step)
+                dsh_reported += 1
             continue
 
         part = event.get("part")
@@ -249,6 +291,25 @@ def parse_usage_text(text: str) -> LogUsage:
                 opencode_cost += float(cost)
                 saw_opencode_cost = True
 
+    if out.summary_source == "claude_result":
+        out.summary, out.by_model = Buckets(), {}
+        if turn_usage is not None:
+            out.summary.add(turn_usage)
+        for part, part_by_model in session_usage.values():
+            out.summary.add(part)
+            _add_by_model(out.by_model, part_by_model)
+        if turn_usage is not None:
+            # Per-model totals exist only when every result had modelUsage.
+            out.by_model = {}
+        if session_cost:
+            out.harness_cost_usd = sum(session_cost.values())
+        for key, (model, b) in process_msgs.items():
+            # Claude Code's synthetic error messages carry no usage and no priced model.
+            if key in reported or b.total() == 0:
+                continue
+            out.summary.add(b)
+            if out.by_model:
+                _add_by_model(out.by_model, {model: {k: getattr(b, k) for k in _BUCKETS}})
     if claude_msgs:
         out.calls = Buckets()
         for model, b in claude_msgs.values():
@@ -268,6 +329,9 @@ def parse_usage_text(text: str) -> LogUsage:
         out.calls, out.calls_source = opencode_calls, "opencode_step_finish"
         if saw_opencode_cost and out.harness_cost_usd is None:
             out.harness_cost_usd = opencode_cost
+    elif dsh_calls is not None:
+        out.calls = dsh_calls
+        out.calls_source = "dsh_step_end" if dsh_reported == dsh_steps else "dsh_step_end_partial"
     return out
 
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="icon.svg" width="56" height="56" alt="">
+<img src="figures/exam.gif" width="468" alt="The exam, one hidden run. Hidden tests resolve to 1 when every hidden test passed.">
 
 # Zero2Repo
 
@@ -8,7 +8,7 @@
 
 **A product spec, an empty workspace, and hidden acceptance tests. The agent builds the repository.**
 
-Organization and repository links are omitted in this copy for double-blind review.
+Organization, repository and paper links are omitted in this copy for double-blind review.
 
 Formerly CodingBench. Same exam. Clearer name.
 
@@ -30,9 +30,14 @@ tests** (binary reward: `1.0` / `0.0`). No LLM-as-judge.
 
 This repository ships:
 
-- **17 released cases** under `benchmark/cases/`: Tomlparse, python-envfile, ymlcodec (TypeScript), Signtoken, httpwire, Optlyn, Otpkit, Hrefparse (C++), Git Orbulk (Go), Lingora, PathSel (Python), lint-policy (TypeScript), Membundle (Go), Navfilter (C11), oggrepack (C99), prosecheck (Python and Node), and klyvmap (Zig)
+- **43 released cases** under `benchmark/cases/` (`case001`–`case043`), each with a
+  public spec, hidden acceptance tests and a pinned environment recipe
 - The **`cbrun`** harness (recommended)
 - An optional **Harbor** adapter
+
+Model trajectories on all 43 cases and the reference solutions, each verified at
+reward 1.0 against the same hidden tests, are published on Hugging Face:
+<https://anonymous-hf.com/a/innck9017i29/> (anonymized for review).
 
 ---
 
@@ -78,9 +83,10 @@ the agent cannot simply recall the upstream repository.
 ### Language-agnostic by construction
 
 The authoring process makes no assumptions about language, build system or test
-framework. This release currently ships eight Python cases, one Python-and-Node
-case, two TypeScript cases, two Go cases, one C++ case, two C cases, and one
-Zig case. New ecosystems are a matter of adding seed repositories, not rewriting
+framework. This release currently ships 26 Python cases, one Python-and-Rust,
+one Python-and-Cython and one Python-and-Node case, three Go cases, three Rust
+cases, two TypeScript cases, two C cases, two Zig cases, one C++ case and one
+Java case. New ecosystems are a matter of adding seed repositories, not rewriting
 the harness.
 
 ### Fully automated, so it scales
@@ -117,6 +123,7 @@ distribution, test on another".
 ### Install
 
 ```bash
+# download this anonymized copy, then:
 cd Zero2Repo
 
 # vendor dependency used by cost reporting
@@ -207,6 +214,7 @@ Each case under `benchmark/cases/<case_id>/` contains:
 | `source/manifest.json` | Runner metadata for the harness |
 | `milestones/final/tests/` | Hidden acceptance tests |
 | `milestones/final/test_manifest.json` | Test inventory / command template |
+| `milestones/final/test_assets.json` | Large test assets, fetched from their official URLs and checked by sha256 when the tests are staged (when present) |
 | `milestones/final/run_acceptance.sh` | Authoritative judge entrypoint (when present) |
 
 List released cases:

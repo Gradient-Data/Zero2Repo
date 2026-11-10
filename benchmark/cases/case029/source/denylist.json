@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "case_id": "case029",
+  "ecosystem": "pip",
+  "install_ban": [
+    "openai-agents",
+    "openai.agents",
+    "openai/openai-agents-python",
+    "openai_agents"
+  ],
+  "import_ban": [
+    "agents"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "agents",
+      "runtime": "python3",
+      "evidence": "Recipe original image: /opt/conda/bin/python3 (Python 3.13.13) reports openai-agents 0.24.0 via importlib.metadata and resolves agents to /opt/conda/lib/python3.13/site-packages/agents/__init__.py via importlib.util.find_spec."
+    }
+  ],
+  "notes": "Ban the upstream distribution, its pip-normalized aliases, repository slug, and preinstalled agents module; allow openai, MCP, Pydantic, NumPy, other declared dependencies, standard libraries, and toolchains. Recipe-image probes of system Python, Node built-ins and global packages, Perl, Tcl, and system packages/executables found no additional product equivalents."
+}

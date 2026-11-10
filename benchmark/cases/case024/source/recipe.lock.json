@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case024",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "bash /env-assets/install.sh",
+    "build_command": "PATH=/opt/runtime/bin:$PATH python3 -m pip install --prefix=/usr/local --no-index --no-deps --no-build-isolation ."
+  }
+}

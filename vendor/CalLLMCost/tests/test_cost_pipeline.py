@@ -75,12 +75,12 @@ def test_openai_litellm_alias_zero_prompt_completion(pricing_path: Path) -> None
     assert cost == pytest.approx(expected)
 
 
-def test_loads_pricing_fixture_if_present() -> None:
-    """Optional: load a sibling pricing fixture when one is checked out."""
+def test_loads_swerouterbench_fixture_if_present() -> None:
+    """Optional: run from monorepo checkout with SWERouterBench sibling data."""
 
     repo_root = Path(__file__).resolve().parents[2]
-    bundled = repo_root.parent / "pricing_fixture" / "data" / "model_pricing.json"
+    bundled = repo_root.parent / "SWERouterBench" / "data" / "model_pricing.json"
     if not bundled.is_file():
-        pytest.skip("pricing fixture model_pricing.json not in tree")
+        pytest.skip("SWERouterBench/data/model_pricing.json not in tree")
     table = load_pricing_table(bundled)
     assert "anthropic/claude-opus-4.6" in table

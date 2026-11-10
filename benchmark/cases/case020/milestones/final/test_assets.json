@@ -1,0 +1,52 @@
+{
+  "assets": [
+    {
+      "path": "tests/F07_assets/bazel-6.5.0-linux-x86_64",
+      "url": "https://github.com/bazelbuild/bazel/releases/download/6.5.0/bazel-6.5.0-linux-x86_64",
+      "sha256": "a40ac69263440761199fcb8da47ad4e3f328cbe79ffbf4ecc14e5ba252857307",
+      "size": 54809867
+    },
+    {
+      "path": "tests/F07_assets/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "sha256": "ff1b650f655b36dfe202fdbae6bb02b363c7257b6dd23e4f95ab61f716190df3",
+      "size": 1547558
+    },
+    {
+      "path": "tests/F07_assets/meson-1.12.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/57/99/36cd25f9598eef70db97577440a70a360af505f6f01c2338a18d1556079c/meson-1.12.1-py3-none-any.whl",
+      "sha256": "930bc7542cbd9f57009e182fd014eba48cf1a0180a7b9006d2d32d8f168d8b02",
+      "size": 1108668
+    },
+    {
+      "path": "tests/F07_assets/ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/6e/53/ebfed7b689c338dd8ebeec9c0730c8d56821292f14e2536e5f3ef1a05744/ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "65a24341b5ac09fcadcc37082660be40a94174e51a937fabf6e2cae26225fa2c",
+      "size": 183365
+    },
+    {
+      "path": "tests/F07_assets/premake-5.0.0-beta2-linux.tar.gz",
+      "url": "https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz",
+      "sha256": "4186b8fd66b55df935280f55663c6e46fd568799d89b7ff6a3cfb20d58ff6224",
+      "size": 857051
+    },
+    {
+      "path": "tests/F07_assets/qbs-linux-x86_64-2.5.0.tar.gz",
+      "url": "https://download.qt.io/official_releases/qbs/2.5.0/qbs-linux-x86_64-2.5.0.tar.gz",
+      "sha256": "541f004e8618479e06feda7fc93240665f3e09443f730f30415328bcbdbca630",
+      "size": 29798756
+    },
+    {
+      "path": "tests/F07_assets/rules_cc-0.0.2.tar.gz",
+      "url": "https://github.com/bazelbuild/rules_cc/releases/download/0.0.2/rules_cc-0.0.2.tar.gz",
+      "sha256": "58bff40957ace85c2de21ebfc72e53ed3a0d33af8cc20abd0ceec55c63be7de2",
+      "size": 127138
+    },
+    {
+      "path": "tests/F07_assets/scons-4.11.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/8e/43/d6285848e893c19682c06e92679dc1a07d37ff7ea148747b1df681ec496c/scons-4.11.1-py3-none-any.whl",
+      "sha256": "454cef364348053422696e3d2ecb4fa593c96a624f955842eaaea64f95c8d11d",
+      "size": 4123659
+    }
+  ]
+}

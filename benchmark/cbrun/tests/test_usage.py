@@ -188,26 +188,40 @@ def test_prices_cover_sol_deepseek_and_kimi():
         "cache_write_tokens": 0,
         "output_tokens": 1_000_000,
     }
-    kimi = trial_cost(buckets, "bailian/kimi-k3")
+    kimi = trial_cost(buckets, "gateway/kimi-k3")
     assert kimi["cost_cny"] is None
     assert kimi["cost_usd"] == round(0.67 + 0.66 + 14.0, 6)
     assert kimi["unpriced_models"] == []
-    deepseek = trial_cost(buckets, "bailian/deepseek-v4-pro-0813")
+    deepseek = trial_cost(buckets, "gateway/deepseek-v4-pro-0813")
     assert deepseek["cost_usd"] == round(0.1901 + 0.19 + 4.2, 6)
-    glm_id, glm_price = lookup_model("bailian/glm-5.3")
+    glm_id, glm_price = lookup_model("gateway/glm-5.3")
     assert glm_id == "z-ai/glm-5.3"
     assert glm_price["cache_write_per_m"] == glm_price["input_per_m"]
-    glm = trial_cost(buckets, "bailian/glm-5.3")
+    glm = trial_cost(buckets, "gateway/glm-5.3")
     assert glm["cost_usd"] == round(0.06 + 0.03 + 4.4, 6)
-    qwen_id, qwen_price = lookup_model("bailian/qwen3.8-max-0902")
+    qwen_id, qwen_price = lookup_model("gateway/qwen3.8-max-0902")
     assert qwen_id == "qwen/qwen3.8-max"
     assert lookup_model("qwen3.8-max")[0] == "qwen/qwen3.8-max"
     assert qwen_price["cache_read_5m_per_m"] == 0.17
     assert qwen_price["cache_write_per_m"] == 2.5
-    qwen = trial_cost(buckets, "bailian/qwen3.8-max-0902")
+    qwen = trial_cost(buckets, "gateway/qwen3.8-max-0902")
     assert qwen["cost_usd"] == round(2.0 + 0.25 + 6.0, 6)
     qwen_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "qwen3.8-max-0902")
     assert qwen_write["cost_usd"] == round(2.0 + 0.25 + 2.5 + 6.0, 6)
+    gemini_id, gemini_price = lookup_model("anthropic/google/gemini-4-argon")
+    assert gemini_id == "google/gemini-4-argon"
+    assert gemini_price["cache_write_per_m"] == gemini_price["input_per_m"]
+    gemini = trial_cost(buckets, "google/gemini-4-argon")
+    assert gemini["cost_usd"] == round(2.0 + 0.1 + 10.0, 6)
+    gemini_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "gemini-4-argon")
+    assert gemini_write["cost_usd"] == round(2.0 + 0.1 + 2.0 + 10.0, 6)
+    flash_id, flash_price = lookup_model("openrouter/deepseek/deepseek-v4.1-flash-1017")
+    assert flash_id == "deepseek/deepseek-v4.1-flash-1017"
+    assert flash_price["cache_write_per_m"] == flash_price["input_per_m"]
+    flash = trial_cost(buckets, "openrouter/deepseek/deepseek-v4.1-flash-1017")
+    assert flash["cost_usd"] == round(0.08 + 0.008 + 0.50, 6)
+    flash_write = trial_cost({**buckets, "cache_write_tokens": 1_000_000}, "deepseek-v4.1-flash-1017")
+    assert flash_write["cost_usd"] == round(0.08 + 0.008 + 0.08 + 0.50, 6)
 
 
 def _step_finish(inp: int, read: int, write: int, output: int, reasoning: int, cost: float) -> str:
@@ -286,7 +300,7 @@ def test_opencode_db_is_ignored_for_claude_logs(tmp_path: Path):
 
 
 def test_opencode_spec_archives_its_data_dir():
-    invocation = resolve_agent(backend="opencode", model="bailian/kimi-k3")
+    invocation = resolve_agent(backend="opencode", model="gateway/kimi-k3")
     assert invocation.spec.usage_paths == ("${XDG_DATA_HOME:-$HOME/.local/share}/opencode",)
 
 
@@ -328,4 +342,4 @@ def test_opencode_zero_self_cost_is_not_recorded(tmp_path: Path):
         con.close()
     assert usage["sources"] == ["opencode_session_db"]
     assert "harness_cost_usd" not in usage
-    assert trial_cost(usage, "bailian/kimi-k3")["cost_usd"] > 0
+    assert trial_cost(usage, "gateway/kimi-k3")["cost_usd"] > 0

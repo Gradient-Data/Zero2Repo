@@ -4,8 +4,8 @@ Different vendors report token usage differently. Costing uses one uniform
 4-bucket view (input / cache_read / cache_write / output) so that
 ``step_real_cost_usd`` can apply per-model prices unambiguously.
 
-Vendor mapping rules were checked against OpenRouter traces
-(typically within ~1% of ``usage.cost``).
+Vendor mapping rules match the logic proven on OpenRouter traces in
+SWERouterBench / MiniSWERouterBench (typically within ~1% of ``usage.cost``).
 Unknown providers, missing fields, or negative counts raise (fail fast).
 """
 

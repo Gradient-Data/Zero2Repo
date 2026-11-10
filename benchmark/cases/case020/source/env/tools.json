@@ -1,0 +1,9 @@
+[
+  {
+    "name": "cmake",
+    "version": "3.27.9",
+    "url": "https://files.pythonhosted.org/packages/48/79/10d15c399a6fb92738f8d02c69eae6f6df0b9c6b9545c947a29c2a45adea/cmake-3.27.9-py2.py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+    "sha256": "434714990d82e3c3936a726c1706c6a1d5a34964a7415d1433af0904a994e414",
+    "archive_prefix": "cmake/data/"
+  }
+]

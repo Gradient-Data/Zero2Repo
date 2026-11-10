@@ -1,0 +1,25 @@
+{
+  "platform": "Ubuntu 24.04, x86_64",
+  "packages": [
+    {
+      "asset": "F03_gnome-keyring_46.1-2ubuntu0.2_amd64.deb",
+      "source": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnome-keyring/gnome-keyring_46.1-2ubuntu0.2_amd64.deb",
+      "sha256": "86629a081c91dd8004655f5f48d8a5bfb75dde8c4e69ef7401b15568c2eacafb"
+    },
+    {
+      "asset": "F03_libgck-1-0_3.41.2-1build3_amd64.deb",
+      "source": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcr/libgck-1-0_3.41.2-1build3_amd64.deb",
+      "sha256": "bceace92f5cbbf55ab2c963a426f73335c887f0c1c45c7b0b7d7610b36d9afde"
+    },
+    {
+      "asset": "F03_libgcr-base-3-1_3.41.2-1build3_amd64.deb",
+      "source": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcr/libgcr-base-3-1_3.41.2-1build3_amd64.deb",
+      "sha256": "b702e0ef02517caf5a3e35b9b663dfc22935315dc2e7dc507e78435963ff2e24"
+    },
+    {
+      "asset": "F03_libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "source": "https://security.ubuntu.com/ubuntu/pool/main/g/glib2.0/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "sha256": "ff1b650f655b36dfe202fdbae6bb02b363c7257b6dd23e4f95ab61f716190df3"
+    }
+  ]
+}

@@ -28,7 +28,7 @@ values are not pinned.
 
 from __future__ import annotations
 
-from _harness import workspace
+from _harness import runtime_uuid_int, workspace
 from F01_helpers import hypot3
 from F02_helpers import ecef_from_llh_deg, runtime_site
 from F03_helpers import TRACKER_NAMED_NED, angle_diff_rad
@@ -59,7 +59,6 @@ from F04_helpers import (
     runtime_in_window_delay_ms,
     runtime_north_speed,
     runtime_offset_north_m,
-    runtime_tracker_b,
     runtime_unexplained_yaw_rad,
     runtime_yaw_rad,
     runtime_yaw_rate,
@@ -442,8 +441,14 @@ def test_in_window_gnss_without_history_not_current_no_anchor():
 
 def test_local_skip_without_no_anchor():
     lat, lon, h = runtime_site()
-    tracker_b = runtime_tracker_b()
     a = TRACKER_NAMED_NED
+    # Tracker B sits one to two sample sigmas from A, so the delay-zero twin
+    # fuses it under any reasonable plausibility check. A metres-long step
+    # would make the control depend on whether the outlier override also
+    # stops the local-position skip, which the spec does not settle.
+    step = 0.01 + (runtime_uuid_int() % 9) / 1000.0
+    tracker_b = (a[0] + step, a[1], a[2])
+    print(f"tracker B north step={step} m from A", flush=True)
     cases = (
         ("no-match", True, IN_WINDOW_NO_HISTORY_MS),
         ("over-max", False, NAMED_DELAY_600_MS),
@@ -570,9 +575,16 @@ def test_stated_local_pos_delay_beats_delay_zero_when_moving():
     lat, lon, h = runtime_site()
     v = 1.8 + runtime_north_speed() * 0.02
     delay_ms = NAMED_DELAY_200_MS
-    # Several tenths of a metre, well above the tracker 1-sigma, small enough
-    # that a delayed fuse is not an indoor-glitch skip of a 5 m / 1 cm step.
-    offset = 0.85 + runtime_offset_north_m() * 0.05
+    vdt = v * delay_ms * 1.0e-3
+    # The tracker reports the time-of-validity position plus half of
+    # v×delay. Against the state at its time of validity the stated sample
+    # is then +vdt/2 off the IMU path; the same bytes fused at delay zero are
+    # -vdt/2 off it (they lag the current state by v×delay). Both residuals
+    # have the same size, about 1.5 sample sigmas, so any plausibility check
+    # on this channel (and whether the global override reaches it) treats
+    # the two arms alike, and no sample of either arm is an outlier.
+    local_std = 0.15
+    offset = 0.5 * vdt
     start = TRACKER_NAMED_NED
     stated = moving_local_scenario(
         lat,
@@ -580,39 +592,52 @@ def test_stated_local_pos_delay_beats_delay_zero_when_moving():
         h,
         delay_ms=delay_ms,
         v_north=v,
+        motion_s=6.0,
         north_offset_m=offset,
-        local_std=(0.12, 0.12, 0.12),
+        local_std=(local_std, local_std, local_std),
     )
     zero = apply_delay_after(stated, stated.probe_after_t_us, local_ms=0)
     t_s = (stated.epochs[-1].t_us - stated.probe_after_t_us) * 1.0e-6
     north, _ = accel_then_cruise_ned(t_s, v)
     truth = (start[0] + north + offset, start[1], start[2])
     imu_n = start[0] + north
-    vdt = v * delay_ms * 1.0e-3
+    imu_err = imu_n - truth[0]
     for kind, run in _langs(stated):
         snap = _last_ready(run, f"{kind} local stated")
         err = snap.ned[0] - truth[0]
         zrun = c_delay_run(zero) if kind == "c" else py_delay_run(zero)
         zsnap = _last_ready(zrun, f"{kind} local delay-zero")
         zerr = zsnap.ned[0] - truth[0]
+        # Signed moves off the IMU-only path: forward for the stated arm,
+        # backward for delay-zero. Fusing at the time of validity puts the
+        # stated arm about v×delay ahead of delay-zero; a filter that ignores
+        # the stated delay gives both arms the same solution, and a skip of
+        # the delayed sample leaves the stated arm on the IMU path.
+        moved_stated = err - imu_err
+        moved_zero = imu_err - zerr
         print(
             f"{kind} local moving: stated_n_err={err:.3f} zero_n_err={zerr:.3f} "
-            f"v*delay={vdt:.3f} n={snap.ned[0]:.3f} imu_n={imu_n:.3f} "
-            f"offset={offset:.3f}",
+            f"stated-zero={err - zerr:.3f} v*delay={vdt:.3f} "
+            f"moved stated={moved_stated:.3f} zero={moved_zero:.3f} "
+            f"n={snap.ned[0]:.3f} imu_n={imu_n:.3f} offset={offset:.3f}",
             flush=True,
         )
-        assert abs(zerr) > 0.30 * vdt, (
-            f"{kind}: local delay-zero along-track error {zerr:.3f} m is not "
-            f"resolvable against v×delay {vdt:.3f} m"
+        assert moved_zero > 0.15 * vdt, (
+            f"{kind}: delay-zero local samples did not pull the solution back "
+            f"toward their lagged position ({moved_zero:.3f} m)"
         )
-        assert abs(err) < abs(zerr), (
-            f"{kind}: stated local delay was not closer to the moving tracker"
+        assert err - zerr > 0.5 * vdt, (
+            f"{kind}: stated local delay is {err - zerr:.3f} m ahead of "
+            f"delay-zero, not about v×delay {vdt:.3f} m"
         )
-        assert abs(snap.ned[0] - truth[0]) < abs(snap.ned[0] - imu_n), (
-            f"{kind}: stated local delay stayed on the IMU tracker path; "
-            "delayed sample looks skipped"
+        # The stated arm must take more than half of its +vdt/2 residual:
+        # the same convergence the stated-vs-delay-zero check above already
+        # asks of the two mirror-image arms on average, now per arm. A skip
+        # leaves it at zero.
+        assert moved_stated > 0.25 * vdt, (
+            f"{kind}: stated local delay stayed on the IMU tracker path "
+            f"({moved_stated:.3f} m); delayed sample looks skipped"
         )
-        _assert_offset_fused_not_skipped(err, offset, f"{kind} local moving")
 
 
 def test_stated_yaw_delay_beats_delay_zero_while_turning():

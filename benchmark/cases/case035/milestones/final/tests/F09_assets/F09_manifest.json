@@ -1,0 +1,62 @@
+[
+  {
+    "asset": "F09_tcsh_6.24.10-4build1_amd64.deb",
+    "sha256": "57f5e7814a058f8162149de24b977407ff6075d11615e0b31e43522c32883705",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/t/tcsh/tcsh_6.24.10-4build1_amd64.deb"
+  },
+  {
+    "asset": "F09_libbsd0_0.12.1-1build1.1_amd64.deb",
+    "sha256": "f3857b0863ac5cfd4263e9bf6cfb1d4be88d5321e4070d5bc2b62b0949e6c86f",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/libb/libbsd/libbsd0_0.12.1-1build1.1_amd64.deb"
+  },
+  {
+    "asset": "F09_fish-common_3.7.0-1_all.deb",
+    "sha256": "38fdb2f1a820e65b93d6ef99063e8d070998eb70c34e2ddacf35294ddbf935a4",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/f/fish/fish-common_3.7.0-1_all.deb"
+  },
+  {
+    "asset": "F09_libmd0_1.1.0-2build1_amd64.deb",
+    "sha256": "77f8cdbf03a43656bbf6604e18bd16834fc8bf2c949d4fbdf24ac297869b667a",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/libm/libmd/libmd0_1.1.0-2build1_amd64.deb"
+  },
+  {
+    "asset": "F09_libbsd0_0.12.1-1build1_amd64.deb",
+    "sha256": "8e97b7d541416512a81e7845c5f21910344c9c5c610893cf265d3298e0caad6b",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/libb/libbsd/libbsd0_0.12.1-1build1_amd64.deb"
+  },
+  {
+    "asset": "F09_libpcre2-32-0_10.42-4ubuntu2.1_amd64.deb",
+    "sha256": "30f899441a422ae478426cc29871223cc9e37ef10b758acf807df52b417bfc5f",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/p/pcre2/libpcre2-32-0_10.42-4ubuntu2.1_amd64.deb"
+  },
+  {
+    "asset": "F09_zsh_5.9-6ubuntu2_amd64.deb",
+    "sha256": "bd5cc8dd3a01a6db38c0a815d75202c356a9c7f378674ba7bed9bc86dcba8af0",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/z/zsh/zsh_5.9-6ubuntu2_amd64.deb"
+  },
+  {
+    "asset": "F09_libmd0_1.1.0-2build1.1_amd64.deb",
+    "sha256": "e5ba01d3c41f256aaf57ec59aa0554857162e3e7f97cdfbff1ed2c0e8d720ee7",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/libm/libmd/libmd0_1.1.0-2build1.1_amd64.deb"
+  },
+  {
+    "asset": "F09_mksh_59c-37_amd64.deb",
+    "sha256": "5fa01165eaad3c282418db5228eaf982b9048c04edbf73ca29cea6c15aa625d0",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/m/mksh/mksh_59c-37_amd64.deb"
+  },
+  {
+    "asset": "F09_libpcre2-32-0_10.42-4ubuntu2_amd64.deb",
+    "sha256": "b1092799b3fd462ea6a372e7b0c54bee1cc3a33c62f10d3f7e7896a38642a9e0",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/p/pcre2/libpcre2-32-0_10.42-4ubuntu2_amd64.deb"
+  },
+  {
+    "asset": "F09_csh_20230828-1_amd64.deb",
+    "sha256": "d4abaec001768c9fd2a86ceb7fb9ad62f0b1fc3291478841057662f13620a44d",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/c/csh/csh_20230828-1_amd64.deb"
+  },
+  {
+    "asset": "F09_fish_3.7.0-1_amd64.deb",
+    "sha256": "da21699b9750e8d90b7306192267e72900c1d51c1849b4fa1a680363a8d50cde",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/universe/f/fish/fish_3.7.0-1_amd64.deb"
+  }
+]

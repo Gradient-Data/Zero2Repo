@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case039",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "bash /env-assets/install.sh && test -x /usr/bin/node",
+    "build_command": "cargo build --frozen --release --features ffi,heap-profile && chmod -R a+rX target/release"
+  }
+}

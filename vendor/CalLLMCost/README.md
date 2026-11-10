@@ -2,7 +2,7 @@
 
 Small, dependency-free Python library to **normalize LLM `usage` payloads** from different providers into four canonical token buckets, then **compute USD cost** from a **pinned per-model price table** (USD per 1M tokens for input, cache read, cache write, and output).
 
-The logic follows a pinned pricing and usage pipeline, and was validated to track OpenRouter’s own `usage.cost` within about **1%** on real traces when the JSON price snapshot matches the provider.
+The logic is extracted from an earlier routing benchmark and used in **MiniSWERouterBench**, where it was validated to track the provider’s own `usage.cost` within about **1%** on real traces when the JSON price snapshot matches the provider.
 
 ## Install
 
@@ -65,7 +65,7 @@ pricing = fetch_pricing_table_from_openrouter(
 Notes:
 
 - One HTTP call returns the full catalog; CalLLMCost keeps only the `model_ids` you pass.
-- If OpenRouter omits `input_cache_write`, **cache_write_per_m** is set to **input_per_m** (same rule as the pinned pricing snapshot).
+- If OpenRouter omits `input_cache_write`, **cache_write_per_m** is set to **input_per_m** (same rule as the SWERouterBench snapshot).
 - Listing often works **without** an API key; pass a key if you see **401/403** or rate limits.
 
 ## Pricing file
@@ -75,7 +75,7 @@ Load a JSON document with:
 - Top-level: `schema_version`, `fetched_at`, `currency`, `unit`, `pricing`
 - `pricing`: map of `model_id` → `{ input_per_m, output_per_m, cache_read_per_m, cache_write_per_m, source_url }`
 
-All rates are **USD per 1 million tokens**. A reference pricing file used with this library is `model_pricing.json`.
+All rates are **USD per 1 million tokens**. A reference file used in the benchmark lives at `SWERouterBench/data/model_pricing.json` in the CommonRouterBench monorepo.
 
 ## Supported `provider` values
 
@@ -94,7 +94,7 @@ print(audit_trace_cost_metrics(Path("./run_output")))
 
 ## License
 
-Apache-2.0 — see `LICENSE`. Copyright belongs to the respective contributors.
+Apache-2.0 — see `LICENSE`. Derived from SWERouterBench pricing/usage modules; copyright belongs to the respective contributors.
 
 ## Contributing
 

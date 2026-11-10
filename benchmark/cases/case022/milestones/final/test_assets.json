@@ -1,0 +1,28 @@
+{
+  "assets": [
+    {
+      "path": "tests/resources/F03/F03_elasticsearch.tar.gz",
+      "url": "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.29-linux-x86_64.tar.gz",
+      "sha256": "f7175de3ac8ca16326b9dbdff4ef70bc3da6405efe624655444ba2464073ea8e",
+      "size": 325443139
+    },
+    {
+      "path": "tests/resources/F06/F06_java.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/openjdk-21-jre-headless_21.0.12.1%2B1-1~24.04.4_amd64.deb",
+      "sha256": "951bb9b9337f1af8568bdf8d8ae7a6d4ff837838c4987f5b5d077ef397fba375",
+      "size": 46499662
+    },
+    {
+      "path": "tests/resources/F06/F06_pyspark.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/ae/40/1414582f16c1d7b051c668c2e19c62d21a18bd181d944cb24f5ddbb2423f/pyspark-4.0.1.tar.gz",
+      "sha256": "9d1f22d994f60369228397e3479003ffe2dd736ba79165003246ff7bd48e2c73",
+      "size": 434204896
+    },
+    {
+      "path": "tests/resources/F09/F09_tsfile.whl",
+      "url": "https://files.pythonhosted.org/packages/c2/77/c0d79ff257d48c39fbe79e7dcc444fe93bdacd3680233b9c9b9dd7fe61cb/tsfile-2.5.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "sha256": "7bab89d68915c12c09f25f4189136126d3430e55469e262beef93892ead2b05f",
+      "size": 9175625
+    }
+  ]
+}

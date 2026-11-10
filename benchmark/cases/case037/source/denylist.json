@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "case_id": "case037",
+  "ecosystem": "pip",
+  "install_ban": [
+    "asyncssh"
+  ],
+  "import_ban": [
+    "asyncssh"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "asyncssh",
+      "runtime": "python3",
+      "evidence": "Recipe original image: Python 3.13 importlib.util.find_spec resolves asyncssh to /opt/conda/lib/python3.13/site-packages/asyncssh/__init__.py."
+    }
+  ],
+  "notes": "Ban the upstream AsyncSSH pip distribution and module root, including the same-origin installation in the recipe image; allow Python/asyncio, cryptography, optional dependencies, build/test tools, and explicitly provided OpenSSH infrastructure. Python 3.12/3.13 stdlib, Node built-ins, Perl module paths, and Tcl package indexes showed no additional bundled SSH implementation."
+}

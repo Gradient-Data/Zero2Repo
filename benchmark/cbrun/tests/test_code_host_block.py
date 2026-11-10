@@ -54,4 +54,19 @@ def test_run_trial_blocks_the_full_list():
     from cbrun import run_case
 
     source = inspect.getsource(run_case.run_trial)
-    assert "CODE_HOST_BLOCK_HOSTS if block_github" in source
+    assert "CODE_HOST_BLOCK_HOSTS + upstream_pages_hosts(load_denylist(case_dir)) if block_github" in source
+
+
+def test_package_cdns_are_blocked():
+    for host in ("unpkg.com", "cdn.jsdelivr.net", "esm.sh", "cdnjs.cloudflare.com"):
+        assert host in denylist.CODE_HOST_BLOCK_HOSTS, host
+
+
+def test_upstream_pages_host_comes_from_repo_slugs():
+    spec = denylist.DenylistSpec(
+        case_id="c", ecosystem="npm",
+        install_ban=("js-yaml", "nodeca/js-yaml", "github.com/Nodeca/js-yaml-js-types", "INSLIB"),
+        import_ban=("js-yaml",),
+    )
+    assert denylist.upstream_pages_hosts(spec) == ("nodeca.github.io",)
+    assert denylist.upstream_pages_hosts(None) == ()

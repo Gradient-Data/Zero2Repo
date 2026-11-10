@@ -1541,7 +1541,7 @@ def test_disabled_automatic_help_makes_help_unknown_unless_declared():
     grp.add_command(command()(child))
     missing = _help_run(grp, [])
     assert_usage_help(missing, greeting, desc)
-    assert desc not in visible, (
+    assert visible != missing.stdout_text + missing.stderr_text, (
         "disabled --help is indistinguishable from missing-subcommand help; "
         f"unknown={visible!r} missing={missing.stdout_text + missing.stderr_text!r}"
     )

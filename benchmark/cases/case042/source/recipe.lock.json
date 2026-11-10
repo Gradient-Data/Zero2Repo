@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case042",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "mkdir -p /opt/runtime && python3 /env-assets/install.py",
+    "build_command": "python3 /opt/runtime/build_product.py"
+  }
+}

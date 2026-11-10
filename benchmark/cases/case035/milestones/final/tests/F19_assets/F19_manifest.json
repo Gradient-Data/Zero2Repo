@@ -1,0 +1,273 @@
+[
+  {
+    "asset": "F19_velnora-2.5.0-py3-none-any.whl",
+    "filename": "velnora-2.5.0-py3-none-any.whl",
+    "sha256": "f37d04bb920392c8a0763b60a1e59d794ade6207c956a1b5ce0c5050abb2ff8c",
+    "source": "https://pypi.org/pypi/velnora/2.5.0/json"
+  },
+  {
+    "asset": "F19_tomlkit-0.13.3-py3-none-any.whl",
+    "filename": "tomlkit-0.13.3-py3-none-any.whl",
+    "sha256": "c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0",
+    "source": "https://pypi.org/pypi/tomlkit/0.13.3/json"
+  },
+  {
+    "asset": "F19_velnora-1.2.0rc2-py3-none-any.whl",
+    "filename": "velnora-1.2.0rc2-py3-none-any.whl",
+    "sha256": "a3cc8253205b2949c38592e9a88f9740e94b6e11c505d34078e3810548e68f88",
+    "source": "https://files.pythonhosted.org/packages/7d/f4/6f7fa67b4bd9440a8ebfd5200e1658802dcbeb43888346c70eb921a87559/velnora-1.2.0rc2-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_velnora-1.1.15-py2.py3-none-any.whl",
+    "filename": "velnora-1.1.15-py2.py3-none-any.whl",
+    "sha256": "2dd44c4778355ef6295979841d17036fa2dfb0263ff7efd3315491e30b809abf",
+    "source": "https://files.pythonhosted.org/packages/db/5e/a8b46144eaf0cf9799a67496705029a8463aef2dd9c6718482c51f4d6aea/velnora-1.1.15-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_CacheControl-0.12.14-py2.py3-none-any.whl",
+    "filename": "CacheControl-0.12.14-py2.py3-none-any.whl",
+    "sha256": "1c2939be362a70c4e5f02c6249462b3b7a24441e4f1ced5e9ef028172edf356a",
+    "source": "https://files.pythonhosted.org/packages/72/a2/28e0ef082f7d78253aded97933e1d7b94bab3c5be366e8afd6513de4028e/CacheControl-0.12.14-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_cachy-0.3.0-py2.py3-none-any.whl",
+    "filename": "cachy-0.3.0-py2.py3-none-any.whl",
+    "sha256": "338ca09c8860e76b275aff52374330efedc4d5a5e45dc1c5b539c1ead0786fe7",
+    "source": "https://files.pythonhosted.org/packages/82/e6/badd9af6feee43e76c3445b2621a60d3d99fe0e33fffa8df43590212ea63/cachy-0.3.0-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_cleo-0.8.1-py2.py3-none-any.whl",
+    "filename": "cleo-0.8.1-py2.py3-none-any.whl",
+    "sha256": "141cda6dc94a92343be626bb87a0b6c86ae291dfc732a57bf04310d4b4201753",
+    "source": "https://files.pythonhosted.org/packages/09/46/3577da4237675e90630e8e9ccd2c7dbcd42afd4463712a207eab148dfbc2/cleo-0.8.1-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_cleo-1.0.0a5-py3-none-any.whl",
+    "filename": "cleo-1.0.0a5-py3-none-any.whl",
+    "sha256": "ff53056589300976e960f75afb792dfbfc9c78dcbb5a448e207a17b643826360",
+    "source": "https://files.pythonhosted.org/packages/45/0c/3825603bf62f360829b1eea29a43dadce30829067e288170b3bf738aafd0/cleo-1.0.0a5-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_clikit-0.6.2-py2.py3-none-any.whl",
+    "filename": "clikit-0.6.2-py2.py3-none-any.whl",
+    "sha256": "71268e074e68082306e23d7369a7b99f824a0ef926e55ba2665e911f7208489e",
+    "source": "https://files.pythonhosted.org/packages/f2/3d/4394c710b9195b83382dc67bdd1040e5ebfc3fc8df90e20fe74341298c57/clikit-0.6.2-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_crashtest-0.3.1-py3-none-any.whl",
+    "filename": "crashtest-0.3.1-py3-none-any.whl",
+    "sha256": "300f4b0825f57688b47b6d70c6a31de33512eb2fa1ac614f780939aa0cf91680",
+    "source": "https://files.pythonhosted.org/packages/76/97/2a99f020be5e4a5a97ba10bc480e2e6a889b5087103a2c6b952b5f819d27/crashtest-0.3.1-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_dulwich-0.20.50-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "filename": "dulwich-0.20.50-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "sha256": "9163fbb021a8ad9c35a0814a5eedf45a8eb3a0b764b865d7016d901fc5a947fc",
+    "source": "https://files.pythonhosted.org/packages/70/7a/edeeffd0f8d0b1689cf4f3229e517b644a5ab358eb2f71c1514bfd14e540/dulwich-0.20.50-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_html5lib-1.1-py2.py3-none-any.whl",
+    "filename": "html5lib-1.1-py2.py3-none-any.whl",
+    "sha256": "0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d",
+    "source": "https://files.pythonhosted.org/packages/6c/dd/a834df6482147d48e225a49515aabc28974ad5a4ca3215c18a882565b028/html5lib-1.1-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_jsonschema-4.17.3-py3-none-any.whl",
+    "filename": "jsonschema-4.17.3-py3-none-any.whl",
+    "sha256": "a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6",
+    "source": "https://files.pythonhosted.org/packages/c1/97/c698bd9350f307daad79dd740806e1a59becd693bd11443a0f531e3229b3/jsonschema-4.17.3-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_packaging-20.9-py2.py3-none-any.whl",
+    "filename": "packaging-20.9-py2.py3-none-any.whl",
+    "sha256": "67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a",
+    "source": "https://files.pythonhosted.org/packages/3e/89/7ea760b4daa42653ece2380531c90f64788d979110a2ab51049d92f408af/packaging-20.9-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_platformdirs-2.6.2-py3-none-any.whl",
+    "filename": "platformdirs-2.6.2-py3-none-any.whl",
+    "sha256": "83c8f6d04389165de7c9b6f0c682439697887bca0aa2f1c87ef1826be3584490",
+    "source": "https://files.pythonhosted.org/packages/c1/c7/9be9d651b93efce682b45142a6267034fc4215972780748618c02e236361/platformdirs-2.6.2-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_poetry_core-1.1.0-py3-none-any.whl",
+    "filename": "poetry_core-1.1.0-py3-none-any.whl",
+    "sha256": "da16a12054bf3f1ff8656d4c289f99c3d6b7704d272fb174004c4dc82e045954",
+    "source": "https://files.pythonhosted.org/packages/fa/1a/928afa4256942608bd4a4d4ed4452ce12de1b4e6e4a36b7e67c73cb1b82c/poetry_core-1.1.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_poetry_core-1.0.8-py2.py3-none-any.whl",
+    "filename": "poetry_core-1.0.8-py2.py3-none-any.whl",
+    "sha256": "54b0fab6f7b313886e547a52f8bf52b8cf43e65b2633c65117f8755289061924",
+    "source": "https://files.pythonhosted.org/packages/d2/04/08841501db81bceb7a86a98dea7c12b0185fcc69bfdf1aea266f727d1d7e/poetry_core-1.0.8-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_poetry_plugin_export-1.0.6-py3-none-any.whl",
+    "filename": "poetry_plugin_export-1.0.6-py3-none-any.whl",
+    "sha256": "03613e085ea74865a557ade1da8f5a94f42e9608569650b1036bc77847248744",
+    "source": "https://files.pythonhosted.org/packages/23/d0/8fa7a78b125d6da7e6bf602be8bcdd68bd92f9021c28dc3769a340fd587e/poetry_plugin_export-1.0.6-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_requests_toolbelt-0.9.1-py2.py3-none-any.whl",
+    "filename": "requests_toolbelt-0.9.1-py2.py3-none-any.whl",
+    "sha256": "380606e1d10dc85c3bd47bf5a6095f815ec007be7a8b69c878507068df059e6f",
+    "source": "https://files.pythonhosted.org/packages/60/ef/7681134338fc097acef8d9b2f8abe0458e4d87559c689a8c306d0957ece5/requests_toolbelt-0.9.1-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_urllib3-1.26.20-py2.py3-none-any.whl",
+    "filename": "urllib3-1.26.20-py2.py3-none-any.whl",
+    "sha256": "0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e",
+    "source": "https://files.pythonhosted.org/packages/33/cf/8435d5a7159e2a9c83a95896ed596f68cf798005fe107cc655b5c5c14704/urllib3-1.26.20-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_lockfile-0.12.2-py2.py3-none-any.whl",
+    "filename": "lockfile-0.12.2-py2.py3-none-any.whl",
+    "sha256": "6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa",
+    "source": "https://files.pythonhosted.org/packages/c8/22/9460e311f340cb62d26a38c419b1381b8593b0bb6b5d1f056938b086d362/lockfile-0.12.2-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_pastel-0.2.1-py2.py3-none-any.whl",
+    "filename": "pastel-0.2.1-py2.py3-none-any.whl",
+    "sha256": "4349225fcdf6c2bb34d483e523475de5bb04a5c10ef711263452cb37d7dd4364",
+    "source": "https://files.pythonhosted.org/packages/aa/18/a8444036c6dd65ba3624c63b734d3ba95ba63ace513078e1580590075d21/pastel-0.2.1-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_pylev-1.4.0-py2.py3-none-any.whl",
+    "filename": "pylev-1.4.0-py2.py3-none-any.whl",
+    "sha256": "7b2e2aa7b00e05bb3f7650eb506fc89f474f70493271a35c242d9a92188ad3dd",
+    "source": "https://files.pythonhosted.org/packages/04/78/95cfe72991d22994f0ec5a3b742b31c95a28344d33e06b69406b68398a29/pylev-1.4.0-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_six-1.17.0-py2.py3-none-any.whl",
+    "filename": "six-1.17.0-py2.py3-none-any.whl",
+    "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+    "source": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_webencodings-0.5.1-py2.py3-none-any.whl",
+    "filename": "webencodings-0.5.1-py2.py3-none-any.whl",
+    "sha256": "a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78",
+    "source": "https://files.pythonhosted.org/packages/f4/24/2a3e3df732393fed8b3ebf2ec078f05546de641fe1b667ee316ec1dcf3b7/webencodings-0.5.1-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_pyparsing-3.2.1-py3-none-any.whl",
+    "filename": "pyparsing-3.2.1-py3-none-any.whl",
+    "sha256": "506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1",
+    "source": "https://files.pythonhosted.org/packages/1c/a7/c8a2d361bf89c0d9577c934ebb7421b25dc84bf3a8e3ac0a40aed9acc547/pyparsing-3.2.1-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_pyrsistent-0.20.0-py3-none-any.whl",
+    "filename": "pyrsistent-0.20.0-py3-none-any.whl",
+    "sha256": "c55acc4733aad6560a7f5f818466631f07efc001fd023f34a6c203f8b6df0f0b",
+    "source": "https://files.pythonhosted.org/packages/23/88/0acd180010aaed4987c85700b7cc17f9505f3edb4e5873e4dc67f613e338/pyrsistent-0.20.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_attrs-23.2.0-py3-none-any.whl",
+    "filename": "attrs-23.2.0-py3-none-any.whl",
+    "sha256": "99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1",
+    "source": "https://files.pythonhosted.org/packages/e0/44/827b2a91a5816512fcaf3cc4ebc465ccd5d598c45cefa6703fcf4a79018f/attrs-23.2.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_virtualenv-20.30.0-py3-none-any.whl",
+    "filename": "virtualenv-20.30.0-py3-none-any.whl",
+    "sha256": "e34302959180fca3af42d1800df014b35019490b119eba981af27f2fa486e5d6",
+    "source": "https://files.pythonhosted.org/packages/4c/ed/3cfeb48175f0671ec430ede81f628f9fb2b1084c9064ca67ebe8c0ed6a05/virtualenv-20.30.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_xattr-0.9.9-cp27-cp27m-manylinux1_x86_64.whl",
+    "filename": "xattr-0.9.9-cp27-cp27m-manylinux1_x86_64.whl",
+    "sha256": "1aad96b6603961c3d1ca1aaa8369b1a8d684a7b37357b2428087c286bf0e561c",
+    "source": "https://files.pythonhosted.org/packages/be/cd/69bb0b061462e7bc9c3fecef0b88d9cefd79449546d46f0a3067c4f22e72/xattr-0.9.9-cp27-cp27m-manylinux1_x86_64.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_platformdirs-4.3.8-py3-none-any.whl",
+    "filename": "platformdirs-4.3.8-py3-none-any.whl",
+    "sha256": "ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4",
+    "source": "https://files.pythonhosted.org/packages/fe/39/979e8e21520d4e47a0bbe349e2713c0aac6f3d853d0e5b34d76206c439aa/platformdirs-4.3.8-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_pexpect-4.9.0-py2.py3-none-any.whl",
+    "filename": "pexpect-4.9.0-py2.py3-none-any.whl",
+    "sha256": "7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523",
+    "source": "https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_ptyprocess-0.7.0-py2.py3-none-any.whl",
+    "filename": "ptyprocess-0.7.0-py2.py3-none-any.whl",
+    "sha256": "4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35",
+    "source": "https://files.pythonhosted.org/packages/22/a6/858897256d0deac81a172289110f31629fc4cee19b6f01283303e18c8db3/ptyprocess-0.7.0-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_virtualenv-20.16.7-py3-none-any.whl",
+    "filename": "virtualenv-20.16.7-py3-none-any.whl",
+    "sha256": "efd66b00386fdb7dbe4822d172303f40cd05e50e01740b19ea42425cbe653e29",
+    "source": "https://files.pythonhosted.org/packages/fd/76/c99d37939e17e3c53f1c1b7e4f5365a9160b1cd0b37700657eed9a2a6775/virtualenv-20.16.7-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_filelock-3.8.2-py3-none-any.whl",
+    "filename": "filelock-3.8.2-py3-none-any.whl",
+    "sha256": "8df285554452285f79c035efb0c861eb33a4bcfa5b7a137016e32e6a90f9792c",
+    "source": "https://files.pythonhosted.org/packages/7c/37/4fed6f28d8010c791437b808a94f37c4ae58ee3998b653d2c0286a8cc190/filelock-3.8.2-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_distlib-0.3.6-py2.py3-none-any.whl",
+    "filename": "distlib-0.3.6-py2.py3-none-any.whl",
+    "sha256": "f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e",
+    "source": "https://files.pythonhosted.org/packages/76/cb/6bbd2b10170ed991cf64e8c8b85e01f2fb38f95d1bc77617569e0b0b26ac/distlib-0.3.6-py2.py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_importlib_metadata-4.13.0-py3-none-any.whl",
+    "filename": "importlib_metadata-4.13.0-py3-none-any.whl",
+    "sha256": "8a8a81bcf996e74fee46f0d16bd3eaa382a7eb20fd82445c3ad11f4090334116",
+    "source": "https://files.pythonhosted.org/packages/d0/98/c277899f5aa21f6e6946e1c83f2af650cbfee982763ffb91db07ff7d3a13/importlib_metadata-4.13.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_importlib_resources-5.10.0-py3-none-any.whl",
+    "filename": "importlib_resources-5.10.0-py3-none-any.whl",
+    "sha256": "ee17ec648f85480d523596ce49eae8ead87d5631ae1551f913c0100b5edd3437",
+    "source": "https://files.pythonhosted.org/packages/c8/47/6bfe2147eae436391916b3741a2cd9a76763e9671703a0d1d8e83142816e/importlib_resources-5.10.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  },
+  {
+    "asset": "F19_zipp-3.15.0-py3-none-any.whl",
+    "filename": "zipp-3.15.0-py3-none-any.whl",
+    "sha256": "48904fc76a60e542af151aded95726c1a5c34ed43ab4134b597665c86d7ad556",
+    "source": "https://files.pythonhosted.org/packages/5b/fa/c9e82bbe1af6266adf08afb563905eb87cab83fde00a0a08963510621047/zipp-3.15.0-py3-none-any.whl",
+    "purpose": "Historical stable and prerelease selection"
+  }
+]

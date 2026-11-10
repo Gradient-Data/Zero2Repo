@@ -24,6 +24,8 @@ __all__ = [
     "provider_env",
     "cli_version_spec",
     "cli_install_command",
+    "cli_link_command",
+    "NPM_BACKENDS",
     "resolve_invocation",
 ]
 
@@ -34,12 +36,15 @@ _CLI_PACKAGES = {
     "codex": ("@openai/codex", "CBRUN_CODEX_VERSION"),
     "opencode": ("opencode-ai", "CBRUN_OPENCODE_VERSION"),
     "claude-code": ("@anthropic-ai/claude-code", "CBRUN_CLAUDE_VERSION"),
+    "dsh": ("@deepseek-ai/dsh", "CBRUN_DSH_VERSION"),
 }
-_CLI_BINS = {
+CLI_BINS = {
     "codex": "codex",
     "opencode": "opencode",
     "claude-code": "claude",
     "cursor": "cursor-agent",
+    "openhands": "openhands",
+    "dsh": "dsh",
 }
 _CURSOR_INSTALL_URL = "https://cursor.com/install"
 _CURSOR_VERSION_ENV = "CBRUN_CURSOR_VERSION"
@@ -113,6 +118,26 @@ def _cursor_install_command(environ: dict[str, str] | None) -> str:
 # on the default PATH (Codex/Claude Bash inherits the CLI process env).
 NODE_RUNTIME_PREFIX = "/opt/cbrun/runtime/node"
 
+# Backends whose CLI is an npm package. Their CLI and a private Node are built
+# once into a shared image and copied into each case's agent image.
+NPM_BACKENDS = frozenset(_CLI_PACKAGES)
+
+
+def cli_link_command(backend: str) -> str:
+    """Put a CLI already present under NODE_RUNTIME_PREFIX on PATH and verify it."""
+    if backend not in NPM_BACKENDS:
+        raise ValueError(f"{backend} is not an npm backend")
+    bin_name = CLI_BINS[backend]
+    cli = f"{NODE_RUNTIME_PREFIX}/bin/{bin_name}"
+    verify = shlex.quote(f"command -v {bin_name} && {bin_name} --version")
+    return (
+        "set -eu; "
+        f"[ -x {cli} ] || {{ echo 'cbrun: {cli} missing from the shared CLI image' >&2; exit 1; }}; "
+        "mkdir -p /usr/local/bin; "
+        f"ln -sfn {cli} /usr/local/bin/{bin_name}; "
+        f"bash -lc {verify}"
+    )
+
 
 def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> str:
     """Idempotent in-container install command for a backend's CLI."""
@@ -129,7 +154,7 @@ def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> 
         return _cursor_install_command(environ)
     pkg, _env_key = _CLI_PACKAGES[backend]
     spec = cli_version_spec(backend, environ)
-    bin_name = _CLI_BINS[backend]
+    bin_name = CLI_BINS[backend]
     verify = shlex.quote(f"command -v {bin_name} && {bin_name} --version")
     dest_bin = f"/usr/local/bin/{bin_name}"
     prefix = NODE_RUNTIME_PREFIX
@@ -146,6 +171,16 @@ def cli_install_command(backend: str, environ: dict[str, str] | None = None) -> 
         "fi; "
         # npm's shebang is `#!/usr/bin/env node`. The private prefix is not
         # on PATH, so invoke the script with the absolute node binary.
+        # Lifecycle scripts (`sh -c node install.cjs`) do not see a PATH
+        # prefix on the npm process; they resolve `node` on the default PATH.
+        # The link lives only in this CLI image. Case images copy the prefix
+        # and not /usr/local/bin/node, so the agent shell still has no node.
+        "mkdir -p /usr/local/bin; "
+        # Deliverable images that already ship Node have this exact path.
+        # Linking a file onto itself fails, and replacing a symlink with a
+        # link to itself loops. Skip the link when node is already there.
+        'if [ "$NODE" != /usr/local/bin/node ]; then ln -sfn "$NODE" /usr/local/bin/node; fi; '
+        f'PATH="$(dirname "$NODE"):$PATH" '
         f'"$NODE" "$NPM" install -g --prefix "$NPM_PREFIX" {shlex.quote(pkg + spec)}; '
         f'CBRUN_CLI_PATH="$NPM_PREFIX/bin/{bin_name}"; '
         '[ -x "$CBRUN_CLI_PATH" ] || { '

@@ -239,7 +239,7 @@ A call is checked before the function runs: first the name, then the argument co
 - `floor(number)` — the largest integer not greater than the argument, as an integer.
 - `contains(array or string, any)` — for an array, whether the second argument is one of its elements; for a string, whether the second argument (a string) occurs in it.
 - `ends_with(string, string)` / `starts_with(string, string)` — whether the first string ends / starts with the second.
-- `length(string, array or object)` — the number of Unicode characters (not bytes) of a string, elements of an array, or keys of an object.
+- `length(string or array or object)` — the number of Unicode characters (not bytes) of a string, elements of an array, or keys of an object.
 - `reverse(array or string)` — a new array, or string, in reverse order.
 - `join(string, array of strings)` — the elements concatenated with the first argument between them; the empty array yields the empty string.
 - `keys(object)` / `values(object)` — an array of the object's keys / values in the object's iteration order.

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "case_id": "case041",
+  "ecosystem": "pip",
+  "install_ban": [
+    "asn1crypto",
+    "asn1crypto-tests",
+    "asn1crypto_tests"
+  ],
+  "import_ban": [
+    "asn1crypto",
+    "asn1crypto_tests"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the upstream distribution, its separately published test companion (including pip spelling aliases), and their Python module roots, as established by setup.py and tests/setup.py; allow ASN.1 standard terminology, Python/Node/Perl/Tcl runtimes, build tools, and general cryptographic infrastructure. Probes of recipe.lock.json base image codingbench-base/ubuntu:24.04 found no same-origin or full functional runtime equivalent: Python 3.12/3.13 lack asn1crypto and pyasn1, Node has no built-in ASN.1 codec, Perl lacks Convert::ASN1, and Tcl lists only core packages; OpenSSL commands, libtasn1, cryptography, and npm Sigstore ASN.1 helpers provide partial facilities rather than this library with its Python data model and cryptographic schemas."
+}

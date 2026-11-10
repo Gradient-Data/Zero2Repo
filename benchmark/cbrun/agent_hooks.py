@@ -7,6 +7,7 @@ explicitly reference a hook (discouraged for external specs).
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from typing import Any
@@ -73,6 +74,16 @@ def claude_code_env(*, model: str, environ: dict[str, str], spec: Any) -> dict[s
                 f"got {output_max!r}"
             )
         out["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = output_max
+    # Merged into every request body, e.g. an OpenRouter provider pin.
+    extra_body = (environ.get("CLAUDE_CODE_EXTRA_BODY") or "").strip()
+    if extra_body:
+        try:
+            parsed = json.loads(extra_body)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"cbrun: CLAUDE_CODE_EXTRA_BODY is not valid JSON: {exc}") from exc
+        if not isinstance(parsed, dict):
+            raise RuntimeError("cbrun: CLAUDE_CODE_EXTRA_BODY must be a JSON object")
+        out["CLAUDE_CODE_EXTRA_BODY"] = extra_body
     return out
 
 

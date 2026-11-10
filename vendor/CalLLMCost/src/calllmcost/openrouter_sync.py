@@ -3,8 +3,8 @@
 OpenRouter publishes USD **per token** strings under each model's ``pricing``
 object (``prompt``, ``completion``, ``input_cache_read``, ``input_cache_write``).
 This module converts them to the four **per 1M tokens** rates used by
-:class:`~calllmcost.pricing.ModelPricing`, matching the pinned pricing-file
-snapshot.
+:class:`~calllmcost.pricing.ModelPricing`, matching the snapshot workflow in
+``SWERouterBench/data/model_pricing.json``.
 
 When ``input_cache_write`` is absent (common for some providers), ``cache_write_per_m``
 is set equal to ``input_per_m``, consistent with the benchmark's pricing file

@@ -194,7 +194,6 @@ def test_boolean_value_type_tokens_case_insensitive():
     greeting = _type_hi()
     flag = f"--{_type_ident()}"
     dest = _type_ident()
-    default_on = True
 
     def callback(**kwargs) -> None:
         print(greeting, flush=True)
@@ -202,7 +201,9 @@ def test_boolean_value_type_tokens_case_insensitive():
 
     callback.__name__ = f"{_type_ident()}_{_type_ident()}"
     typed = _type_leaf(callback, option(flag, dest, type=BOOL))
-    inferred = _type_leaf(callback, option(flag, dest, default=default_on))
+    # The spec does not say whether a bare boolean default makes an option a
+    # flag, so the inferred case is declared a value option explicitly.
+    inferred = _type_leaf(callback, option(flag, dest, default=True, is_flag=False))
     as_text = _type_leaf(callback, option(flag, dest, type=STRING))
 
     for token in _BOOL_ON:
@@ -632,6 +633,13 @@ def test_unknown_choice_is_usage_error():
     assert_usage_class(result, greeting)
 
 
+def _fresh(token: str) -> str:
+    """An equal string that is not the same object as *token*."""
+    copy = token.encode("utf-8").decode("utf-8")
+    assert copy == token and copy is not token
+    return copy
+
+
 def test_choice_must_be_unique_after_normalization():
     greeting = _type_hi()
     flag = f"--{_type_ident()}"
@@ -653,8 +661,10 @@ def test_choice_must_be_unique_after_normalization():
         callback,
         option(flag, dest, type=Choice([first, second], case_sensitive=False)),
     )
-    first_run = _type_run(unique, [flag, first])
-    second_run = _type_run(unique, [flag, second])
+    # A command-line token is never the very object a choice was registered
+    # with, so each token is passed as a fresh equal string.
+    first_run = _type_run(unique, [flag, _fresh(first)])
+    second_run = _type_run(unique, [flag, _fresh(second)])
     print(
         f"unique_first={first_run.stdout_text!r} "
         f"unique_second={second_run.stdout_text!r}",
@@ -670,7 +680,7 @@ def test_choice_must_be_unique_after_normalization():
         option(flag, dest, type=Choice([stem, folded], case_sensitive=False)),
     )
     for token in (stem, folded):
-        result = _type_run(colliding, [flag, token])
+        result = _type_run(colliding, [flag, _fresh(token)])
         print(
             f"colliding token={token!r} code={result.exit_code!r} "
             f"out={result.stdout_text!r}",

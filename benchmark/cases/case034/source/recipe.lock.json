@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case034",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "/usr/bin/python3 /env-assets/install.py",
+    "build_command": "SETUPTOOLS_SCM_PRETEND_VERSION=0.10.3.dev46+gb4cf7360 /opt/conda/bin/python -m pip install --no-index --no-deps --no-build-isolation . && /opt/conda/bin/python /opt/check-environment.py --project"
+  }
+}

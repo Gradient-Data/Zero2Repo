@@ -1258,7 +1258,9 @@ def test_show_omits_a_ledger_only_when_older_than_seven_days(isolated_ws):
     older_name, older_shown = shown_after_later_session(day_ms)
     assert older_name not in older_shown
     _empty_show(older_shown, older_name)
-    just_past_name, just_past_shown = shown_after_later_session(1000)
+    # One millisecond past the cutoff, the clock's resolution: the spec states
+    # the boundary exactly, so no grace period is allowed.
+    just_past_name, just_past_shown = shown_after_later_session(1)
     assert just_past_name not in just_past_shown
     _empty_show(just_past_shown, just_past_name)
     # Not more than seven days, including exactly seven days, stays listed.

@@ -16,6 +16,15 @@ reports: an open with no report came from a non-Python tool (or Python without
 the hook), and a report from a process off the allowlist is a direct use.
 Stopping, freezing or tampering with the monitor is interference and counts
 the same as an access.
+
+A silent event stream alone does not prove interference: a busy host can hold
+``docker exec`` output while the monitor runs normally. After
+``HEARTBEAT_TIMEOUT_SEC`` of silence the host asks the Docker daemon for the
+monitor's process state. A stopped or missing process is interference. A live
+one means the stream is late; the kernel keeps queueing inotify events and hook
+reports meanwhile, so nothing is lost and the round goes on. A probe that fails,
+or silence beyond ``STALL_LIMIT_SEC``, is an infrastructure failure: the round
+stops and is not scored.
 """
 
 from __future__ import annotations
@@ -38,6 +47,8 @@ __all__ = [
     "AccessMonitorError",
     "Reconciler",
     "allowlist_rule",
+    "monitor_process_state",
+    "probe_monitor",
     "python_entry",
 ]
 
@@ -45,6 +56,9 @@ __all__ = [
 # is unexplained. Reports are sent before the open, so matches are near-instant.
 GRACE_SEC = 3.0
 HEARTBEAT_TIMEOUT_SEC = 30.0
+# Observed stalls of the docker exec stream on a loaded host lasted 4-5 minutes.
+STALL_LIMIT_SEC = 900.0
+PROBE_TIMEOUT_SEC = 30.0
 READY_TIMEOUT_SEC = 300.0
 _MAX_PATHS_PER_EVENT = 50
 
@@ -318,8 +332,57 @@ class Reconciler:
         ]
 
 
+def monitor_process_state(top_output: str) -> tuple[str, str]:
+    """Classify the monitor process from ``docker top <id> -eo pid,stat,args`` output.
+
+    Returns ``("alive" | "interference" | "unknown", detail)``.
+    """
+    rows = []
+    for line in top_output.splitlines()[1:]:
+        parts = line.split(None, 2)
+        if len(parts) < 3:
+            continue
+        argv = parts[2].split()
+        if argv[-1] == CONTAINER_ACCESS_MONITOR_PATH and os.path.basename(argv[0]).startswith("python"):
+            rows.append((parts[0], parts[1]))
+    if not rows:
+        return "interference", "the access monitor process is gone"
+    shown = ", ".join(f"pid {pid} state {stat}" for pid, stat in rows)
+    states = {stat[:1] for _pid, stat in rows}
+    if states & {"T", "t"}:
+        return "interference", f"the access monitor process is stopped ({shown})"
+    if states & {"Z", "X"}:
+        return "interference", f"the access monitor process has exited ({shown})"
+    if states <= {"R", "S", "D", "I"}:
+        return "alive", shown
+    return "unknown", f"unrecognized access monitor process state ({shown})"
+
+
+def probe_monitor(container_id: str, *, timeout_sec: float = PROBE_TIMEOUT_SEC) -> tuple[str, str]:
+    """Ask the Docker daemon for the monitor's process state, apart from its stream.
+
+    ``docker top`` reads process state on the daemon side, so no program in the
+    container, which the agent controls as root, answers for the monitor.
+    """
+    argv = ["docker", "top", container_id, "-eo", "pid,stat,args"]
+    try:
+        proc = subprocess.run(argv, capture_output=True, text=True, errors="replace", timeout=timeout_sec)
+    except subprocess.TimeoutExpired:
+        return "unknown", f"docker top gave no answer within {timeout_sec:g}s"
+    except OSError as exc:
+        return "unknown", f"cannot run docker top: {exc}"
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip()[-300:]
+        return "unknown", f"docker top exited {proc.returncode}: {detail}"
+    return monitor_process_state(proc.stdout)
+
+
 class AccessMonitor:
-    """Run the in-container monitor for one solve round and reconcile its stream."""
+    """Run the in-container monitor for one solve round and reconcile its stream.
+
+    ``abort`` is set to stop the agent: on a violation (``violated``) or on an
+    infrastructure failure (``infra_error``).
+    """
 
     def __init__(
         self,
@@ -329,23 +392,31 @@ class AccessMonitor:
         log_path: Path | None = None,
         grace_sec: float = GRACE_SEC,
         heartbeat_timeout_sec: float = HEARTBEAT_TIMEOUT_SEC,
+        stall_limit_sec: float = STALL_LIMIT_SEC,
+        probe=probe_monitor,
     ):
         self.container_id = container_id
         self.round_index = round_index
         self.log_path = Path(log_path) if log_path else None
         self.grace_sec = grace_sec
         self.heartbeat_timeout_sec = heartbeat_timeout_sec
+        self.stall_limit_sec = stall_limit_sec
+        self._probe = probe
         self.violated = threading.Event()
+        self.abort = threading.Event()
+        self.infra_error: str | None = None
         self.reconciler: Reconciler | None = None
         self._proc: subprocess.Popen | None = None
         self._lock = threading.Lock()
         self._ready = threading.Event()
         self._exited = threading.Event()
         self._stopping = False
+        self._bye = False
         self._start_error: str | None = None
         self._last_line = time.monotonic()
         self._last_ts = 0.0
         self._log = None
+        self._log_lock = threading.Lock()
         self._threads: list[threading.Thread] = []
 
     def argv(self) -> list[str]:
@@ -388,9 +459,10 @@ class AccessMonitor:
             self._ready.wait(0.2)
 
     def _write_log(self, line: str) -> None:
-        if self._log is not None:
-            self._log.write(line + "\n")
-            self._log.flush()
+        with self._log_lock:
+            if self._log is not None:
+                self._log.write(line + "\n")
+                self._log.flush()
 
     def _read_stdout(self) -> None:
         assert self._proc is not None and self._proc.stdout is not None
@@ -418,13 +490,16 @@ class AccessMonitor:
             if kind == "error":
                 self._start_error = str(event.get("detail") or "monitor error")
                 continue
-            if self.reconciler is None or kind == "bye":
+            if kind == "bye":
+                self._bye = True
+                continue
+            if self.reconciler is None:
                 continue
             with self._lock:
                 self._last_ts = max(self._last_ts, float(event.get("ts") or 0.0))
                 new = self.reconciler.feed(event)
             if new:
-                self.violated.set()
+                self._violation()
         self._exited.set()
         if self._ready.is_set() and not self._stopping:
             self._flag("the access monitor process exited while the agent was running")
@@ -439,12 +514,37 @@ class AccessMonitor:
             self._start_error = " | ".join(tail)[-500:]
 
     def _watchdog(self) -> None:
+        last_probe = float("-inf")
         while not self._exited.wait(1.0):
             if self._stopping or not self._ready.is_set():
                 continue
-            silent = time.monotonic() - self._last_line
-            if silent > self.heartbeat_timeout_sec:
-                self._flag(f"the access monitor stopped responding for {silent:.0f}s")
+            now = time.monotonic()
+            silent = now - self._last_line
+            if silent <= self.heartbeat_timeout_sec:
+                continue
+            if silent > self.stall_limit_sec:
+                self._fail_infra(
+                    f"the access monitor stream was silent for {silent:.0f}s while its "
+                    f"process stayed alive (limit {self.stall_limit_sec:g}s)"
+                )
+                return
+            if now - last_probe < self.heartbeat_timeout_sec:
+                continue
+            state, detail = self._probe(self.container_id)
+            last_probe = time.monotonic()
+            self._write_log(json.dumps(
+                {"t": "probe", "silent_sec": round(silent, 1), "state": state, "detail": detail}
+            ))
+            if self._stopping:
+                return
+            if state == "interference":
+                self._flag(f"{detail} after {silent:.0f}s without a heartbeat")
+                return
+            if state != "alive":
+                self._fail_infra(
+                    f"the access monitor stream was silent for {silent:.0f}s and its "
+                    f"process state could not be read: {detail}"
+                )
                 return
 
     def _flag(self, message: str) -> None:
@@ -452,7 +552,17 @@ class AccessMonitor:
             return
         with self._lock:
             self.reconciler.interference(message, ts=self._last_ts)
+        self._violation()
+
+    def _violation(self) -> None:
         self.violated.set()
+        self.abort.set()
+
+    def _fail_infra(self, message: str) -> None:
+        if self.infra_error is None:
+            self.infra_error = message
+        self._write_log(json.dumps({"t": "infra", "message": message}))
+        self.abort.set()
 
     def stop(self) -> list[dict]:
         """Let late opens settle, report the unexplained ones, stop the monitor."""
@@ -466,15 +576,19 @@ class AccessMonitor:
                     break
                 time.sleep(0.2)
         self._stopping = True
+        self._terminate()
+        # The monitor sends ``bye`` only after draining every queued event, so
+        # without it opens late in the round may never have reached the host.
+        if self._ready.is_set() and not self._bye:
+            self._fail_infra("the access monitor stream ended without its final report")
         events: list[dict] = []
         if self.reconciler is not None:
             with self._lock:
                 if self.reconciler.expire(self._last_ts, final=True):
-                    self.violated.set()
+                    self._violation()
                 events = list(self.reconciler.events)
                 stats = self.reconciler.stats()
             self._write_log(json.dumps({"t": "summary", "files": stats, "violations": len(events)}))
-        self._terminate()
         if self._log is not None:
             self._log.close()
             self._log = None
@@ -493,10 +607,13 @@ class AccessMonitor:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             proc.kill()
-            subprocess.run(
-                ["docker", "exec", self.container_id, "pkill", "-f", CONTAINER_ACCESS_MONITOR_PATH],
-                capture_output=True,
-                timeout=30,
-            )
+            try:
+                subprocess.run(
+                    ["docker", "exec", self.container_id, "pkill", "-f", CONTAINER_ACCESS_MONITOR_PATH],
+                    capture_output=True,
+                    timeout=30,
+                )
+            except subprocess.TimeoutExpired:
+                self._fail_infra("docker exec did not answer within 30s while stopping the access monitor")
         for thread in self._threads:
             thread.join(timeout=5)

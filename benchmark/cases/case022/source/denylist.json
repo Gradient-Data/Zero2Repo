@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "case_id": "case022",
+  "ecosystem": "pip",
+  "install_ban": [
+    "datasets"
+  ],
+  "import_ban": [
+    "datasets",
+    "datasets-cli",
+    "datasets_cli",
+    "datasets_modules",
+    "huggingface/datasets"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "datasets",
+      "runtime": "python3",
+      "evidence": "Probed recipe original image: /opt/runtime/bin/python imports datasets 5.2.0.dev0 from /opt/runtime/lib/python3.13/site-packages/datasets/__init__.py. /usr/bin/python3 and /opt/conda/bin/python have no datasets module."
+    },
+    {
+      "import_root": "datasets-cli",
+      "runtime": "system",
+      "evidence": "Probed recipe original image: /opt/runtime/bin/datasets-cli has the /opt/runtime/bin/python shebang and imports datasets.commands.datasets_cli.main, matching setup.py console_scripts."
+    }
+  ],
+  "notes": "Ban only the upstream datasets pip distribution, module roots, CLI and repository identity; allow provided infrastructure including numpy, pyarrow, pandas, torch and huggingface-hub. Recipe-image probes found the upstream Python package and CLI, with no additional equivalent in system/conda Python, Node built-ins/global packages, Perl module paths, Tcl packages or system commands."
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "case043",
+  "ecosystem": "source",
+  "install_ban": [
+    "clojurewasm/tap/zwasm",
+    "clojurewasm/zwasm",
+    "containerd-shim-zwasm",
+    "jtakakura/zwasm-rust-sdk",
+    "zwasm",
+    "zwasm-rust-sdk",
+    "zwasm-sdk",
+    "zwasm-sys",
+    "zwasm/containerd-shim-zwasm",
+    "zwasm/tap/zwasm",
+    "zwasm/zwasm",
+    "zwasm/zwasm-rust-sdk"
+  ],
+  "import_ban": [
+    "WebAssembly",
+    "ZWASM_",
+    "containerd-shim-zwasm",
+    "libzwasm",
+    "zwasm",
+    "zwasm.h",
+    "zwasm/",
+    "zwasm_",
+    "zwasm_sdk",
+    "zwasm_sys"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "WebAssembly",
+      "runtime": "node",
+      "evidence": "Probed codingbench-base/ubuntu:24.04 (sha256:c2b1157f85698d3d3a3b4ed4e598315aea77c7e090be895eef18271af4e54ca7): /usr/local/bin/node v20.18.1 exposes the built-in WebAssembly global; constructing WebAssembly.Module and WebAssembly.Instance from a valid Wasm binary succeeded. This provides Wasm execution, without claiming full zwasm feature parity. The recipe installer adds only Zig and wasm-tools."
+    }
+  ],
+  "notes": "Ban zwasm source/distribution aliases, documented companion bindings/shim, implementation-specific module/header/library roots, and the verified Node Wasm engine; allow Zig and its standard library, Python/pytest, Node itself, wasm-tools, standard wasm.h/WASI interfaces, and unrelated infrastructure. Probes found no Wasm runtime modules in either Python installation or Perl, and no standalone system Wasm runtime."
+}

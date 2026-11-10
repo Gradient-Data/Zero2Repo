@@ -19,6 +19,7 @@ no upstream tree to compile. The solving agent builds in ``/app``.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shlex
@@ -29,13 +30,17 @@ import time
 from pathlib import Path
 from typing import Any
 
+from coding_bench_harbor.test_assets import Fetcher, TestAsset
+from coding_bench_harbor.test_assets import copy_from as copy_test_asset
+from coding_bench_harbor.test_assets import download as download_test_asset
+
 from .denylist import (
     install_ban_hashes_from_file,
     log_probe_result,
     probe_banned_imports,
     render_strip_script,
 )
-from .docker_env import docker_available, image_exists
+from .docker_env import build_output, docker_available, image_build_lock, image_exists
 from .images import deliverable_tag
 from .state import FINGERPRINT_LABEL, digest, file_manifest, image_matches
 from .recipe import (
@@ -49,9 +54,10 @@ from .recipe import (
     stage_benchmark_bundle,
     staging_shell_command,
     validate_lock_env_install,
+    image_name_prefix,
 )
 
-__all__ = ["ensure_deliverable_image", "resource_fetch_command"]
+__all__ = ["ensure_deliverable_image", "resource_fetch_command", "test_asset_fetcher"]
 
 GENERIC_FETCH_SCRIPT = Path(__file__).resolve().parent / "fetch_resources.py"
 
@@ -153,6 +159,34 @@ def resource_fetch_command(case_dir: Path | str) -> str:
     )
 
 
+def test_asset_fetcher() -> Fetcher:
+    """How hidden-test assets are fetched: from their URLs, via the store under supply.
+
+    The store is only a cache keyed by SHA-256; every asset still comes from
+    its declared official URL the first time.
+    """
+    from . import supply
+
+    run = supply.active()
+    if run is None:
+        return download_test_asset
+    store = run.store
+
+    def fetch(asset: TestAsset, target: Path) -> None:
+        with store.lock(asset.sha256):
+            if not store.has(asset.sha256, asset.size):
+                with tempfile.TemporaryDirectory(dir=store.root / "tmp") as tmp:
+                    part = Path(tmp) / "asset"
+                    download_test_asset(asset, part)
+                    dest = store.blob_path(asset.sha256)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    os.chmod(part, 0o664)
+                    os.replace(part, dest)
+        copy_test_asset(store.stored_path(asset.sha256, asset.size, label=asset.url), target)
+
+    return fetch
+
+
 def _volume_mounts(case_dir: Path) -> list[str]:
     """Optional operator-supplied caches. Never invented per case."""
     mounts: list[str] = []
@@ -193,13 +227,26 @@ def _ensure_base_image(base_image: str) -> None:
     """
     if image_exists(base_image):
         return
+    with image_build_lock(base_image):
+        if image_exists(base_image):
+            return
+        _pull_or_build_base_image(base_image)
+
+
+def _pull_or_build_base_image(base_image: str) -> None:
+    from . import supply
+
+    run = supply.active()
+    if run is not None:
+        _build_base_image_from_supply(run, base_image)
+        return
     from_image = public_base_pull_ref(base_image)
     print(f"[cbrun] pulling {from_image}", flush=True)
-    proc = subprocess.run(["docker", "pull", from_image])
+    proc = subprocess.run(["docker", "pull", from_image], **build_output())
     if proc.returncode != 0:
         raise RecipeLockError(
             f"docker pull failed for {from_image} "
-            f"(exit {proc.returncode}; see streamed docker output above)"
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
         )
     if from_image == base_image:
         if not image_exists(base_image):
@@ -223,12 +270,41 @@ def _ensure_base_image(base_image: str) -> None:
             "-t",
             base_image,
             str(BASE_IMAGE_DOCKERFILE_DIR),
-        ]
+        ],
+        **build_output(),
     )
     if proc.returncode != 0:
         raise RecipeLockError(
             f"docker build failed for {base_image} "
-            f"(exit {proc.returncode}; see streamed docker output above)"
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
+        )
+    if not image_exists(base_image):
+        raise RecipeLockError(f"base image still missing after build: {base_image}")
+
+
+def _build_base_image_from_supply(run, base_image: str) -> None:
+    """Build the base image FROM the pinned system image, downloads served by the base lock."""
+    from_image = run.base_from_image()
+    if not image_exists(from_image):
+        print(f"[cbrun] pulling {from_image}", flush=True)
+        proc = subprocess.run(["docker", "pull", from_image], **build_output())
+        if proc.returncode != 0:
+            raise RecipeLockError(f"docker pull failed for {from_image} (exit {proc.returncode})")
+    lock = run.base_lock()
+    with run.locked(f"base image {base_image}", lock.entries) as session:
+        print(f"[cbrun] building {base_image} FROM {from_image} (supply lock)", flush=True)
+        proc = subprocess.run(
+            [
+                "docker", "build", *session.build_args(),
+                "--build-arg", f"FROM_IMAGE={from_image}",
+                "-t", base_image, str(BASE_IMAGE_DOCKERFILE_DIR),
+            ],
+            **build_output(),
+        )
+    if proc.returncode != 0:
+        raise RecipeLockError(
+            f"docker build failed for {base_image} "
+            f"(exit {proc.returncode}; see the build output above or in the build log)"
         )
     if not image_exists(base_image):
         raise RecipeLockError(f"base image still missing after build: {base_image}")
@@ -257,7 +333,7 @@ def _strip_env_image(
 ) -> None:
     denylist = _denylist_file(case_dir)
     hashes = install_ban_hashes_from_file(denylist) if denylist.is_file() else []
-    strip_name = f"z2r-recipe-env-strip-{case_id}"
+    strip_name = f"{image_name_prefix()}z2r-recipe-env-strip-{case_id}"
     _remove_container(strip_name)
     with tempfile.TemporaryDirectory(prefix="cbrun-strip-") as raw:
         host = Path(raw)
@@ -288,7 +364,7 @@ def _strip_env_image(
             ]
         )
         print(f"[cbrun] stripping banned artefacts from {source_tag}", flush=True)
-        proc = subprocess.run(argv)
+        proc = subprocess.run(argv, **build_output())
         if proc.returncode != 0:
             _remove_container(strip_name)
             raise RecipeLockError(
@@ -332,59 +408,56 @@ def _build_env_image(
     base_image = resolve_lock_base_image(lock)
     _ensure_base_image(base_image)
 
-    install = str(runner.get("install_command") or "").strip()
-    if not install or install.lower() == "true":
-        raise RecipeLockError("runner.install_command is empty")
-
-    container_name = f"z2r-recipe-env-{case_id}"
+    container_name = f"{image_name_prefix()}z2r-recipe-env-{case_id}"
     gpus = _runner_docker_gpus(runner)
-    argv = [
-        "docker",
-        "run",
-        "--name",
-        container_name,
-        "--network",
-        _docker_network(),
-        *_registry_docker_env(),
-    ]
-    if gpus:
-        argv.extend(["--gpus", gpus])
-    argv.extend(_volume_mounts(case_dir))
-    fetch = resource_fetch_command(case_dir)
-    command = f"{fetch} && {install}" if fetch else install
-    argv.extend([base_image, "bash", "-lc", command])
+    from . import supply
 
-    retries = _env_build_retries()
-    delay = _env_build_retry_delay_sec()
-    last_output = ""
-    for attempt in range(1, retries + 1):
-        _remove_container(container_name)
-        print(
-            f"[cbrun] building env {tag} from {base_image} "
-            f"(attempt {attempt}/{retries})",
-            flush=True,
-        )
-        proc = subprocess.run(argv)
-        if proc.returncode == 0:
-            break
-        last_output = f"exit {proc.returncode} (see streamed docker output above)"
-        if attempt < retries:
+    run = supply.active()
+    with contextlib.ExitStack() as stack:
+        session = None
+        if run is not None:
+            lock = run.case_lock(case_dir)
+            session = stack.enter_context(run.locked(case_id, lock.entries))
+        argv = _env_install_argv(case_dir, base_image, runner, container_name, session)
+
+        retries = _env_build_retries()
+        delay = _env_build_retry_delay_sec()
+        last_output = ""
+        for attempt in range(1, retries + 1):
+            _remove_container(container_name)
             print(
-                f"[cbrun] env install failed (attempt {attempt}); "
-                f"retrying in {delay}s",
-                file=sys.stderr,
+                f"[cbrun] building env {tag} from {base_image} "
+                f"(attempt {attempt}/{retries})",
                 flush=True,
             )
-            time.sleep(delay)
-    else:
-        _remove_container(container_name)
-        raise RecipeLockError(
-            f"env-only install failed after {retries} attempts:\n{last_output}"
-        )
+            proc = subprocess.run(argv, **build_output())
+            if proc.returncode == 0:
+                break
+            last_output = f"exit {proc.returncode} (see the build output above or in the build log)"
+            if session is not None and session.violations:
+                # A request outside the lock fails the same way every time.
+                _remove_container(container_name)
+                session.raise_for_violations()
+            if attempt < retries:
+                print(
+                    f"[cbrun] env install failed (attempt {attempt}); "
+                    f"retrying in {delay}s",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                time.sleep(delay)
+        else:
+            _remove_container(container_name)
+            raise RecipeLockError(
+                f"env-only install failed after {retries} attempts:\n{last_output}"
+            )
 
     pre_tag = f"{tag}-prestrip"
+    # The install command (and with it the proxy settings) would otherwise
+    # become the image's default command.
+    commit_changes = ["-c", 'CMD ["/bin/bash"]'] if run is not None else []
     commit = subprocess.run(
-        ["docker", "commit", container_name, pre_tag],
+        ["docker", "commit", *commit_changes, container_name, pre_tag],
         capture_output=True,
         text=True,
     )
@@ -414,6 +487,50 @@ def _build_env_image(
     return tag
 
 
+def _env_install_argv(
+    case_dir: Path,
+    base_image: str,
+    runner: dict[str, Any],
+    container_name: str,
+    session=None,
+) -> list[str]:
+    """``docker run`` argv of a case's environment install.
+
+    With a supply proxy *session*, the container mounts the proxy CA and the
+    install runs with the proxy settings exported inside its command, never as
+    container env, which ``docker commit`` would keep in the image.
+    """
+    install = str(runner.get("install_command") or "").strip()
+    if not install or install.lower() == "true":
+        raise RecipeLockError("runner.install_command is empty")
+    network = _docker_network()
+    if session is not None and network != "host":
+        raise RecipeLockError(
+            f"the supply proxy listens on the host's loopback; CODINGBENCH_DOCKER_NETWORK "
+            f"must be 'host', got {network!r}"
+        )
+    argv = [
+        "docker",
+        "run",
+        "--name",
+        container_name,
+        "--network",
+        network,
+        *_registry_docker_env(),
+    ]
+    gpus = _runner_docker_gpus(runner)
+    if gpus:
+        argv.extend(["--gpus", gpus])
+    argv.extend(_volume_mounts(case_dir))
+    fetch = resource_fetch_command(case_dir)
+    command = f"{fetch} && {install}" if fetch else install
+    if session is not None:
+        argv.extend(session.docker_run_args())
+        command = session.shell_exports() + command
+    argv.extend([base_image, "bash", "-lc", command])
+    return argv
+
+
 def _stage_deliverable(
     case_dir: Path,
     env_tag: str,
@@ -427,8 +544,10 @@ def _stage_deliverable(
         return tag
 
     final_dir = case_dir / "milestones" / "final"
-    container_name = f"z2r-recipe-deliverable-{case_id}"
-    with stage_benchmark_bundle(case_dir, final_dir) as bundle:
+    container_name = f"{image_name_prefix()}z2r-recipe-deliverable-{case_id}"
+    with stage_benchmark_bundle(
+        case_dir, final_dir, fetch_test_assets=test_asset_fetcher()
+    ) as bundle:
         _remove_container(container_name)
         argv = [
             "docker",
@@ -445,12 +564,12 @@ def _stage_deliverable(
             staging_shell_command(),
         ]
         print(f"[cbrun] staging deliverable {tag} from {env_tag}", flush=True)
-        proc = subprocess.run(argv)
+        proc = subprocess.run(argv, **build_output())
         if proc.returncode != 0:
             _remove_container(container_name)
             raise RecipeLockError(
                 f"deliverable staging failed (exit {proc.returncode}; "
-                "see streamed docker output above)"
+                "see the build output above or in the build log)"
             )
         commit = subprocess.run(
             [

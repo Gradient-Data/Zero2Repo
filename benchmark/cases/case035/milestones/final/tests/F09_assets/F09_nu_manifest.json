@@ -1,0 +1,6 @@
+{
+  "asset": "F09_nu-0.108.0-x86_64-unknown-linux-gnu.tar.gz",
+  "sha256": "f0daaa0256b0f7dd5f4d9925b4d5522d8de5e947ed9ad64a43526e5cffeb05df",
+  "source": "https://github.com/nushell/nushell/releases/download/0.108.0/nu-0.108.0-x86_64-unknown-linux-gnu.tar.gz",
+  "shell": "nu"
+}

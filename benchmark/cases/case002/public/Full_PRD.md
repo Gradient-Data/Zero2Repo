@@ -192,7 +192,7 @@ Feature points below group these entries by capability. They do not invent addit
 
 ### FP-06: Get, set, and unset a binding in a `.env` file
 
-**Public entry:** The library’s three file-editing entries: read one name, write one name, and delete one name. The `envfile` command’s `get` / `set` / `unset` subcommands (FP-07) use this same behavior; CLI output and exit status are specified there. Quote modes and the `export` prefix apply to write.
+**Public entry:** The library’s three file-editing entries: read one name, write one name, and delete one name. The `envfile` command’s `set` / `unset` subcommands (FP-07) use this same behavior; its `get` subcommand reads with FP-04’s values-mapping rules. CLI output and exit status are specified there. Quote modes and the `export` prefix apply to write.
 
 **Normal behavior:**
 
@@ -241,7 +241,7 @@ Installing python-envfile **without** the `cli` extra leaves this program unable
 **Boundary / error behavior:**
 
 - `list` or `get` against a path that cannot be opened as a file fails with the usage-style failure class and a report that the env file could not be opened, naming the path. This report is not a usage message: it is distinct from the report for a missing argument.
-- `get` of a name that is missing from an existing file, has no value, or whose value is the empty string exits with the missing-key failure class and no output. The missing-key class differs from the usage-style class.
+- `get` of a name that is missing from an existing file, has no value, or whose value is the empty string exits with the missing-key failure class, writing nothing on either standard stream and emitting no diagnostic on any channel. The missing-key class differs from the usage-style class.
 - `unset` of a name missing from an existing file exits unsuccessfully and leaves the file unchanged.
 - `set` without both a name and a value is a usage failure (missing argument).
 - `set` and `unset` use FP-06’s default of not following symbolic links.

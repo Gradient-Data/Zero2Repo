@@ -1,0 +1,401 @@
+# Velunex Suite Product Requirements
+
+Velunex Suite executes keyword-driven acceptance tests and automation tasks and produces results and documentation.
+
+### FP-01: Test data and suite construction
+
+- Users can supply native plain-text tables, reStructuredText or Markdown with embedded automation blocks, or machine-readable suite data. The resulting suite preserves the declared tests or tasks, keywords, arguments, documentation, metadata, and tags; surrounding prose in embedded-document formats does not become executable content. In space-separated rows, documentation and metadata keep the whitespace between their cells as written.
+
+- Plain text data supports space-separated and pipe-separated tables, escaped literal content, continued rows, and comments. Escaped separators remain part of their values, continued values belong to the original statement, and comments do not execute.
+
+- A suite file creates a suite containing its declared tests or tasks. Directory sources create nested suites from eligible descendant sources, and multiple sources form a common parent suite. Discovery includes the four built-in source formats and formats declared by registered custom parsers by default; callers can restrict or extend the selected formats. Discovery excludes entries whose names begin with a dot or underscore, except recognized directory initialization sources; explicitly supplied files bypass discovery exclusions. Sources with no tests or tasks are omitted from directory discovery.
+
+- Directory initialization data supplies suite documentation, metadata, setup and cleanup, and inherited test setup, cleanup, timeout, and common tags. A lower-level setup or cleanup declaration overrides the inherited value and can explicitly disable it. A nonempty lower-level timeout replaces the inherited timeout. Common tags accumulate through directory levels; a test can remove matching common tags. Variables and keywords declared in initialization data are not automatically visible in child suites. Directory initialization data cannot declare tests, default templates, or default-only tags.
+
+- Malformed sections, settings, or executable statements produce diagnostics that identify the source location and invalid construct. A source mixing test and task sections is invalid. An invalid statement in an otherwise readable suite does not make unrelated valid statements disappear from the publicly inspectable data.
+
+- Tools can obtain source tokens and structured syntax with source positions and diagnostics, edit structured data, and save it as native automation text. Tools can also construct executable suites from sources, text, structured syntax, or caller-created suite content, and exchange suite content as structured suite data without losing its declared executable structure.
+
+- Activated translations recognize localized section headings, settings, behavior-driven prefixes, and Boolean words while continuing to accept English. Built-in translations are English, Arabic, Bosnian, Bulgarian, Chinese Simplified, Chinese Traditional, Czech, Dutch, Finnish, French, German, Hindi, Italian, Japanese, Korean, Polish, Portuguese, Brazilian Portuguese, Romanian, Russian, Spanish, Swedish, Thai, Turkish, Ukrainian, and Vietnamese. Caller-supplied translations can define additional accepted vocabulary; an unavailable requested language is reported as a configuration error.
+
+In the accepted vocabulary tables, semicolons separate alternatives and a dash denotes no additional word.
+
+| Language | Settings heading | Test heading | Task heading | Keyword heading | Documentation setting | Tag setting |
+| --- | --- | --- | --- | --- | --- | --- |
+| Arabic | الإعدادات | وضعيات الاختبار | المهام | الأوامر | التوثيق | العلامات |
+| Bosnian | Postavke | Test Cases | Taskovi | Keywords | Dokumentacija | Tagovi |
+| Brazilian Portuguese | Configurações | Casos de Teste | Tarefas | Palavras-Chave | Documentação | Etiquetas |
+| Bulgarian | Настройки | Тестови случаи | Задачи | Ключови думи | Документация | Етикети |
+| Chinese Simplified | 设置 | 用例 | 任务 | 关键字 | 说明 | 标签 |
+| Chinese Traditional | 設置 | 案例 | 任務 | 關鍵字 | 說明 | 標籤 |
+| Czech | Nastavení | Testovací případy | Úlohy | Klíčová slova | Dokumentace | Štítky |
+| Dutch | Instellingen | Testgevallen | Taken | Actiewoorden | Documentatie | Labels |
+| Finnish | Asetukset | Testit | Tehtävät | Avainsanat | Dokumentaatio | Tunnisteet |
+| French | Paramètres | Cas de test | Tâches | Mots-clés | Documentation | Étiquette |
+| German | Einstellungen | Testfälle | Aufgaben | Schlüsselwörter | Dokumentation | Marker |
+| Hindi | स्थापना | नियत कार्य प्रवेशिका | कार्य प्रवेशिका | कुंजीशब्द | प्रलेखन | निशान |
+| Italian | Impostazioni | Casi Di Test | Attività | Parole Chiave | Documentazione | Tag |
+| Japanese | 設定 | テスト ケース | タスク | キーワード | ドキュメント | タグ |
+| Korean | 설정 | 테스트 사례 | 작업 | 키워드 | 문서 | 태그 |
+| Polish | Ustawienia | Przypadki Testowe | Zadania | Słowa Kluczowe | Dokumentacja | Znaczniki |
+| Portuguese | Definições | Casos de Teste | Tarefas | Palavras-Chave | Documentação | Etiquetas |
+| Romanian | Setari | Cazuri De Test | Sarcini | Cuvinte Cheie | Documentatie | Etichete |
+| Russian | Настройки | Заголовки тестов | Задача | Ключевые слова | Документация | Метки |
+| Spanish | Configuraciones | Casos de prueba | Tareas | Palabras clave | Documentación | Etiquetas |
+| Swedish | Inställningar | Testfall | Taskar | Nyckelord | Dokumentation | Taggar |
+| Thai | การตั้งค่า | การทดสอบ | งาน | คำสั่งเพิ่มเติม | เอกสาร | กลุ่ม |
+| Turkish | Ayarlar | Test Durumları | Görevler | Anahtar Kelimeler | Dokümantasyon | Etiketler |
+| Ukrainian | Налаштування | Тест-кейси | Завдань | Ключових слова | Документація | Теги |
+| Vietnamese | Cài Đặt | Các kịch bản kiểm thử | Các nghiệm vụ | Các từ khóa | Tài liệu hướng dẫn | Các thẻ |
+
+| Language | Given prefixes | When prefixes | Then prefixes | And prefixes | But prefixes |
+| --- | --- | --- | --- | --- | --- |
+| Arabic | بافتراض | عندما; لما | إذن; عندها | و | لكن |
+| Bosnian | Uslovno | Kada | Tada | I | Ali |
+| Brazilian Portuguese | Dado | Quando | Então | E | Mas |
+| Bulgarian | В случай че | Когато | Тогава | И | Но |
+| Chinese Simplified | 假定 | 当 | 那么 | 并且 | 但是 |
+| Chinese Traditional | 假定 | 當 | 那麼 | 並且 | 但是 |
+| Czech | Pokud | Když | Pak | A | Ale |
+| Dutch | Stel; Gegeven | Als | Dan | En | Maar |
+| Finnish | Oletetaan | Kun | Niin | Ja | Mutta |
+| French | Étant donné; Étant donné que; Étant donné qu'; Soit; Sachant que; Sachant qu'; Sachant; Etant donné; Etant donné que; Etant donné qu'; Etant donnée; Etant données | Lorsque; Quand; Lorsqu' | Alors; Donc | Et; Et que; Et qu' | Mais; Mais que; Mais qu' |
+| German | Angenommen | Wenn | Dann | Und | Aber |
+| Hindi | दिया हुआ | जब | तब | और | परंतु |
+| Italian | Dato | Quando | Allora | E | Ma |
+| Japanese | 仮定; 指定; 前提条件 | 条件; 次の場合; もし; 実行条件 | アクション; その時; 動作 | および; 及び; かつ; 且つ; ならびに; 並びに; そして; それから | ただし; 但し |
+| Korean | 주어진 | 때 | 보다 | 그리고 | 하지만 |
+| Polish | Zakładając; Zakładając, że; Mając | Jeżeli; Jeśli; Gdy; Kiedy | Wtedy | Oraz; I | Ale |
+| Portuguese | Dado | Quando | Então | E | Mas |
+| Romanian | Fie ca | Cand | Atunci | Si | Dar |
+| Russian | Дано | Когда | Тогда | И | Но |
+| Spanish | Dado | Cuando | Entonces | Y | Pero |
+| Swedish | Givet | När | Då | Och | Men |
+| Thai | กำหนดให้ | เมื่อ | ดังนั้น | และ | แต่ |
+| Turkish | Diyelim ki | Eğer ki | O zaman | Ve | Ancak |
+| Ukrainian | Дано | Коли | Тоді | Та | Але |
+| Vietnamese | Đã cho | Khi | Thì | Và | Nhưng |
+
+| Language | Additional true words | Additional false words |
+| --- | --- | --- |
+| Arabic | نعم; صحيح | لا; خطأ |
+| Bosnian | — | — |
+| Brazilian Portuguese | Verdadeiro; Verdade; Sim; Ligado | Falso; Não; Desligado; Desativado; Nada |
+| Bulgarian | Вярно; Да; Включен | Невярно; Не; Изключен; Нищо |
+| Chinese Simplified | 真; 是; 开 | 假; 否; 关; 空 |
+| Chinese Traditional | 真; 是; 開 | 假; 否; 關; 空 |
+| Czech | Pravda; Ano; Zapnuto | Nepravda; Ne; Vypnuto; Nic |
+| Dutch | Waar; Ja; Aan | Onwaar; Nee; Uit; Geen |
+| Finnish | Tosi; Kyllä; Päällä | Epätosi; Ei; Pois |
+| French | Vrai; Oui; Actif | Faux; Non; Désactivé; Aucun |
+| German | Wahr; Ja; An; Ein | Falsch; Nein; Aus; Unwahr |
+| Hindi | यथार्थ; निश्चित; हां; पर | गलत; नहीं; हालाँकि; यद्यपि; नहीं; हैं |
+| Italian | Vero; Sì; On | Falso; No; Off; Nessuno |
+| Japanese | 真; 有効; はい; オン | 偽; 無効; いいえ; オフ |
+| Korean | 참; 네; 켜기 | 거짓; 아니오; 끄기 |
+| Polish | Prawda; Tak; Włączone | Fałsz; Nie; Wyłączone; Nic |
+| Portuguese | Verdadeiro; Verdade; Sim; Ligado | Falso; Não; Desligado; Desativado; Nada |
+| Romanian | Adevarat; Da; Cand | Fals; Nu; Oprit; Niciun |
+| Russian | — | — |
+| Spanish | Verdadero; Si; On | Falso; No; Off; Ninguno |
+| Swedish | Sant; Ja; På | Falskt; Nej; Av; Ingen |
+| Thai | — | — |
+| Turkish | Doğru; Evet; Açik | Yanliş; Hayir; Kapali |
+| Ukrainian | — | — |
+| Vietnamese | Đúng; Vâng; Mở | Sai; Không; Tắt; Không Có Gì |
+
+- Suite data can declare suite identity, documentation, metadata, library, resource and variable imports, suite and test fixtures, common and default-only tags, default templates, timeouts, variables, tests or tasks, and reusable keywords. Test-specific declarations override suite defaults; default-only tags apply only to tests without their own tag declaration. Tags are compared without case, spaces, or underscores, and equivalent duplicate tags count once. A test without an executable body is invalid.
+
+### FP-02: Variables and scoped automation data
+
+- Scalar references pass the original value when occupying a whole argument and interpolate its textual representation when embedded in text. List references expand ordered positional values, and dictionary references expand named values. Expansion of a value of an incompatible kind fails as invalid variable use.
+
+- Users can define variables in data, supply execution-wide variables, load Python, YAML, or JSON variable files, and read environment variables with an optional caller-provided value for an absent environment entry. Python variable providers can accept caller arguments and produce values dynamically. Missing files, invalid variable-file content, and unresolved references are reported as variable errors rather than substituted with invented values. A refused variable provider is identified by its source file in the diagnostic.
+
+- Variable lookup ignores case, spaces, and underscores in ordinary variable names. Individually supplied execution variables override execution variable files, which override suite variable declarations, which override imported resource and variable-file values. The last individually supplied definition wins; among multiple imported files at the same priority, the first definition wins. A resource's own declarations override the values it imports.
+
+- Assignments default to local scope and can explicitly create test or task, suite, or global variables. Local assignments are confined to the current test or keyword; test or task variables are visible to its called keywords; suite variables belong to that suite without automatic inheritance by child suites, unless propagation to children is explicitly requested; global variables are visible across suites. A runtime assignment replaces the visible value in its selected scope and in narrower active scopes that it covers. Test-scope values set during suite setup are available in that setup and its suite cleanup, but not in tests or child suites; a test-scope value set in suite cleanup is confined to that cleanup.
+
+- Variables support nested references, object attribute access, indexed collection access, slicing, and assignment from keyword returns. Nested variable names resolve their inner references before the outer reference; a missing inner reference fails the whole lookup. An existing variable matching the complete reference name takes precedence over interpreting that name as access to an object attribute or an expression. Extended references can evaluate Python 3.13 expressions starting with a supplied base variable, including its object operations, and return the resulting value; invalid expressions or unavailable attributes fail as invalid variable access. A single target receives a returned collection as one value; multiple targets unpack returned values, with an optional list target receiving the remaining values. Missing items, invalid indices, and incompatible unpacking fail as invalid variable access or assignment.
+
+- Automatically available values expose the source and execution directories, temporary directory, platform separators, empty values, numeric and Boolean values, absence of a value, current suite and test identity, documentation, metadata, tags, and output locations. Test and suite outcome information is available to their cleanup actions, and previous-test information is available after a test completes. Automatic context values take precedence over static user definitions; runtime reassignment can replace them in its scope. Source-directory references remain tied to the file containing them.
+
+- Type declarations on variables convert supplied values to integers, floating-point or decimal numbers, Booleans, text, bytes or mutable byte sequences, lists, tuples, sets, immutable sets, mappings, dates, date-and-time values, durations, paths, absence values, or secrets. Collection declarations can convert their elements and mapping keys and values. Arbitrary-object declarations preserve supplied values. Enumerated types, typed-dictionary declarations, and custom converters are not accepted for variable declarations. An unconvertible value produces a conversion error.
+
+- Union declarations for variables and keyword arguments preserve a supplied value that already satisfies a concrete member, including its declared collection member types. Otherwise, conversion is attempted in declaration order and the first successful result is used. An unrestricted member preserves every supplied value without conversion regardless of its position. A general-object member permits preceding conversions and preserves the original value if they fail. When all members are supported concrete types and none accepts or converts the value, the declaration fails as a conversion error.
+
+- Secret values can be passed to accepting library keywords without revealing their contents through ordinary string interpolation or argument logging; explicitly extracting a secret's content makes that content ordinary data. Secret declarations in data require an existing secret or an environment-derived value and refuse a bare literal value.
+
+- Variable and argument type conversion accepts signed decimal numeric text with decimal fractions or exponent notation and ignores grouping spaces and underscores. Integer declarations also accept binary, octal, and hexadecimal representations and require an exactly integral value; converting a nonintegral number to an integer is refused. Floating-point conversion accepts real numbers or numeric text; decimal conversion accepts integers, floating-point values, or numeric text.
+
+- For typed Boolean conversion, text spelling true, yes, or on, or the numeral one, becomes true; text spelling false, no, or off, or the numeral zero, and empty text become false; text spelling none becomes an absent value. These word comparisons ignore letter case. Activated translations add true and false words. Other text and supplied numeric or absent values are preserved. Text conversion maps each byte to the character with the same ordinal, uses other ordinary values textual representation, and refuses secrets. Byte conversion maps text ordinals and supplied integer byte values from zero through 255 to bytes and refuses out-of-range characters or values. Absence declarations accept empty text or the case-insensitive word none and reject other text.
+
+- List and tuple declarations accept sequence values or text denoting a Python 3.13 literal list or tuple. Set and immutable-set declarations accept collections or text denoting literal lists, tuples, or sets. Mapping declarations accept mappings or text denoting a Python 3.13 literal dictionary. Literal input is data, not an executable expression. Fixed-length tuple declarations require the declared number of members; repeated-element declarations convert every member. Path declarations accept text or path values and preserve the represented path. Date-and-time and duration declarations accept the same calendar and duration inputs as the date and duration operations; a date declaration refuses a nonzero clock component in a supplied calendar value or timestamp. For date declarations, the case-insensitive words today and now instead yield the current local calendar date without a clock component.
+
+- Numeric variable references denote signed decimal, binary, octal, or hexadecimal integers or floating-point values when no ordinary variable shadows them. Direct lookup of an unresolved reference fails; the explicit optional-lookup utility instead returns absence when no caller replacement was supplied.
+
+- Keyword-return assignment can replace an indexed list item or slice, add or replace a mapping entry, or set an attribute on an existing object. These mutations are visible through other references to that object. When the base is absent, is text, is an integer, or is a floating-point number, an attribute-assignment target instead creates an ordinary local variable with the complete name. An applicable object attribute assignment that the object refuses fails as invalid assignment; an invalid index or assignment to an immutable item also fails.
+
+### FP-03: Extensible library keywords
+
+- Users can import Python libraries by discoverable name or source location, supply initialization arguments, and give imports distinct aliases. Publicly exposed library keywords become callable with their declared names and return their actual results and side effects. Relative library source locations are resolved from the importing source before configured search locations. Failed imports and failed initialization identify the unavailable or invalid library as an execution error; unrelated tests remain runnable by default.
+
+- Static libraries expose declared keyword operations, hybrid libraries choose which existing operations are exposed, and dynamic libraries supply keyword discovery and execution behavior. Library-provided keyword documentation, tags, argument information, and type information remain available to callers and documentation tools. Explicitly hidden operations are not callable as keywords.
+
+- Library calls bind positional, named, positional-only, named-only, defaulted, variable positional, and variable named arguments according to their declarations. Named binding uses the declared argument name with case and spaces significant. Missing required arguments, repeated bindings, unexpected arguments, and positional arguments after named arguments fail as argument errors. Before any named binding, a literal containing a name separator remains positional when it does not name an accepted argument and the keyword does not accept arbitrary named arguments. Omitted optional arguments receive their declared defaults.
+
+- Explicit type declarations support integers, floating-point and decimal numbers, Booleans, text, bytes and mutable byte sequences, lists, tuples, sequences, sets, immutable sets, dictionaries, mappings, paths, dates, date-and-time values, durations, enumerated values, unions, literal choices, typed dictionaries, absence values, and secrets. Arbitrary-object declarations preserve supplied values. Parameterized collections convert their members; typed dictionaries convert declared values, require mandatory keys, and refuse undeclared keys. Already conforming values are preserved. Custom conversion declarations can supply conversions for additional types; failed explicit conversion is an argument error. With an implicit integer type inferred only from a default, a nonintegral numeric input can instead become a floating-point value; a failed implicit conversion otherwise preserves the original input. If explicit conversion fails and a default supplies an alternative type, that conversion is attempted and must succeed. Callers can disable automatic conversion.
+
+- Stateful libraries can isolate their state per test, share it within a suite, or share it across the whole execution; per-test isolation is the default for class-based libraries, and module-based libraries share execution-wide state. Different initialized imports with distinct aliases retain their corresponding state and configuration.
+
+- Remote keyword libraries discover and execute keywords on a reachable server. Returned values, logged messages, and ordinary, continuable, or fatal outcomes are delivered to the calling execution. A caller-selected communication timeout bounds waiting for the server; without one, the host socket timeout applies. Unavailable servers or malformed responses produce remote-operation errors.
+
+- Remote keyword calls preserve text, signed integers from minus 2,147,483,648 through 2,147,483,647, floating-point numbers, Booleans, binary values, and date-and-time values; integers outside that range fail as unsupported remote input; calendar dates become midnight date-and-time values and durations become seconds. Absence becomes empty text, non-text iterable values become lists, mapping keys become text, and mapping values and collection members undergo the same conversions. Other unsupported objects become text. Text containing a character with an ordinal from zero through 31 other than tab, line feed, or carriage return is conveyed as binary when every character fits in a byte and is refused otherwise; binary mapping keys are refused. Binary return values remain binary, and returned mappings support item and attribute-style access, including mappings nested in mapping values and collection members.
+
+- Enumerated argument conversion accepts an existing member or its declared name, with an exact name taking precedence over a unique match ignoring case, spaces, underscores, and hyphens. Integer-valued enumerations also accept their member numeric values. Literal-choice conversion preserves an exact choice with matching type; otherwise it converts to the choice types and requires a unique matching choice, using the same text normalization. No match or ambiguous normalized matches produce argument errors. Secret-typed arguments accept only existing secrets.
+
+- Callers can explicitly refresh an active library's exposed keywords after that library changes them. Subsequent calls use its added or removed keywords and updated argument declarations and documentation. The caller can identify the library by its import name or active object; an unavailable library is refused as a library-lookup error.
+
+### FP-04: Reusable user keywords and resources
+
+- Users can compose higher-level keywords from keyword calls and import shared resource files. Imported resources expose their declared variables, keywords, and imported library keywords to the importing suite, including resources imported by another resource. Relative resources are found from the importing source before configured search locations. A missing resource produces an import error identifying that resource.
+
+- User keywords accept required, defaulted, named-only, variable positional, and variable named arguments. Defaults can depend on earlier arguments, and declared argument types convert values. Invalid binding or conversion fails as an argument error. Values local to the caller do not become the called keyword's local variables unless passed explicitly.
+
+- Ordinary keyword matching ignores case, spaces, and underscores. Unqualified calls prefer a keyword declared in the current suite, then resource keywords, then external library keywords, then standard-library keywords. Among matching resource keywords, a keyword in the same resource as its caller takes precedence, followed by a uniquely applicable public keyword over private matches. Explicit qualification and caller-selected library search priority resolve otherwise ambiguous providers, and selecting an empty search priority removes the previously selected one; unresolved ambiguity and an unknown keyword fail as keyword-resolution errors. A call with an English behavior-driven prefix meaning given, when, then, and, or but, or an activated translated prefix, first resolves the name with its prefix omitted; if that name has no match, it resolves the full name.
+
+- Keyword names can contain embedded arguments with optional regular-expression restrictions. Unlike ordinary keyword matching, embedded matching preserves spaces and underscores in literal name portions while ignoring letter case. Matching calls supply the captured values to the keyword, and calls outside the restriction do not match it. Within the provider candidates remaining after explicit qualification, declared search priority, and same-source preference, ordinary matches take precedence over embedded matches. Among embedded matches, one definition is more specific when its declared name matches another definition but the reverse does not; a uniquely more specific match wins and unresolved competing matches fail as ambiguous keyword calls.
+
+- User keywords can return one value, multiple values, or no value, and can return early from nested control structures. Setup failure prevents the keyword body from running; keyword cleanup runs after the body, a setup failure, or a body failure, and cleanup failure makes the keyword fail. A keyword with no executable body is invalid.
+
+- Data-driven tests invoke a selected template keyword separately for each argument row, including expanded rows inside loops. A test-level template overrides the suite default, and a test can disable the default template. Ordinary failures do not prevent later template rows from executing; syntax errors, fatal termination, and test timeouts still prevent successful completion.
+
+- Private user keywords remain callable, but a call originating outside the defining source produces a warning.
+
+### FP-05: Test and task execution lifecycle
+
+- Executing a suite runs its tests in declaration order and nested suites in source-name order unless ordering is explicitly changed. Keywords within a body execute in order and can pass results to later statements. Test or task names, tags, documentation, and free metadata accompany the outcomes.
+
+- Suite setup precedes descendant execution and suite cleanup follows it; test setup precedes its body and test cleanup follows it. Failed setup prevents the affected body from executing, but its cleanup still runs. Failed suite setup fails its descendant tests without running their bodies, and failed suite cleanup makes descendant tests fail. Cleanup continues after ordinary individual failures; fatal failures and invalid syntax can still stop it.
+
+- An ordinary unhandled keyword failure fails the test and prevents later body statements from executing; it does not prevent later tests from running. Continuable failures allow subsequent body statements while retaining failure. Explicit continuation and stop policies can apply locally or recursively through called user keywords; a local policy governs its own body over an inherited recursive policy, while explicitly continuable failures remain continuable.
+
+- A requested skip stops the affected test as skipped, still permits its cleanup, and remains distinguishable from a passed or failed test. Tag-based skipping can avoid a test body, and caller-selected skip-on-failure converts matching failures to skipped outcomes. A suite with no failures and at least one passed test passes; a suite with only skipped tests is skipped; any failed descendant makes the suite fail.
+
+- Tests and user keywords can have caller-declared elapsed-time timeouts. Test and user-keyword timeouts can interrupt their setup and body. Existing deadlines do not interrupt their cleanup, which runs to completion; elapsed cleanup time can still cause a timeout failure detected after cleanup completes. When active timeouts overlap, the earliest expiring one governs. Exceeding a timeout fails the affected operation with a timeout reason. User-keyword timeout failures remain distinguishable from ordinary assertion failures. Timeouts are disabled by default. In a direct test or user-keyword declaration, an empty, explicitly disabled, or nonpositive duration disables the timeout. An invalid duration fails as invalid timeout configuration.
+
+- Fatal termination or a caller-selected stop-on-failure policy prevents remaining tests from running their bodies and marks them failed due to termination. Cleanup for already started tests and suites still runs unless explicitly disabled. A first graceful external interruption preserves completed results and performs cleanup.
+
+- Test automation and task automation use the same execution semantics, with the chosen mode reflected in result terminology. A task-only source selects task mode automatically. Mixing test and task sources without an explicit mode choice is refused as inconsistent execution configuration.
+
+### FP-06: Conditional execution, iteration, and failure handling
+
+- Conditional branches use Python 3.13 expression semantics over supplied values and execute only the first true branch, or the alternative branch when none is true. Substituted text is evaluated as expression text, whereas explicit object references expose their actual values to the expression. Inline conditional execution can assign the selected keyword return value; when no branch is selected, the assignment receives an absent value. Invalid expressions fail as evaluation errors rather than choosing an arbitrary branch.
+
+- Loops iterate over ordered values, numeric ranges, enumerated values, parallel sequences, or dictionary entries. Numeric ranges exclude the end value and default to a start of zero and a step of one; a zero step is invalid. Enumeration starts at zero unless overridden. Multiple loop variables consume corresponding groups of values; an incompatible number is invalid loop data. Dictionary iteration can provide keys alone, key-value pairs, or separate key and value variables in mapping order. Parallel iteration stops at the shortest input by default and can instead require equal lengths or extend to the longest input using a caller-selected fill value, with absence as the default fill.
+
+- Condition-controlled loops repeat while their condition is true; an omitted condition remains true. The default maximum is 10,000 completed iterations per loop invocation. Users can replace this with an iteration count, an elapsed-time limit, or no limit. Reaching a limit while more iterations are requested fails the loop by default; an explicit successful-limit policy instead completes it successfully. An elapsed-time limit does not interrupt a keyword already running inside an iteration.
+
+- Loop continuation skips the remainder of the current iteration, and loop exit skips all remaining iterations of the enclosing loop. These statements are valid only in a loop's own body, including nested control structures, and are invalid when placed in a separate called keyword or outside a loop.
+
+- Failure handlers select the first matching branch using exact text, wildcard, regular-expression, or prefix matching, with exact matching as the default. A handler without patterns catches ordinary failures not matched earlier. A matching handler receives the failure message when requested; an unmatched failure propagates, a success-only branch runs only if the protected body succeeded, and final cleanup executes after either outcome. Syntax errors and timeouts are not caught as ordinary failures.
+
+- Named or anonymous groups collect related statements into a visible execution group without introducing a new variable scope. Groups and control structures can nest, and their results preserve the executed, failed, skipped, and unexecuted portions. Missing terminators and misplaced branches fail as invalid control structure syntax.
+
+- Failure-handler exact and prefix matching are case-sensitive; wildcard matching covers the full failure message, and regular-expression matching covers the full message using Python 3.13 regular-expression semantics over the supplied pattern and failure message. A handler with multiple patterns matches when any pattern matches. A final-cleanup failure replaces a handled or successful outcome with failure.
+
+### FP-07: Standard assertions and execution utilities
+
+- Standard operations are available without importing a library. They assert truth, equality or inequality, numeric or textual equality, emptiness, length, containment or absence, any-of containment, occurrence count, prefixes, suffixes, wildcard matches, and regular-expression matches. A satisfied assertion succeeds and an unsatisfied assertion fails with the compared values and unmet condition identifiable; caller-supplied messages are preserved. Truth assertions evaluate textual conditions as Python 3.13 expressions and otherwise use the supplied value truth. Numeric equality compares values rounded to six decimal places by default and uses caller-supplied precision when specified. Text and nested collection equality can apply case folding, leading or trailing whitespace trimming, and collapsing whitespace runs before comparison; these transformations are off by default. Equality can validate the first value against a declared type and convert the second to it, infer the target from the first value, or convert both values to a declared type. Selecting both conversion modes is refused.
+
+- Standard conversions produce integers with a chosen base, floating-point numbers with optional rounding, binary, octal, or hexadecimal text, text, Booleans, and bytes. Integer conversion truncates numeric fractional values toward zero; textual input defaults to decimal unless a binary, octal, or hexadecimal prefix selects its base. Numeric text ignores spaces and underscores. Numeric rounding chooses the nearest value at the requested decimal precision and resolves ties toward the even choice. Explicit Boolean conversion treats case-insensitive false text as false and otherwise uses Python 3.13 truth-value semantics. Byte conversion accepts text characters with ordinals zero through 255, integer byte values in that range, or caller-selected binary or hexadecimal byte representations. Text conversion preserves ordinary values textual representations and converts byte ordinals directly to matching characters. List creation preserves argument order; dictionary creation preserves values and later entries replace repeated keys. Unaccepted input fails as a conversion error.
+
+- Callers can evaluate Python 3.13 expressions with supplied variables, optional imported modules, and an explicit namespace, and invoke an operation on a supplied object. Successful evaluation returns its value; invalid expressions, absent object operations, and failures in those operations remain observable as execution failures.
+
+- Dynamic keyword execution accepts a resolved keyword name and caller arguments, executes it, and returns its result. Caller-selected handling can return success as a Boolean, return a success-or-failure outcome with the value or failure reason, warn on ordinary failure, continue after ordinary failure, or require a matching expected failure. Expected-failure matching defaults to whole-message wildcard matching and can instead use exact text, prefix matching, or full-message regular-expression matching. These matches are case-sensitive; regular expressions follow Python 3.13 semantics over the supplied pattern and failure message. A matching expected failure returns its actual failure message. An unexpected success or nonmatching expected failure fails the expectation; syntax errors, timeouts, and fatal failures are not silently ignored.
+
+- Repetition executes a keyword a caller-selected number of times or for a caller-selected duration. Duration mode repeats successive calls until its time allowance is exhausted without interrupting an already running call. A nonpositive repetition count or duration performs no calls. Retry execution repeats an ordinarily failing keyword until it succeeds or the caller-selected attempt count or elapsed-time allowance is exhausted, waits the selected interval after each failed attempt by default, returns the successful value, and fails with the last failure reason if exhausted. A caller can instead measure the retry interval between attempt starts; an attempt lasting longer than that interval causes the next eligible attempt to start without an additional wait. Retry counts must be positive; malformed repetition or retry counts, durations, or intervals fail as invalid execution configuration. Invalid syntax, timeouts, fatal failures, and skips stop retrying.
+
+- Runtime utilities can inspect visible variables, require their presence or absence, and explicitly provide a value for an absent lookup. They can import additional libraries, resources, and variable files into the current suite, choose library search priority, and change current documentation, metadata, tags, and test message so later calls and final results expose those changes.
+
+- Wildcard assertions match the whole supplied text using arbitrary-length, single-character, and character-set wildcards. Regular-expression assertions use Python 3.13 regular-expression semantics over the supplied text and expression with caller-selected flags, search anywhere in the text, and honor anchors supplied in the pattern. Successful regular-expression assertions return the matched text and captured groups; no match fails. A literal-pattern utility produces a Python 3.13 regular-expression pattern that matches supplied text literally rather than interpreting its metacharacters.
+
+- Runtime utilities can pause for a caller-supplied duration, explicitly fail or skip execution, complete the current test body successfully with cleanup, and join supplied text with a caller-selected separator, defaulting to one space. Negative pause durations complete without waiting. Earlier accumulated failures remain failures after a successful early completion.
+
+- Measurement utilities return the length of supplied text, bytes, lists, or mappings and the number of occurrences of a requested item in text or a collection. Text occurrence counting counts nonoverlapping matches; collection occurrence counting compares items for equality. A value without a supported length or collection interpretation fails as invalid measurement input.
+
+- Runtime inspection can require that a keyword name resolves to one valid keyword, failing when it is unknown, ambiguous, or invalid without executing it. It can retrieve a currently active imported library by its import name or alias, or retrieve all active libraries with their names. The retrieved objects retain their actual library state; requesting an unavailable library fails as a library-lookup error.
+
+### FP-08: Collection data manipulation and validation
+
+- Collection operations convert iterable values to lists, append or insert values, replace indexed values, combine lists, extract items or slices, search and count items, remove values or indexed items, deduplicate, reverse, sort, and copy lists. Removal by value removes every occurrence and accepts absent values; removal by index returns the removed item. Combining preserves input and item order; deduplication returns a new list, preserves the input, and keeps the first occurrence. Slice starts are zero-based and inclusive, ends are exclusive, and negative bounds count from the end. Search returns matching positions or counts within the requested slice; a bounded first-item search returns the position in the original collection, or minus one when absent. Sorting is ascending and refuses items that cannot be compared with each other. Mutating operations change supplied mutable lists. Copies are shallow by default: they are independent collections sharing nested values; requesting a deep copy instead isolates nested values. Read-only operations preserve the original collection.
+
+- Dictionary operations retrieve keys, values, items, and selected entries, add or replace entries, remove entries, remove and return a selected entry, retain a chosen subset, combine mappings, and copy mappings. Ordinary entry removal and subset retention accept requested keys that are absent; retrieving or removing-and-returning a required entry fails when its key is absent unless a replacement value was explicitly supplied. Combining mappings lets later entries replace earlier values for the same key. Mutations change a supplied mutable dictionary. Dictionary copies are shallow by default, sharing nested values, and can instead isolate nested values through a deep copy. Key, value, and item enumeration uses ascending key order when keys are mutually sortable; a caller can instead request original mapping order. Keys that cannot be mutually sorted retain original mapping order.
+
+- Collection assertions check list or dictionary equality, containment, subsets, item values, duplicate absence, and pattern-matching items. List equality compares positions by default and treats lists and tuples with equal contents as equal; ignoring order still requires equal occurrence counts. List subset assertions require each requested value to occur but ignore ordering and repeated requests for the same value. Dictionary equality requires the same keys and corresponding values, with caller-selected excluded keys omitted; subset assertions require only the selected entries. Requested case-insensitivity applies recursively, and for dictionaries can affect keys, values, or both. Normalizing distinct dictionary keys to the same key is refused as ambiguous collection data. Differences fail with differing items or missing entries identifiable. Pattern operations select only textual items and return matching values or their count in source order, or assert whether any match exists. Wildcards require a full-item match; regular expressions match from the start using Python 3.13 semantics. Case and whitespace are significant unless explicitly ignored.
+
+- Indexed access accepts positions from either end, with negative positions counted from the end; an out-of-range item access fails. Insertion beyond an end inserts at that end. Mutation requests on immutable sequences or mappings leave the immutable input unchanged. They return a modified mutable collection, except that indexed list removal and dictionary pop return the removed item. Invalid collection kinds and invalid indices produce collection-operation errors.
+
+### FP-09: Text transformation and validation
+
+- Text operations change letter case, capitalize words, trim selected leading or trailing characters, select substrings, split into characters, fields, or lines, extract text before the first or after the last selected delimiter, and format text with caller-supplied values. Field splitting defaults to whitespace runs, discarding surrounding whitespace, and otherwise uses the exact selected separator; a caller can limit splits and choose splitting from the left or right. Substring and line slices use zero-based inclusive starts and exclusive ends, permit positions counted from the end, and omit line terminators from returned lines. A missing extraction delimiter returns the full source. Supported byte-oriented operations return bytes and apply letter-case changes only to ASCII letters.
+
+- Literal and regular-expression replacement and removal return transformed content without changing the source value. Negative replacement limits replace all matches, zero performs no replacements, and positive limits replace that many matches from the left. Regular-expression extraction returns matched content or caller-selected capture groups in source order; malformed expressions and unavailable capture groups fail as invalid pattern operations.
+
+- Line selection returns lines containing a literal substring or fully matching a wildcard or regular expression; regular-expression selection can instead search anywhere within each line. Matching is case-sensitive by default and can be made case-insensitive. Line counting returns the number of source lines. Type assertions distinguish text and bytes; lower-case and upper-case assertions require at least one cased character and all cased characters in the requested case. Title-case conversion preserves words already containing uppercase letters and otherwise uppercases the first alphabetic character in each whitespace-separated word, preserving original whitespace; title-case validation succeeds when that conversion leaves the value unchanged. Words fully matching caller-supplied regular-expression exclusions are left unchanged during title-case conversion and validation. An unmet property fails as a string assertion.
+
+- Encoding converts text to bytes and decoding converts bytes to text with the caller-selected character encoding and error policy. Invalid encodings and unrepresentable or invalid data fail under the strict policy; explicitly selected replacement or omission policies handle those characters accordingly.
+
+- Random-string generation returns the requested length using the caller-selected character collection; a requested length range chooses a length within that range. The default is eight characters drawn from ASCII letters and digits. Built-in character collections cover lowercase ASCII letters, uppercase ASCII letters, both ASCII letter cases, digits, Arabic code points from U+0600 through U+06FF inclusive, and ASCII letters together with ą, ć, ę, ł, ń, ó, ś, ź, ż and their uppercase counterparts. Each character position is selected independently with equal probability for each occurrence in the selected collection; a length range chooses uniformly among its inclusive integer lengths. Caller collections can combine built-in character groups and literal characters, retaining repeated occurrences. A nonpositive fixed length returns empty text. An empty character collection for a positive requested length, a reversed length range, or a malformed length is an invalid generation request.
+
+- Regular-expression extraction and replacement use Python 3.13 regular-expression semantics over the supplied text, pattern, selected flags, and replacement. Extraction returns nonoverlapping matches from left to right, or the selected numbered or named captured groups. Replacement interprets capture references in the replacement text. Text formatting uses Python 3.13 format-string semantics with the supplied format text and positional or named values; invalid formatting requests fail. Encoding and decoding require the selected character encoding and default to strict error handling.
+
+### FP-10: Execution results, logging, and reports
+
+- A normal execution produces machine-readable results, a browsable detailed log, and a summary report by default. Users can select an alternative structured result representation, a unit-test result summary, debug output, and a compatibility result representation for earlier consumers, and disable artifact types. The detailed log requires machine-readable output; disabling that output also prevents the detailed log, while the summary report, unit-test summary, and debug output can remain enabled. Other artifact types can be disabled independently. Structured results preserve suite hierarchy, test outcomes, reasons, timings, tags, documentation, metadata, keyword execution details, and execution errors. Recorded execution intervals encompass completed work and lie within the invocation's clock bounds, allowing at most one millisecond of rounding error per reported time value on a host with a stable clock.
+
+- Browsable logs expose nested suite, test, keyword, and control-flow details with their outcomes and messages. Reports expose overall, suite, and tag statistics and individual test results; navigation connects summary entries with their detailed logs when both documents are generated. Passed, failed, and skipped outcomes remain distinguishable.
+
+- Logging accepts trace, debug, information, warning, and error severity, with information as the default recording threshold. Lower-severity messages are excluded by the selected threshold; disabling logging suppresses ordinary recorded messages. Warnings and execution errors remain separately visible as execution issues, and logging an error does not itself fail the current test under the default execution policy.
+
+- Library log messages, captured standard output, and captured standard error are associated with their executing keyword; callers can also write directly to the console. Detailed console progress is the default and includes suite and test outcomes and summary counts. Compact mode emits per-test progress and final totals; issue-only mode emits warnings and errors; silent mode suppresses framework console output.
+
+- Suite and tag statistics count passed, failed, and skipped tests in their represented groups. Users can select suite depth, include or exclude tag statistics, and define Boolean combinations of tag groups with caller-supplied documentation or links. These presentation selections do not alter the underlying test outcomes.
+
+- Public result-reading operations accept both supported structured result representations and expose inspectable suites, tests, messages, timings, outcomes, and totals. Callers can edit result content and write new results and reports reflecting those edits. Unreadable or malformed result files fail as invalid result input rather than yielding an apparently successful empty run.
+
+- Callers can change the recording threshold during execution and restore the threshold selected at invocation. Each change returns the previously active threshold, and subsequent ordinary messages follow the new threshold. An unsupported severity selection fails as invalid logging configuration.
+
+### FP-11: Execution selection and configuration
+
+- Users can select suites and tests by name or hierarchical name and select or exclude tests by tag expressions. Name and tag matching ignores case, spaces, and underscores. Patterns support arbitrary-length, single-character, and character-set wildcards and must match the whole name or tag. Tag expressions support conjunction, disjunction, and negation, in that precedence order from highest to lowest; negation excludes every matching right-hand condition from its left-hand selection and may omit the left condition to select its complement. Repeated selectors within a category are alternatives, different categories combine as constraints, and exclusions win over inclusion. Selecting no tests is an execution-input error unless empty suites are explicitly permitted.
+
+- Users can select discovery sources by filename, path, recursive path pattern, or extension. Name and extension matching is case-insensitive; a single path wildcard remains within one path component, and a recursive wildcard spans nested components. Selecting additional extensions enables those sources for parsing without turning unrelated files into tests.
+
+- Earlier results can select failed tests for rerunning or select entire failed suites, preserving the current suite's source definitions as the executable content. Unreadable prior results are invalid rerun input. An earlier run without matching failures produces an empty-selection error unless empty suites are allowed.
+
+- Execution configuration can override top-level suite name, documentation, metadata, and test tags. Options may come from direct invocation, argument files, or execution environment defaults. Explicit invocation overrides environment defaults; repeated single-valued options use the last supplied value, and repeated accumulating options retain their values. Missing argument files and invalid option values fail as configuration errors.
+
+- Execution order can remain unchanged or randomize tests, suites, or both. A caller-supplied random seed makes the order reproducible for the same suite content and selected mode; randomization preserves the selected tests and their parent-suite membership. Across independently selected seeds, each permutation of the selected suite order and each permutation of the selected test order within a suite is equally likely.
+
+- Dry-run execution checks keyword availability, argument counts, and executable control structure validity without performing ordinary library keyword side effects. It still produces distinguishable validation outcomes and identifies invalid calls; it does not promise that runtime values or external-system behavior are valid.
+
+- Invocation communicates successful completion, failed tests, and invalid input or configuration as distinguishable outcomes. Interruption during source preparation has a distinct stopped outcome. A caller can suppress a failure-based process status without suppressing input errors or changing recorded test failures. Under the default policy, non-test execution errors are reported separately; explicitly treating them as fatal stops remaining execution.
+
+### FP-12: Result post-processing
+
+- Result post-processing consumes saved results in either supported structured representation and generates reports and logs without rerunning keywords. It can emit new structured results and a unit-test summary. It preserves the recorded test or task mode unless overridden; combining incompatible modes without an explicit choice is refused.
+
+- Combining multiple results keeps each input suite as a child of a new common suite, preserving the input order and the distinct executions. Filtering can select suites or tests by names and tags, and metadata overrides and statistics settings affect the newly generated artifacts without altering the original files.
+
+- Merging results requires matching root-suite names and combines corresponding suites and tests. A later non-skipped result replaces an earlier matching test, while a later skipped result preserves the earlier test outcome. Previously absent suites and tests are added. Replacement remains visible together with the prior result's status and reason; incompatible roots fail as invalid merge input.
+
+- Merging takes suite documentation and fixtures from the last corresponding suite and preserves metadata from all merged suites with later values winning conflicts. Summary counts and overall outcomes reflect the resulting tests rather than summing superseded attempts.
+
+- Keyword-detail removal can select all keywords, passed execution details, successful loop iterations, earlier failed retry attempts, or keywords selected by name or tags. Warnings are retained except when all keyword details are explicitly removed. Flattening selected loops, iterations, or keywords retains their descendant messages in the selected parent while omitting the nested detail. These reductions preserve test outcomes and totals.
+
+### FP-13: Execution and result extension hooks
+
+- Registered listeners receive start and end notifications for suites, tests, keywords, and control structures, with associated identity and outcome information, and receive log-message and result-artifact notifications. Parent starts precede child events and parent ends follow child events. Listeners may subscribe to a subset of events. Higher caller-declared numeric priority receives each execution notification first; priority defaults to zero, and equal priorities use registration order with command-line listeners before library listeners.
+
+- The older listener interface supports observing execution; the current interface also permits edits to executable data and results. Changes to forthcoming keyword calls affect what executes, and changes to test outcome or metadata affect resulting artifacts. Command-line listeners cover the whole execution, whereas library-registered listeners apply only where that library is active. Listener registration and callback failures are reported as listener errors rather than ordinary test assertion failures.
+
+- Caller-provided suite modifiers can inspect, add, remove, reorder, or edit suites, tests, and executable statements. Multiple modifiers apply in registration order; execution filtering and other ordinary suite configuration apply to the modified content. Invalid modifier loading or invocation produces an extension error.
+
+- Caller-provided result modifiers can inspect and edit recorded suite and test results before new artifacts are written, and those artifacts reflect changed outcomes, metadata, and content. Public traversal operations expose nested suite and result content so an extension can select descendants and edit them without reconstructing a complete run.
+
+- Custom parsers accept their declared source formats and provide executable suite content. A caller-provided parser can read directory initialization sources and receive inherited test fixture, tag, and timeout defaults. A parser declaring a built-in source format takes precedence over the built-in reader for that format. Parser failures and invalid returned suite content are reported as source-processing errors.
+
+- A caller-supplied console logger can replace built-in console presentation and receive execution and artifact information. Failure to load the requested logger is a configuration error; the selected logger's output is observable during the run.
+
+### FP-14: Local file and environment automation
+
+- Local file operations read and write text with a selected encoding, read and write binary content without text conversion, append content, and select file lines by wildcard matching by default or by caller-selected regular-expression matching. Line matching is case-sensitive, searches anywhere within each line, and preserves source order; regular expressions follow Python 3.13 semantics over the supplied pattern and each source line. Text encoding defaults to UTF-8 with strict error handling. Missing input files, invalid encodings, and permission-denied operations fail as file-operation errors.
+
+- File and directory operations create, copy, move, remove, and empty caller-selected paths, including recursive directory operations when requested. File creation creates missing parent directories, copying preserves source content, and moving removes the original after success. Missing-file removal succeeds, while removal of a nonempty directory requires an explicit recursive request.
+
+- File and directory assertions distinguish missing paths, files, directories, and empty or nonempty content. Listing and counting can select all entries, files only, or directories only and optionally filter their names. Existence waits succeed when the requested creation or removal occurs and fail on expiration of the caller-selected timeout.
+
+- Path operations join, normalize, and split paths and extensions; file inspection returns byte size and modification time. Callers can update modification time and create or update a file's timestamp. Invalid source paths and incompatible path kinds produce path-operation errors.
+
+- Environment operations read, enumerate, set, append, remove, and assert presence or absence of process environment entries. Changes affect subsequent reads and child processes started afterward. Missing required entries fail as environment lookup errors unless the caller explicitly supplies a replacement value.
+
+- Listings are sorted by entry name and default to entry names, with full paths available on request. Wildcards can select paths for existence assertions and file removal; a negative existence assertion succeeds only when no path matches. Creating an existing directory succeeds, file creation replaces existing content, and emptying a directory removes its descendants while retaining the directory. A file destination that is a directory receives the source basename; copying or moving multiple files requires a destination directory. Directory copy includes descendants and refuses an existing destination subtree with the same name. Missing-directory removal succeeds. Existence waits default to 60 seconds, accept a caller-supplied duration, and allow unlimited waiting when an absent or negative timeout is explicitly selected.
+
+- Environment names are case-sensitive on Linux. Appending joins values with the host path separator by default, or with a selected separator; removing an absent environment entry succeeds. Path normalization resolves redundant separators and current and parent components without requiring the path to exist, and expands a leading home-directory abbreviation.
+
+### FP-15: Process execution and management
+
+- Process automation starts real local commands synchronously or in the background with caller-selected arguments, working directory, environment, and optional shell interpretation. By default, shell interpretation is disabled and the child inherits the current directory and environment. Without shell interpretation, arguments remain distinct values; nontext arguments become text. A supplied environment replaces inherited entries as a whole, with separately supplied entry overrides applied afterward. An unavailable executable or invalid working directory fails as process-start failure.
+
+- Completed process results expose the exit outcome, standard output, and standard error. Standard input is inherited by default and can instead be text, a file, or a caller-provided stream. Standard output and error are captured separately by default and can be redirected, discarded, or combined, with caller-selected decoding for captured text and the host console encoding as its default. A nonzero child exit remains inspectable as a process result and does not automatically fail the keyword.
+
+- Multiple started processes can be addressed by returned references or aliases and one can be selected as active for subsequent operations. The most recently started background process becomes active by default; synchronous execution does not change the active selection. Inspection distinguishes running and stopped processes and exposes the operating-system process identity. An unknown reference or an operation without an active process fails as invalid process selection.
+
+- Waiting can complete with the process result or stop waiting after a caller-selected timeout. The caller can choose to leave a timed-out process running, terminate it, or kill it. Expiration while leaving the process running is a normal, non-failing wait outcome. Explicit termination, killing, and supported operating-system signals affect the selected process, and bulk termination affects only processes started through this process-management capability. Graceful termination allows 30 seconds for a process to exit before forcefully killing it; on Linux, termination includes its child processes.
+
+- Command-line text can be split into arguments while preserving quoted whitespace, with backslash escaping disabled by default and available on request. Arguments can be joined into command-line text with quoting for embedded whitespace and quotes. Malformed quoting in a split request fails as invalid command-line input.
+
+- Waiting has no timeout by default. When a caller supplies a wait timeout, expiration leaves the process running unless termination or killing was selected. Configured relative redirection paths are relative to the child working directory. Unknown process configuration options are refused.
+
+### FP-16: Date and duration conversion and arithmetic
+
+- Date operations accept calendar timestamps, timestamps with caller-defined formats, Python calendar-date and date-and-time values, and numeric seconds since midnight UTC on January 1, 1970. They convert them to a requested timestamp, custom-formatted text, date-and-time value, calendar-date value, or epoch-seconds value; timestamp output is the default. Timestamps support years 1900 through 9999, and supplied Python calendar values support years 1 through 9999. Epoch conversion uses the host local time zone. Caller-defined calendar input and output formats follow Python 3.13 date-and-time formatting semantics for the supplied value and format text. Calendar-date output discards the clock component. Default timestamp input supplies year, month, and day followed by optional hour, minute, second, and fractional second components; missing clock components mean zero. Invalid calendar dates or content incompatible with a requested format fail as invalid date input. These conversions apply to values without time-zone information.
+
+- Duration conversion accepts numeric seconds, time-unit text, timer text, and Python duration values, and returns seconds, time-unit text, timer text, or a Python duration value as requested; numeric seconds are the default result. Signed values preserve their sign and magnitude. Supported units are nanoseconds, microseconds, milliseconds, seconds, minutes, hours, days, and weeks; incompatible input or output formats fail as invalid duration conversion.
+
+- Date arithmetic adds or subtracts a duration from a calendar date and subtracts one date from another to obtain their signed elapsed difference. Duration arithmetic adds or subtracts the supplied durations.
+
+- Current-date operations return the current local clock reading by default or the UTC reading when selected, with an optional caller-supplied increment. Epoch-seconds output represents the same current instant under either time-zone selection. Other time-zone selections are refused for calendar output. The special input words today and now, compared without letter case, both denote the local current date and time. Returned current values reflect the host clock at the time of the request.
+
+- Built-in timestamp, time-unit-text, and timer-text results round to the nearest millisecond by default; excluding fractional seconds rounds to the nearest whole second. Caller-defined date output patterns preserve fractional precision according to Python date formatting semantics. Numeric and Python date or duration results retain their supported input precision unless whole-second rounding is explicitly requested.
+
+- Duration units have their ordinary fixed ratios: a minute is 60 seconds, an hour 60 minutes, a day 24 hours, and a week seven days; fractional units are accepted. Date arithmetic follows Gregorian calendar dates, including leap years divisible by four except centuries not divisible by 400.
+
+### FP-17: XML inspection, validation, and editing
+
+- XML operations accept file content, text, bytes, or an already parsed XML document and return inspectable element content. Malformed XML or unreadable sources fail as XML input errors. Ordinary parsing removes comments and processing instructions. A well-formed document is accepted even if it does not satisfy its declared schema or document type.
+
+- Element selection supports child and descendant paths, qualified element names, wildcard names, attribute predicates, and positional predicates. Multi-element selection returns matches in document order. Single-element operations require exactly one match and fail on no match or multiple matches; selection failures identify the requested path. Element counting returns the number of matches for callers to compare with their expected count. An assertion that elements exist requires at least one match; an assertion that they do not exist requires no matches.
+
+- Callers can retrieve element text, child text, attributes, and tags and assert text, attribute, or whole-element equality or wildcard matches. Retrieved element text concatenates text inside it and its descendants in document order, excluding text after the selected element. Missing attributes return an absent value or a caller-supplied default; assertions requiring an attribute fail when it is absent. Whole-element comparison checks tags, attributes, interior text, and children in order by default; the selected root element tail is ignored. Callers can exclude children, collapse and trim whitespace in text, or compare children in tag-name order while preserving relative order among equal tags. Wildcards apply to expected text and attribute values. Unmet assertions identify differing or missing content.
+
+- Editing changes tags, text, tail text, and attributes, adds or removes elements, clears element content, and copies element trees. These changes affect the returned document; changing a document read from a file does not rewrite that file until explicitly saved. Saving and reloading preserves the edited element content.
+
+- By default, selection uses local element names while namespace associations remain available for saving. Requesting namespace-qualified element names enables selection to distinguish equal local names in different namespaces; requesting complete namespace removal instead omits namespace associations from saved content. Preservation of qualified names takes precedence if both requests are supplied. When full XPath support is selected, evaluation follows XPath 1.0 over the selected parsed document representation, caller-selected context element, and caller-supplied expression without external namespace bindings, returning element, text, numeric, or Boolean results.
+
+- Adding an element appends it after existing children by default or inserts at a requested child position. Copies and added elements isolate their descendants from later edits to the original, and editing either side leaves the other unchanged. Removing or clearing an element preserves its following text in its document position by default and can explicitly remove that text; clearing removes the element attributes, text, and children but preserves its tag. Removing the document root is refused.
+
+### FP-18: Telnet session automation
+
+- Telnet automation opens real sessions to caller-selected servers, retains multiple sessions, and switches among them by reference or alias. Closing one session leaves other sessions usable, and closing all sessions invalidates the prior selections. Failed connections and unknown selections are session errors.
+
+- Users can configure each session's text encoding, output newline, prompt matching, and wait timeout. Writes can append the selected newline and consume and return the echoed line, send content unchanged, or send a selected control character. Named control operations are break, interrupt process, abort output, request peer presence, erase character, erase line, and no operation; numeric control values are also accepted. Reads return available content or wait for literal text, a regular-expression match, or the configured prompt, preserving received content through the stopping match. Content received after the stopping match remains available to subsequent reads. A prompt-based read without a configured prompt is refused as invalid session configuration.
+
+- Login exchanges caller-provided credentials with the configured login and password prompts. With a session prompt configured, login succeeds only after that prompt is received; without one, it reads output after the selected login wait interval and fails if the configured incorrect-login text appears. Command execution sends a command, consumes its echoed line, and returns the response through the prompt. Prompt content is retained by default and can be removed on request. Waiting past the selected timeout fails with the awaited condition and received output distinguishable from a successful match.
+
+- Terminal emulation, when explicitly enabled, interprets terminal control sequences and returns rendered screen content for prompt matching and reads. Caller-selected screen dimensions determine line wrapping and cursor positioning; received text and cursor movement, overwrite, and erase controls change the rendered content accordingly.
+
+- Sessions default to a three-second read timeout, UTF-8 text conversion, carriage-return followed by line-feed for written newlines, no configured prompt, and terminal emulation disabled. Encoding errors omit unrepresentable characters by default; strict failure and replacement policies can be selected. Binary writes pass bytes unchanged, and disabling text encoding makes reads return bytes. Session-specific overrides replace the defaults for that session without changing other open sessions.
+
+### FP-19: Keyword documentation generation
+
+- Keyword documentation generation accepts Python libraries, dynamic libraries including remote-server libraries, resource files, suite files, and directory initialization files. It preserves the source introduction for libraries and resources and exposes identity, initialization arguments, keyword names, argument requirements and defaults, documentation, tags, and declared argument and return types. Initialization arguments select the corresponding library discovered keyword documentation. Private user keywords remain in structured specifications and are omitted from interactive reader documentation.
+
+- Documentation can be generated as a browsable interactive document or a lightweight marked-up reader document, or as structured specifications for tools. Previously generated specifications can be read and converted to another supported documentation form without importing the original library, preserving documented keyword information.
+
+- Source documentation can use native documentation formatting, Markdown, HTML, plain text, or reStructuredText. Formatted reader output distinguishes headings, paragraphs, lists, links, and preformatted code content according to the selected source format; plain-text sources preserve text without interpreting markup. Structured output can preserve original documentation or contain rendered reader markup as requested.
+
+- Console queries list keyword names, show selected keyword documentation and arguments, or report a library's declared version. Console name filters ignore letter case and spaces and support arbitrary-length, single-character, and character-set wildcards. Listing filters match anywhere in a keyword name, while documentation-query filters match the whole name; multiple filters are alternatives. Omitting filters includes all keywords. Filtering selects names without changing their documentation. Interactive documentation supports keyword search and navigation between keyword references and type descriptions, with English and Finnish static-text languages. Language selection changes presentation without changing documented keyword names, argument information, or types.
+
+- Unavailable libraries or resources, invalid initialization arguments, malformed documentation specifications, and unsupported output formats produce documentation-input errors. An invalid individual keyword definition is identified in the documented keyword information while valid keywords remain documentable. A diagnostic for malformed argument syntax identifies the supplied declaration.
+
+- Framework-native documentation rendering supports paragraphs and line breaks, bold and italic emphasis, inline code, preformatted text, headings, lists, tables, links, images, and named links to documented keywords. Rendered reports and keyword documentation make these distinctions visible rather than displaying all markup as ordinary text.
+
+### FP-20: Suite documentation generation
+
+- Suite documentation generation accepts one or more suite files or directories without executing their keyword bodies. The browsable document includes the suite hierarchy, test names, documentation, metadata, tags, and top-level keyword calls with their arguments.
+
+- Users can select suites and tests by names and tags, add tags, override top-level name, documentation, and metadata, and select a document title. The resulting document contains the selected content and overrides. Without a supplied title, the top-level suite name is used.
+
+- Unreadable sources, malformed invocation, and a selection yielding no tests are documentation-input errors rather than successful empty documentation.

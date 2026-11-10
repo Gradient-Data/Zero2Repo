@@ -14,15 +14,19 @@ Run with a custom local AgentSpec::
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
+import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .agent_spec import BACKENDS, CODEX_REASONING_EFFORT_ENV, CODEX_REASONING_EFFORTS
-from .agents import cli_version_spec
+from .agents import NPM_BACKENDS, cli_version_spec
 from .assets import AdapterError
+from .init_queue import DEFAULT_INIT_SLOTS
 from .limits import DEFAULT_AGENT_TIMEOUT_SEC, DEFAULT_TEST_TIMEOUT_SEC, resolve_limits
 from .results import TrialResult, format_reward_matrix, write_summary
 from .run_case import run_trial
@@ -52,6 +56,115 @@ def _print_token_usage(usage: dict) -> None:
         print(f"  WARNING: token usage incomplete: {detail}", file=sys.stderr)
 
 
+def _build_images(args: argparse.Namespace, case_dirs: list[Path]) -> int:
+    """Build each npm backend's shared CLI image once, then each case's images,
+    up to ``--jobs`` at once.
+
+    The CLI image is built first so ``--force-image`` rebuilds it once, not once
+    per case. Recipe base images need no separate step: the first case to need
+    one builds it under a host-wide lock while the others wait and then reuse it.
+    """
+    from .docker_env import build_output_to
+    from .images import ensure_agent_image, ensure_cli_image
+    from .recipe_image import ensure_deliverable_image
+
+    backends = list(args.backend)
+    try:
+        for backend in backends:
+            if backend in NPM_BACKENDS:
+                tag = ensure_cli_image(backend, force=args.force_image)
+                print(f"[cbrun] shared CLI image ready: {tag}", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001 - no case can build its agent image without it
+        print(f"error: shared CLI image: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+
+    def build_case(case_dir: Path) -> list[str]:
+        if not backends:
+            return [ensure_deliverable_image(case_dir, force=args.force_image)]
+        return [
+            ensure_agent_image(
+                case_dir.name,
+                cache_root=args.cache_root,
+                case_dir=case_dir,
+                force=args.force_image,
+                environ=os.environ,
+                backend=backend,
+                enforce_denylist=args.enforce_denylist,
+            ).agent_image
+            for backend in backends
+        ]
+
+    log_dir = args.cache_root / "build-logs"
+    parallel = args.jobs > 1
+
+    def build_logged(case_dir: Path) -> list[str]:
+        if not parallel:
+            return build_case(case_dir)
+        with build_output_to(log_dir / f"{case_dir.name}.log"):
+            return build_case(case_dir)
+
+    failed = 0
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        futures = {pool.submit(build_logged, case_dir): case_dir for case_dir in case_dirs}
+        for future, case_dir in futures.items():
+            try:
+                for tag in future.result():
+                    print(tag)
+                if parallel:
+                    print(f"[cbrun] built {case_dir.name}; log {log_dir / (case_dir.name + '.log')}",
+                          file=sys.stderr)
+            except Exception as exc:  # noqa: BLE001 - keep the matrix going
+                print(f"[cbrun] build-images {case_dir.name} FAILED: {type(exc).__name__}: {exc}",
+                      file=sys.stderr)
+                if parallel:
+                    tail = _tail(log_dir / f"{case_dir.name}.log")
+                    if tail:
+                        print(f"[cbrun] last lines of {log_dir / (case_dir.name + '.log')}:\n{tail}",
+                              file=sys.stderr)
+                failed += 1
+    return 1 if failed else 0
+
+
+def _tail(path: Path, lines: int = 40) -> str:
+    """The last *lines* of a build log, or "" when it is missing or empty."""
+    try:
+        text = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return ""
+    return "\n".join(text[-lines:])
+
+
+def _prepare_supply(
+    args: argparse.Namespace, case_dirs: list[Path], backends: list[str | None]
+) -> int:
+    """Route every build and solve through the supply proxy (``--all`` or ``--supply``).
+
+    Downloads what the run will install into the host-wide store first, building
+    the base image alongside, so installs read local files. Runs on selected
+    cases without ``--supply`` skip this and download directly.
+    """
+    from .supply import SupplyError, SupplyRun, activate
+    from .supply_proxy import SupplyViolation
+    from .supply_store import StoreError
+
+    harnesses: list[str] = [b for b in backends if b]
+    if args.agent_spec is not None:
+        from .agent_spec import load_agent_spec
+
+        image_backend = load_agent_spec(args.agent_spec).image_backend
+        if image_backend:
+            harnesses.append(image_backend)
+    if args.build_images and not args.backend:
+        harnesses = []
+    try:
+        run = activate(SupplyRun())
+        run.prepare(case_dirs, harnesses, force=args.force_image)
+    except (SupplyError, SupplyViolation, StoreError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="cbrun",
@@ -60,6 +173,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--case", action="append", default=[], help="Case id (repeatable).")
     selection.add_argument("--all", action="store_true", help="Run every case under --cases-root.")
+    parser.add_argument(
+        "--supply",
+        action="store_true",
+        help="Use the local supply store and proxy for a run on selected cases too "
+        "(a full-suite run always does).",
+    )
 
     agent = parser.add_mutually_exclusive_group()
     agent.add_argument(
@@ -78,7 +197,27 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--build-images",
         action="store_true",
-        help="Build :deliverable from recipe.lock + shared base image, then exit.",
+        help="Build images, then exit. Without --backend: each case's :deliverable. "
+        "With --backend: the shared CLI image first, then each case's "
+        ":deliverable and :agent-<backend>.",
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="Trials to run at once in this process (default: 1); their setup "
+        "still queues for --init-slots. With --build-images, cases whose images "
+        "are built at once. Shared images are built once: the CLI image before "
+        "any case, a recipe base image by the first case that needs it while "
+        "the others wait.",
+    )
+    parser.add_argument(
+        "--init-slots",
+        type=int,
+        default=DEFAULT_INIT_SLOTS,
+        help="Trials that may set up at once on this host, across every cbrun "
+        "process (default: %(default)s). Setup is image build, container start "
+        "and agent install; later trials wait in line for a free slot.",
     )
     parser.add_argument("--cases-root", type=Path, default=_default_cases_root())
     parser.add_argument(
@@ -160,6 +299,15 @@ def _iter_case_dirs(cases_root: Path, cases: list[str], run_all: bool) -> list[P
     return out
 
 
+def host_exclusive(case_dir: Path) -> bool:
+    """True when the case's hidden tests need the host to themselves (test_manifest host_exclusive)."""
+    try:
+        manifest = json.loads((Path(case_dir) / "milestones" / "final" / "test_manifest.json").read_text())
+    except (OSError, ValueError):
+        return False
+    return manifest.get("host_exclusive") is True
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
     if args.agent_spec is not None and args.backend:
@@ -172,9 +320,9 @@ def main(argv: list[str] | None = None) -> int:
     else:
         backends = args.backend or ["codex"]
 
-    # Deliverable images contain no agent CLI, so the pin check only applies
-    # to trial runs.
-    if not args.build_images:
+    # Deliverable images contain no agent CLI, so the pin check applies to
+    # trial runs and to building agent images.
+    if not args.build_images or args.backend:
         for backend in backends:
             if backend is None:
                 continue
@@ -199,20 +347,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: no cases found under {args.cases_root}", file=sys.stderr)
         return 2
 
+    if args.jobs < 1:
+        print("error: --jobs must be at least 1", file=sys.stderr)
+        return 2
     if args.build_images:
-        from .recipe_image import ensure_deliverable_image
+        if (args.all or args.supply) and _prepare_supply(args, case_dirs, backends) != 0:
+            return 1
+        return _build_images(args, case_dirs)
 
-        failed = 0
-        for case_dir in case_dirs:
-            print(f"[cbrun] build-images {case_dir.name} ...", file=sys.stderr)
-            try:
-                tag = ensure_deliverable_image(case_dir, force=args.force_image)
-            except Exception as exc:  # noqa: BLE001 - keep the matrix going
-                print(f"  FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
-                failed += 1
-                continue
-            print(tag)
-        return 1 if failed else 0
+    if args.init_slots < 1:
+        print("error: --init-slots must be at least 1", file=sys.stderr)
+        return 2
 
     if args.out is None:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -269,40 +414,56 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
-    results: list[TrialResult] = []
-    write_summary(results, args.out)
-    for case_dir in case_dirs:
-        trial_labels = backends if args.agent_spec is None else [Path(args.agent_spec).stem]
-        for label, backend in zip(trial_labels, backends):
-            trial_out = args.out / case_dir.name / str(label)
-            backend_label = backend or f"spec:{args.agent_spec.name}"
-            print(f"[cbrun] {case_dir.name} / {backend_label} / {args.model} ...", file=sys.stderr)
-            try:
-                result = run_trial(
-                    case_dir,
-                    backend=backend,
-                    agent_spec_path=args.agent_spec,
-                    model=args.model,
-                    out_dir=trial_out,
-                    cache_root=args.cache_root,
-                    limits=limits,
-                    force_image=args.force_image,
-                    allow_leakage=args.allow_leakage,
-                    enforce_denylist=args.enforce_denylist,
-                    denylist_fix_retries=args.denylist_fix_retries,
-                    block_github=args.block_github,
-                    allow_emulated=args.allow_emulated,
-                )
-            except Exception as exc:  # noqa: BLE001 - record, never crash the matrix
-                result = TrialResult(
-                    case_id=case_dir.name,
-                    backend=backend or Path(args.agent_spec).stem,
-                    model=args.model,
-                    reward=0.0,
-                    terminal_status="error",
-                    error=f"{type(exc).__name__}: {exc}",
-                )
-                print(f"  FAILED: {result.error}", file=sys.stderr)
+    # Every argument is checked above, so a mistake never waits for the downloads.
+    if (args.all or args.supply) and _prepare_supply(args, case_dirs, backends) != 0:
+        return 1
+
+    trial_labels = backends if args.agent_spec is None else [Path(args.agent_spec).stem]
+    trials = [
+        (case_dir, label, backend)
+        for case_dir in case_dirs
+        for label, backend in zip(trial_labels, backends)
+    ]
+    # Finished trials keep their place in the matrix whatever order they end in.
+    finished: dict[int, TrialResult] = {}
+    finished_lock = threading.Lock()
+
+    def run_one(case_dir: Path, label: str, backend: str | None) -> TrialResult:
+        backend_label = backend or f"spec:{args.agent_spec.name}"
+        print(f"[cbrun] {case_dir.name} / {backend_label} / {args.model} ...", file=sys.stderr)
+        try:
+            return run_trial(
+                case_dir,
+                backend=backend,
+                agent_spec_path=args.agent_spec,
+                model=args.model,
+                out_dir=args.out / case_dir.name / str(label),
+                cache_root=args.cache_root,
+                limits=limits,
+                force_image=args.force_image,
+                allow_leakage=args.allow_leakage,
+                enforce_denylist=args.enforce_denylist,
+                denylist_fix_retries=args.denylist_fix_retries,
+                block_github=args.block_github,
+                allow_emulated=args.allow_emulated,
+                init_slots=args.init_slots,
+            )
+        except Exception as exc:  # noqa: BLE001 - record, never crash the matrix
+            result = TrialResult(
+                case_id=case_dir.name,
+                backend=backend or Path(args.agent_spec).stem,
+                model=args.model,
+                reward=0.0,
+                terminal_status="error",
+                error=f"{type(exc).__name__}: {exc}",
+            )
+            print(f"  {case_dir.name} / {backend_label} FAILED: {result.error}", file=sys.stderr)
+            return result
+
+    def record(index: int, result: TrialResult) -> None:
+        with finished_lock:
+            print(f"[cbrun] {result.case_id} / {result.backend} done: "
+                  f"{result.terminal_status}", file=sys.stderr)
             _print_token_usage(result.token_usage)
             if result.needs_review:
                 counts = (result.transcript_scan or {}).get("counts") or {}
@@ -311,8 +472,27 @@ def main(argv: list[str] | None = None) -> int:
                     f"medium={counts.get('medium', 0)}; see {result.logs.get('transcript_scan')}",
                     file=sys.stderr,
                 )
-            results.append(result)
-            write_summary(results, args.out)
+            finished[index] = result
+            write_summary([finished[i] for i in sorted(finished)], args.out)
+
+    write_summary([], args.out)
+    # A case whose verdict depends on the host's free CPU or memory (test_manifest
+    # host_exclusive) runs after every other trial of this run, one at a time, so no
+    # trial of this run competes with it.
+    shared = [index for index, trial in enumerate(trials) if not host_exclusive(trial[0])]
+    exclusive = [index for index, trial in enumerate(trials) if host_exclusive(trial[0])]
+    if exclusive:
+        print(f"[cbrun] {len(exclusive)} host-exclusive trial(s) run last, one at a time",
+              file=sys.stderr)
+    # Each trial waits for an init slot inside run_trial, so --jobs trials run at
+    # once while at most --init-slots of them set up.
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        futures = {pool.submit(run_one, *trials[index]): index for index in shared}
+        for future in as_completed(futures):
+            record(futures[future], future.result())
+    for index in exclusive:
+        record(index, run_one(*trials[index]))
+    results = [finished[i] for i in sorted(finished)]
 
     summary_path = write_summary(results, args.out)
     print(format_reward_matrix(results))

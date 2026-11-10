@@ -1,0 +1,66 @@
+{
+  "version": "1.88.0",
+  "release_manifest": {
+    "url": "https://static.rust-lang.org/dist/channel-rust-1.88.0.toml",
+    "sha256": "431b7c5c0b9a511d8e31d29b378bbc74124e8521f14beb92d3a5a5f7e7e55449",
+    "date": "2025-06-26"
+  },
+  "architectures": {
+    "x86_64": {
+      "rustc": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/rustc-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+        "sha256": "b049fd57fce274d10013e2cf0e05f215f68f6580865abc52178f66ae9bf43fd8",
+        "size": 80014172
+      },
+      "cargo": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/cargo-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+        "sha256": "856962610ee821648cee32e3d6abac667af7bb7ea6ec6f3d184cc31e66044f6b",
+        "size": 9955712
+      },
+      "rust-std": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/rust-std-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+        "sha256": "36d7eacf46bd5199cb433e49a9ed9c9b380d82f8a0ebc05e89b43b51c070c955",
+        "size": 30914344
+      }
+    },
+    "aarch64": {
+      "rustc": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/rustc-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+        "sha256": "b841d40bb98b2718c6452ec8421a4a8df584fce8d41875bcd9b1af83f52f7d96",
+        "size": 60443292
+      },
+      "cargo": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/cargo-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+        "sha256": "5aa43865f2002914ce4fca8916b4403bfca62f17e779ad368f6a17553296a58b",
+        "size": 9473508
+      },
+      "rust-std": {
+        "url": "https://static.rust-lang.org/dist/2025-06-26/rust-std-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+        "sha256": "e9ac4ff3c87247a2195fcceddbf1bdeee5c4fd337f014d8f4c4e3ac99002021f",
+        "size": 27336216
+      }
+    }
+  },
+  "wasm32": {
+    "rust-std": {
+      "url": "https://static.rust-lang.org/dist/2025-06-26/rust-std-1.88.0-wasm32-unknown-unknown.tar.xz",
+      "sha256": "a7e18bf7751375caaba9cbe049dd3f2158bb48e67126eaafd969e7baf08fc2a1",
+      "size": 20635700
+    },
+    "wasm-bindgen": {
+      "version": "0.2.108",
+      "architectures": {
+        "x86_64": {
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.108/wasm-bindgen-0.2.108-x86_64-unknown-linux-musl.tar.gz",
+          "sha256": "d15d7e476feec78d0ec9edc27b8f77279ec7a3e6227756e7036e5cd2066800f4",
+          "size": 11183940
+        },
+        "aarch64": {
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.108/wasm-bindgen-0.2.108-aarch64-unknown-linux-musl.tar.gz",
+          "sha256": "ff323f6a7807cfbab4f635f9df1d81397557cac84063c9cc187878c78408c906",
+          "size": 11052985
+        }
+      }
+    }
+  }
+}

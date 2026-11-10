@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "case_id": "case042",
+  "ecosystem": "pip",
+  "install_ban": [
+    "zarr",
+    "zarr-http-server",
+    "zarr-indexing",
+    "zarr-metadata"
+  ],
+  "import_ban": [
+    "zarr",
+    "zarr_http_server",
+    "zarr_indexing",
+    "zarr_metadata"
+  ],
+  "runtime_equivalents": [
+    {
+      "import_root": "zarr",
+      "runtime": "python3",
+      "evidence": "Original recipe image: PathFinder resolves the same-repository prebuilt package at /opt/cb-warm/.codingbench-site/zarr/__init__.py when that directory is explicitly supplied; default import lookup finds no such module in system Python 3.12, Conda Python 3.13, or /opt/runtime/bin/python3."
+    },
+    {
+      "import_root": "zarr_http_server",
+      "runtime": "python3",
+      "evidence": "Original recipe image: PathFinder resolves the same-repository prebuilt package at /opt/cb-warm/.codingbench-site/zarr_http_server/__init__.py when that directory is explicitly supplied; default import lookup finds no such module in system Python 3.12, Conda Python 3.13, or /opt/runtime/bin/python3."
+    },
+    {
+      "import_root": "zarr_metadata",
+      "runtime": "python3",
+      "evidence": "Original recipe image: PathFinder resolves the same-repository prebuilt package at /opt/cb-warm/.codingbench-site/zarr_metadata/__init__.py when that directory is explicitly supplied; default import lookup finds no such module in system Python 3.12, Conda Python 3.13, or /opt/runtime/bin/python3."
+    }
+  ],
+  "notes": "Bans only Zarr Python and its three same-repository companion distributions and import roots; NumPy, numcodecs, storage and Web libraries, build tools, public format keys, and neutralized names remain allowed. Recipe-image probes covered all three Python environments, Node built-ins and global packages, Perl library directories, system packages and installed library files; no additional runtime equivalent was found."
+}

@@ -140,7 +140,6 @@ def test_true_is_boolean_not_int_or_str():
     value = require_path(doc, "k")
     print(f"true value={value!r} type={type(value)!r}", flush=True)
     require_bool(value, True)
-    assert value is not 1
     assert not is_int(value)
     assert not is_str(value)
     assert value != "true"
@@ -151,7 +150,6 @@ def test_false_is_boolean_not_int_or_str():
     value = require_path(doc, "k")
     print(f"false value={value!r} type={type(value)!r}", flush=True)
     require_bool(value, False)
-    assert value is not 0
     assert not is_int(value)
     assert not is_str(value)
     assert value != "false"

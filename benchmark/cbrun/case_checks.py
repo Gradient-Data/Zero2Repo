@@ -7,17 +7,21 @@ not imported here so unit tests can use synthetic fixtures.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
+import tokenize
 from pathlib import Path
 
 from coding_bench_harbor._leakage import scan_leakage
+from coding_bench_harbor.test_assets import TestAssetError
+from coding_bench_harbor.test_assets import load as load_test_assets
 
 from .denylist import ALLOWED_JUDGE_BANS, validate_denylist_artifact
 from .substrates import KNOWN_PROVIDERS
 
-__all__ = ["check_case_assets", "check_case_warnings", "main"]
+__all__ = ["check_case_assets", "check_case_supply", "check_case_warnings", "main"]
 
 _OUTSIDE_CACHE = "/opt/cb-cache"
 _PRIVILEGE_MARKERS = (
@@ -115,6 +119,16 @@ def check_case_assets(case_dir: Path | str) -> list[str]:
             return errors
         names = list(tests_manifest.get("test_files") or [])
         names.extend(tests_manifest.get("support_files") or [])
+        try:
+            fetched = {a.path for a in load_test_assets(final_dir)}
+        except TestAssetError as exc:
+            errors.append(f"{cid}: {exc}")
+            fetched = set()
+        for path in sorted(fetched):
+            if (final_dir / path).exists():
+                errors.append(
+                    f"{cid}: {path} is committed although test_assets.json fetches it"
+                )
         for name in names:
             rel = Path(str(name))
             target = (final_dir / rel).resolve()
@@ -122,6 +136,8 @@ def check_case_assets(case_dir: Path | str) -> list[str]:
                 target.relative_to(final_dir.resolve())
             except ValueError:
                 errors.append(f"{cid}: test file escapes milestones/final: {name}")
+                continue
+            if str(rel.as_posix()) in fetched:
                 continue
             if not target.is_file() and not target.is_dir():
                 errors.append(f"{cid}: test_manifest references missing {name}")
@@ -163,6 +179,42 @@ def _check_undeclared_tests(cid: str, names: list, tests_dir: Path) -> list[str]
     return errors
 
 
+def _python_code_text(text: str) -> str:
+    """*text* with comments and docstrings blanked; other strings stay.
+
+    A privileged call is code: a marker in prose (a comment, or a docstring
+    describing a helper) needs no substrate, while a string argument such as
+    ``["unshare", "--net"]`` does. Text the tokenizer cannot read is returned
+    unchanged, so it is still scanned in full.
+    """
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        return text
+    lines = text.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+    blank: list[tuple[int, int]] = []
+    statement_start = True
+    for tok in tokens:
+        kind = tok.type
+        if kind == tokenize.COMMENT or (kind == tokenize.STRING and statement_start):
+            start = offsets[tok.start[0] - 1] + tok.start[1]
+            end = offsets[tok.end[0] - 1] + tok.end[1]
+            blank.append((start, end))
+        if kind in (tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT, tokenize.ENCODING):
+            statement_start = True
+        elif kind not in (tokenize.NL, tokenize.COMMENT):
+            statement_start = False
+    chars = list(text)
+    for start, end in blank:
+        for i in range(start, end):
+            if chars[i] != "\n":
+                chars[i] = " "
+    return "".join(chars)
+
+
 def _privilege_hits(tests_dir: Path) -> list[str]:
     if not tests_dir.is_dir():
         return []
@@ -180,6 +232,8 @@ def _privilege_hits(tests_dir: Path) -> list[str]:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
+        if path.suffix == ".py":
+            text = _python_code_text(text)
         if pattern.search(text):
             hits.append(path.relative_to(tests_dir).as_posix())
     return hits
@@ -209,6 +263,8 @@ def _check_substrates(cid: str, tests_manifest: dict, tests_dir: Path) -> list[s
 
 def _check_suite_wall_fields(cid: str, tests_manifest: dict) -> list[str]:
     errors: list[str] = []
+    if "host_exclusive" in tests_manifest and not isinstance(tests_manifest["host_exclusive"], bool):
+        errors.append(f"{cid}: host_exclusive must be true or false")
     for key in ("suite_wall_seconds", "judge_timeout_sec"):
         if key not in tests_manifest:
             continue
@@ -250,6 +306,23 @@ def check_case_warnings(case_dir: Path | str) -> list[str]:
     return []
 
 
+def check_case_supply(case_dir: Path | str) -> list[str]:
+    """Problems with *case_dir*'s supply manifest entry and lock (empty if clean).
+
+    A full-suite run installs each case only from its lock, so a case without
+    one, or with a lock recorded from a different install command, cannot run.
+    """
+    from .supply import SupplyError, case_files, case_inputs_digest, load_manifest, require_lock
+
+    case_dir = Path(case_dir)
+    try:
+        case_files(load_manifest(), case_dir)
+        require_lock("case", case_dir.name, case_inputs_digest(case_dir))
+    except (SupplyError, OSError, ValueError) as exc:
+        return [str(exc)]
+    return []
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check case assets for runner defects.")
     parser.add_argument("--cases-root", type=Path, default=None)
@@ -271,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: case not found: {case_dir}", file=sys.stderr)
             errors += 1
             continue
-        issues = check_case_assets(case_dir)
+        issues = check_case_assets(case_dir) + check_case_supply(case_dir)
         notes = check_case_warnings(case_dir)
         for item in issues:
             print(f"error: {item}")

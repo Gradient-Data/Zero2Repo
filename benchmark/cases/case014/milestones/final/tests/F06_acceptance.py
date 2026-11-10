@@ -711,19 +711,37 @@ def test_ahrs_earth_rate_is_not_corrected():
     the same run on a tilted specific force.
     """
     acc = SPECIFIC_FORCE_LEVEL
-    omega = runtime_z_rate_rps()
-    # Long enough for the Earth-rate adjustment to exceed integration residual.
-    # The yaw-variance restart watchdog is not the subject of this arm (_ahrs
-    # switches it off), so an unaided yaw 1-sigma cannot end the run early.
+    # z-rate 11-12 deg/s, sampled at 500 Hz for 36 s. The rate stays above
+    # any stillness bound a detector may use while gyro bias is still
+    # uncertain (the PRD admits 5 deg/s of bias per axis), so the turn is not
+    # absorbed as bias. The 500 Hz IMU (the PRD covers 100 Hz or faster)
+    # makes one sample of z-rate × dt ~0.024 deg, so the half-effect
+    # tolerance (~0.073 deg of a ~0.146 deg Earth-rate effect over the 35 s
+    # scored below) spans three samples: whether the first or last IMU interval is integrated (a
+    # sample-timing convention the PRD does not state) cannot decide the
+    # verdict, while a filter that removes Earth rate is off by a whole
+    # effect. The duration is the original 36 s, so the unaided yaw 1-sigma
+    # grows no further than before. The yaw-variance restart watchdog is not
+    # the subject of this arm (_ahrs switches it off).
+    omega = math.radians(11.0 + (math.degrees(runtime_z_rate_rps()) - 8.0) / 7.0)
     duration_s = 36.0
+    imu_hz = 500
     gyr = (0.0, 0.0, omega)
     tilt = runtime_tilt_rad()
     acc_tilt = still_level_acc(0.0, tilt)
     run = c_att_run(
-        _ahrs(cmds=att_hold(t0_us=0, duration_s=duration_s, acc=acc, gyr=gyr))
+        _ahrs(
+            cmds=att_hold(
+                t0_us=0, duration_s=duration_s, acc=acc, gyr=gyr, imu_hz=imu_hz
+            )
+        )
     )
     tilted = c_att_run(
-        _ahrs(cmds=att_hold(t0_us=0, duration_s=duration_s, acc=acc_tilt, gyr=gyr))
+        _ahrs(
+            cmds=att_hold(
+                t0_us=0, duration_s=duration_s, acc=acc_tilt, gyr=gyr, imu_hz=imu_hz
+            )
+        )
     )
     _assert_init_ok(run, "AHRS Earth-rate")
     _assert_init_ok(tilted, "AHRS Earth-rate tilted twin")
@@ -731,15 +749,34 @@ def test_ahrs_earth_rate_is_not_corrected():
     tr, tp, _ty = require_att(tilted.last(), "AHRS Earth-rate tilted twin")
     level_off = math.hypot(roll, pitch)
     tilt_off = math.hypot(tr, tp)
-    dt_s = run.last().t_us / 1e6
-    corrected = bias_corrected_z_integral(run.snaps, omega)
+    # Score the yaw change from a reference instant 1 s after the start to
+    # the end, against the bias-corrected z-rate integral over the same
+    # interval. When integration starts relative to init (whether the first
+    # epoch integrates from the init time, a nominal step, or not at all) is
+    # a convention the PRD does not state; it shifts yaw by a constant that
+    # cancels in this difference.
+    t_ref_us = 1_000_000
+    k_ref = next(
+        (k for k, sn in enumerate(run.snaps) if sn.t_us >= t_ref_us), None
+    )
+    assert k_ref is not None and k_ref + 1 < len(run.snaps), (
+        "AHRS Earth-rate: no snapshot at the 1 s reference instant"
+    )
+    ref = run.snaps[k_ref]
+    assert ref.rpy_ok and ref.att is not None, (
+        f"AHRS Earth-rate: attitude unpublished at the reference t={ref.t_us}"
+    )
+    dt_s = (run.last().t_us - ref.t_us) / 1e6
+    corrected = bias_corrected_z_integral(run.snaps, omega) - bias_corrected_z_integral(
+        run.snaps[: k_ref + 1], omega
+    )
     earth = _WGS84_OMEGA_RPS * dt_s
-    yaw_unwrapped = _unwrapped_yaw(run.snaps, "AHRS Earth-rate")
+    yaw_unwrapped = _unwrapped_yaw(run.snaps[k_ref:], "AHRS Earth-rate") - ref.att[2]
     print(
         f"AHRS Earth-rate: roll={math.degrees(roll)} pitch={math.degrees(pitch)} "
         f"tilt_roll={math.degrees(tr)} tilt_pitch={math.degrees(tp)} "
         f"level_off={math.degrees(level_off)} tilt_off={math.degrees(tilt_off)} "
-        f"last={math.degrees(yaw)} "
+        f"last={math.degrees(yaw)} ref_t={ref.t_us} scored_s={dt_s} "
         f"corrected={math.degrees(corrected)} earth={math.degrees(earth)} deg",
         flush=True,
     )
@@ -2287,6 +2324,13 @@ def test_suite_standstill_fuses_bias_and_attitude_has_no_velocity():
             assert still_err < fast_err, (
                 f"{name}: {label} zero-speed z-bias was not closer to the gyro rate "
                 "than the fast-speed z-bias on the same IMU"
+            )
+            # A zero-rotation update is a direct measurement of the gyro bias,
+            # fused on every epoch of several seconds of standstill, so any
+            # filter that fuses it recovers far more than half of the rate.
+            assert still_err < 0.5 * abs(omega), (
+                f"{name}: {label} zero-speed z-bias recovered less than half of "
+                "the gyro rate; the zero-rotation update was not fused"
             )
 
 

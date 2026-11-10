@@ -1,0 +1,100 @@
+{
+  "assets": [
+    {
+      "path": "tests/F03_assets/F03_libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb",
+      "sha256": "ff1b650f655b36dfe202fdbae6bb02b363c7257b6dd23e4f95ab61f716190df3",
+      "size": 1547558
+    },
+    {
+      "path": "tests/F08_assets/F08_cpython-3.12.8+20250115-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250115/cpython-3.12.8%2B20250115-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "sha256": "34a5a1619aba16544ec8d6f225be59b333d650f58983eeca25193722dc9016fd",
+      "size": 21288771
+    },
+    {
+      "path": "tests/F08_assets/F08_cpython-3.12.9+20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.12.9%2B20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "sha256": "a36bc60c38fe146e908e2e71fc21266c8558b24a9407226b1d887212839437ef",
+      "size": 21295465
+    },
+    {
+      "path": "tests/F08_assets/F08_cpython-3.13.2+20250317-x86_64-unknown-linux-gnu-freethreaded+pgo+lto-full.tar.zst",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.13.2%2B20250317-x86_64-unknown-linux-gnu-freethreaded%2Bpgo%2Blto-full.tar.zst",
+      "sha256": "1aea5062614c036904b55c1cc2fb4b500b7f6f7a4cacc263f4888889d355eef8",
+      "size": 101232025
+    },
+    {
+      "path": "tests/F08_assets/F08_cpython-3.13.2+20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.13.2%2B20250317-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "sha256": "ee909a9d0fb16375ebd3b3ca0322fd9cac0904b304e28ad68527036858e301e9",
+      "size": 21361912
+    },
+    {
+      "path": "tests/F08_assets/F08_pypy3.10-v7.3.19-linux64.tar.gz",
+      "url": "https://downloads.python.org/pypy/pypy3.10-v7.3.19-linux64.tar.gz",
+      "sha256": "abfbb05bb3691e694cf9307635d14d0866f0a85429df8958c110e3de168706b4",
+      "size": 36914376
+    },
+    {
+      "path": "tests/F09_assets/F09_fish-common_3.7.0-1_all.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/fish-common_3.7.0-1_all.deb",
+      "sha256": "38fdb2f1a820e65b93d6ef99063e8d070998eb70c34e2ddacf35294ddbf935a4",
+      "size": 2261412
+    },
+    {
+      "path": "tests/F09_assets/F09_fish_3.7.0-1_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/fish_3.7.0-1_amd64.deb",
+      "sha256": "da21699b9750e8d90b7306192267e72900c1d51c1849b4fa1a680363a8d50cde",
+      "size": 1305612
+    },
+    {
+      "path": "tests/F09_assets/F09_nu-0.108.0-x86_64-unknown-linux-gnu.tar.gz",
+      "url": "https://github.com/nushell/nushell/releases/download/0.108.0/nu-0.108.0-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "f0daaa0256b0f7dd5f4d9925b4d5522d8de5e947ed9ad64a43526e5cffeb05df",
+      "size": 64593393
+    },
+    {
+      "path": "tests/F09_assets/F09_powershell-7.4.7-linux-x64.tar.gz",
+      "url": "https://github.com/PowerShell/PowerShell/releases/download/v7.4.7/powershell-7.4.7-linux-x64.tar.gz",
+      "sha256": "cfd57927b7a0d9f2da400471ea8dadc3ceb52f5e4a4a9a51c20495b4071f055a",
+      "size": 71281502
+    },
+    {
+      "path": "tests/F09_windows_assets/F09_libwine_9.0~repack-4build3_amd64.deb",
+      "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libwine_9.0~repack-4build3_amd64.deb",
+      "sha256": "eb421a3660bfdc090d70ce16b06aadfde1c2bce2593292023e520988f45d009e",
+      "size": 104806224
+    },
+    {
+      "path": "tests/F09_windows_assets/F09_python-3.12.10-embed-amd64.zip",
+      "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip",
+      "sha256": "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",
+      "size": 11133606
+    },
+    {
+      "path": "tests/F09_windows_assets/F09_rapidfuzz-3.14.6-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/84/c4/12f01df5778227c8655fcd9b429fc001d43270f5d8d154edc9066bab1de3/rapidfuzz-3.14.6-cp312-cp312-win_amd64.whl",
+      "sha256": "cfca36e4612208875e08611a779164b6cb8900ab8bbd3d82d4cfdfae9efbfac9",
+      "size": 1731992
+    },
+    {
+      "path": "tests/F09_windows_assets/F09_virtualenv-21.14.12-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/a0/92/f3b8af2d36ddec4dc61dc25655dc010e419ff456cb4ca0e720c8112f1047/virtualenv-21.14.12-py3-none-any.whl",
+      "sha256": "7820aeaef23f1f59a96458edfc7f9d3deac937155718de15f1c9a64471e15551",
+      "size": 5556824
+    },
+    {
+      "path": "tests/F19_assets/F19_virtualenv-20.16.7-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/fd/76/c99d37939e17e3c53f1c1b7e4f5365a9160b1cd0b37700657eed9a2a6775/virtualenv-20.16.7-py3-none-any.whl",
+      "sha256": "efd66b00386fdb7dbe4822d172303f40cd05e50e01740b19ea42425cbe653e29",
+      "size": 8848378
+    },
+    {
+      "path": "tests/F19_assets/F19_virtualenv-20.30.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/4c/ed/3cfeb48175f0671ec430ede81f628f9fb2b1084c9064ca67ebe8c0ed6a05/virtualenv-20.30.0-py3-none-any.whl",
+      "sha256": "e34302959180fca3af42d1800df014b35019490b119eba981af27f2fa486e5d6",
+      "size": 4329461
+    }
+  ]
+}

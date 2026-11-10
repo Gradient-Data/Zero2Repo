@@ -1,0 +1,137 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_helpers.py",
+    "tests/F01_sources.py",
+    "tests/F02_helpers.py",
+    "tests/F02_variables.py",
+    "tests/F03_helpers.py",
+    "tests/F03_libraries.py",
+    "tests/F04_helpers.py",
+    "tests/F04_keywords.py",
+    "tests/F05_helpers.py",
+    "tests/F05_lifecycle.py",
+    "tests/F06_control.py",
+    "tests/F06_helpers.py",
+    "tests/F07_helpers.py",
+    "tests/F07_utilities.py",
+    "tests/F08_collections.py",
+    "tests/F08_helpers.py",
+    "tests/F09_helpers.py",
+    "tests/F09_text.py",
+    "tests/F10_helpers.py",
+    "tests/F10_results.py",
+    "tests/F11_configuration.py",
+    "tests/F11_helpers.py",
+    "tests/F12_helpers.py",
+    "tests/F12_postprocessing.py",
+    "tests/F13_extensions.py",
+    "tests/F13_helpers.py",
+    "tests/F14_helpers.py",
+    "tests/F14_local_automation.py",
+    "tests/F15_helpers.py",
+    "tests/F15_process.py",
+    "tests/F16_datetime.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_xml.py",
+    "tests/F18_helpers.py",
+    "tests/F18_telnet.py",
+    "tests/F19_documentation.py",
+    "tests/F19_helpers.py",
+    "tests/F20_documentation.py",
+    "tests/F20_helpers.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "python3 -m pytest -p no:cacheprovider tests/F01_helpers.py tests/F01_sources.py tests/F02_helpers.py tests/F02_variables.py tests/F03_helpers.py tests/F03_libraries.py tests/F04_helpers.py tests/F04_keywords.py tests/F05_helpers.py tests/F05_lifecycle.py tests/F06_control.py tests/F06_helpers.py tests/F07_helpers.py tests/F07_utilities.py tests/F08_collections.py tests/F08_helpers.py tests/F09_helpers.py tests/F09_text.py tests/F10_helpers.py tests/F10_results.py tests/F11_configuration.py tests/F11_helpers.py tests/F12_helpers.py tests/F12_postprocessing.py tests/F13_extensions.py tests/F13_helpers.py tests/F14_helpers.py tests/F14_local_automation.py tests/F15_helpers.py tests/F15_process.py tests/F16_datetime.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_xml.py tests/F18_helpers.py tests/F18_telnet.py tests/F19_documentation.py tests/F19_helpers.py tests/F20_documentation.py tests/F20_helpers.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "python3 -m pytest -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_sources.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_variables.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_libraries.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_keywords.py"
+    ],
+    "F05": [
+      "tests/F05_helpers.py",
+      "tests/F05_lifecycle.py"
+    ],
+    "F06": [
+      "tests/F06_control.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_utilities.py"
+    ],
+    "F08": [
+      "tests/F08_collections.py",
+      "tests/F08_helpers.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_text.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_results.py"
+    ],
+    "F11": [
+      "tests/F11_configuration.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_helpers.py",
+      "tests/F12_postprocessing.py"
+    ],
+    "F13": [
+      "tests/F13_extensions.py",
+      "tests/F13_helpers.py"
+    ],
+    "F14": [
+      "tests/F14_helpers.py",
+      "tests/F14_local_automation.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_process.py"
+    ],
+    "F16": [
+      "tests/F16_datetime.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_xml.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_telnet.py"
+    ],
+    "F19": [
+      "tests/F19_documentation.py",
+      "tests/F19_helpers.py"
+    ],
+    "F20": [
+      "tests/F20_documentation.py",
+      "tests/F20_helpers.py"
+    ]
+  }
+}

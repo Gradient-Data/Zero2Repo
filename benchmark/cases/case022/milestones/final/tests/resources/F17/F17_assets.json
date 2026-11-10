@@ -1,0 +1,22 @@
+{
+  "purpose": "Offline real FTP server dependencies; all wheels are pure Python and imported by the server subprocess only.",
+  "packages": [
+    {
+      "file": "F17_pyasynchat.whl",
+      "sha256": "35b7859515693e479e8d95ebe9f32cbf4d6312ab7599ced39fc24699e51de46f"
+    },
+    {
+      "file": "F17_pyasyncore.whl",
+      "sha256": "269bbc5252671827387636822841a1fb721ec6e858b23a3e12cf92eb1f97da2a"
+    },
+    {
+      "file": "F17_pyftpdlib.whl",
+      "sha256": "82fe6b92019f90f310ca71ab096d6bd9c66229f23cb05162078694ccf974695b"
+    }
+  ],
+  "sources": [
+    "https://pypi.org/project/pyftpdlib/2.1.0/",
+    "https://pypi.org/project/pyasyncore/1.0.5/",
+    "https://pypi.org/project/pyasynchat/1.0.5/"
+  ]
+}

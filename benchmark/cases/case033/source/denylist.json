@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "case_id": "case033",
+  "ecosystem": "pip",
+  "install_ban": [
+    "pyro-ppl",
+    "pyro_ppl"
+  ],
+  "import_ban": [
+    "pyro"
+  ],
+  "notes": "Ban the Pyro probabilistic programming distribution, its underscore alias, and its Python module root; allow provided infrastructure including torch, numpy, pyro-api, funsor, and opt-einsum. Runtime-equivalent inspection is unverified: casebox cannot resolve the recipe image because milestones/v2/Init/image.json is missing, and no case-specific recipe image is installed."
+}

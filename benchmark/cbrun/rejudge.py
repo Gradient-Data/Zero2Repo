@@ -8,7 +8,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
+
+from coding_bench_harbor.test_assets import load as load_test_assets
+from coding_bench_harbor.test_assets import materialize as materialize_test_assets
 
 from .assets import load_case
 from .denylist import require_denylist, scan_workspace_imports
@@ -16,6 +20,7 @@ from .docker_env import Container
 from .images import ensure_agent_image
 from .isolation import synthesize_task_toml
 from .judge import import_app, run_judge
+from .recipe_image import test_asset_fetcher
 from .limits import DEFAULT_TEST_TIMEOUT_SEC, case_test_timeout_sec, resolve_limits
 from .steps import discover_steps
 
@@ -133,6 +138,25 @@ def static_scan_violation(workspace: Path, denylist, out_dir: Path) -> str | Non
     return f"upstream import/symbol present in workspace: {summary}"
 
 
+def _tests_with_assets(tests_dir: Path, staged: Path) -> Path:
+    """*tests_dir*, or a copy of it with its declared test assets fetched.
+
+    Asset paths are always fetched again from the manifest rather than taken
+    from *tests_dir*, so a stale copy there can never be judged with.
+    """
+    assets = load_test_assets(tests_dir)
+    if not assets:
+        return tests_dir
+    skip = {(tests_dir / a.path).resolve() for a in assets}
+
+    def ignore(directory: str, names: list[str]) -> set[str]:
+        return {n for n in names if (Path(directory) / n).resolve() in skip}
+
+    shutil.copytree(tests_dir, staged, ignore=ignore)
+    materialize_test_assets(tests_dir, staged, test_asset_fetcher())
+    return staged
+
+
 def rejudge_workspace(
     *,
     case_dir: Path,
@@ -162,7 +186,7 @@ def rejudge_workspace(
         tests_final_dir = resolved.tests_cache_dir / "final"
     else:
         agent_image = image
-        tests_final_dir = Path(tests_dir)
+        tests_final_dir = _tests_with_assets(Path(tests_dir), out_dir / "tests_final")
     step = discover_steps(case)[0]
     limits = resolve_limits(test_timeout_sec=test_timeout_sec).for_case(
         case_test_timeout_sec(getattr(step, "test_manifest", None))

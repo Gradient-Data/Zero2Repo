@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "case_id": "case023",
+  "ecosystem": "cargo",
+  "install_ban": [
+    "resharp",
+    "resharp-algebra",
+    "resharp-ffi",
+    "resharp-parser"
+  ],
+  "import_ban": [
+    "resharp",
+    "resharp-algebra/",
+    "resharp-dotnet",
+    "resharp-engine/",
+    "resharp-ffi/",
+    "resharp-parser/",
+    "resharp_algebra",
+    "resharp_ffi",
+    "resharp_parser"
+  ],
+  "runtime_equivalents": [],
+  "notes": "Ban the upstream Cargo packages (including the unpublished FFI workspace package), Rust module roots, implementation directories and documented .NET companion; allow Rust/Cargo, standard libraries and all provided crates including regex, regex-syntax, regex-automata, fancy-regex and pcre2; Python 3.12/3.13, Node, Perl, Tcl and system regex tools probed in codingbench-base/ubuntu:24.04 lack the product intersection/complement semantics; recipe installation assets were reviewed, but the final recipe image is not yet registered and remains unprobed."
+}

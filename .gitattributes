@@ -1,4 +1,17 @@
 benchmark/** text eol=lf
+# Case assets (specs, hidden tests, test data) are stored byte for byte: the tests
+# compare exact bytes, and a file's type cannot be told from its extension.
+benchmark/cases/** -text -eol
 *.ogg binary
 *.opus binary
 *.xz binary
+
+# Binary test assets: never apply the text/eol rule above.
+*.whl binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.deb binary
+*.safetensors binary

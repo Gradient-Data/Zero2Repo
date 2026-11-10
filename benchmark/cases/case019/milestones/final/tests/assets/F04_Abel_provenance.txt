@@ -1,0 +1,10 @@
+# feature: F04
+
+F04_Abel_manifest.json is the unmodified response obtained on 2026-10-31 from
+https://fonts.google.com/download/list?family=Abel (including its XSSI prefix).
+Its static face URL is https://fonts.gstatic.com/s/abel/v18/MwQ5bhbm2POE6VhLPJp6qGI.ttf.
+The downloaded bytes equal F04_Abel-Regular.ttf, SHA256
+8598fde76842471846dee0c335ed650c9071c89639e681c5681ba9c9a3e3ee9b.
+The accompanying SIL Open Font License is F04_Abel_OFL.txt.
+The offline HTTPS mirror serves this response and face unchanged; product code
+performs acquisition, persists the family and renders caller text itself.

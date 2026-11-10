@@ -1,0 +1,1063 @@
+{
+  "git+https://github.com/icicle-emu/icicle-emu.git?rev=638508b72f480f9be6fe2e267ef09de8f1541f9a#638508b72f480f9be6fe2e267ef09de8f1541f9a": {
+    "repository": "icicle-emu/icicle-emu",
+    "files": [
+      {
+        "path": ".gitignore",
+        "mode": "100644",
+        "sha": "e9868bd21d663918be2338228bba460004559586",
+        "size": 14
+      },
+      {
+        "path": "Cargo.lock",
+        "mode": "100644",
+        "sha": "861ab521605546ee06487db00f1741384d3feefa",
+        "size": 36051
+      },
+      {
+        "path": "Cargo.toml",
+        "mode": "100644",
+        "sha": "97f830001391bc9e3e665972f462a90983cd927c",
+        "size": 804
+      },
+      {
+        "path": "Dockerfile",
+        "mode": "100644",
+        "sha": "73de031716d77c890c9acfbac239bb1094e92504",
+        "size": 767
+      },
+      {
+        "path": "LICENCE-APACHE",
+        "mode": "100644",
+        "sha": "0123141cc56b4797e4f48b2a88d23938c7dc65fc",
+        "size": 11369
+      },
+      {
+        "path": "LICENCE-MIT",
+        "mode": "100644",
+        "sha": "1c188efd88d8fa274fb6a8afc977be77db740106",
+        "size": 1082
+      },
+      {
+        "path": "README.md",
+        "mode": "100644",
+        "sha": "cf54811bcb07010606e5bce176b5528803be19b6",
+        "size": 5672
+      },
+      {
+        "path": "afl-icicle-trace/Cargo.toml",
+        "mode": "100644",
+        "sha": "3de071475cab844a13a3512f65997ec3b8639673",
+        "size": 588
+      },
+      {
+        "path": "afl-icicle-trace/README.md",
+        "mode": "100644",
+        "sha": "40c0e06e4906807939e9b4a281366d8af471f8ce",
+        "size": 55
+      },
+      {
+        "path": "afl-icicle-trace/src/afl.rs",
+        "mode": "100644",
+        "sha": "f8e07e30b05045e834a98378e863f572a3baaeb7",
+        "size": 5163
+      },
+      {
+        "path": "afl-icicle-trace/src/instrumentation.rs",
+        "mode": "100644",
+        "sha": "5f4cd834b212d43a758d0b2d9b0b581c40f7a3d2",
+        "size": 3611
+      },
+      {
+        "path": "afl-icicle-trace/src/lib.rs",
+        "mode": "100644",
+        "sha": "cb55b91b8261b2813c4648de4b237239f6b1ec13",
+        "size": 15092
+      },
+      {
+        "path": "afl-icicle-trace/src/main.rs",
+        "mode": "100644",
+        "sha": "2ea32a1232f399d92d42db78e90e2c2c88847261",
+        "size": 1615
+      },
+      {
+        "path": "afl-icicle-trace/src/shared_mem.rs",
+        "mode": "100644",
+        "sha": "59cf543376c3e8894e5fb959e6b48da9d3da4996",
+        "size": 3781
+      },
+      {
+        "path": "icicle-cpu/Cargo.toml",
+        "mode": "100644",
+        "sha": "459169ea04242a213be9b58b89f212f70c94c1e7",
+        "size": 543
+      },
+      {
+        "path": "icicle-cpu/src/config.rs",
+        "mode": "100644",
+        "sha": "e9fc2b9fdc6196aeae90b437694fec3376af11c6",
+        "size": 916
+      },
+      {
+        "path": "icicle-cpu/src/cpu.rs",
+        "mode": "100644",
+        "sha": "b8a81c54365c9d6ba247cd50257ad7ec6c070908",
+        "size": 24778
+      },
+      {
+        "path": "icicle-cpu/src/debug_info.rs",
+        "mode": "100644",
+        "sha": "6eb9b6a7803da30e03c3983f9a4e757ebbc61a1c",
+        "size": 15074
+      },
+      {
+        "path": "icicle-cpu/src/elf.rs",
+        "mode": "100644",
+        "sha": "02562664af51fd1e59ebe4dd401679ab64419dc7",
+        "size": 12522
+      },
+      {
+        "path": "icicle-cpu/src/exec/const_eval.rs",
+        "mode": "100644",
+        "sha": "41daf7f34923942acb8dc4efcad61e905d7bc59d",
+        "size": 37616
+      },
+      {
+        "path": "icicle-cpu/src/exec/helpers.rs",
+        "mode": "100644",
+        "sha": "cd954098c4e2edcd37623bb03c448e6f9bce42cb",
+        "size": 37678
+      },
+      {
+        "path": "icicle-cpu/src/exec/interpreter.rs",
+        "mode": "100644",
+        "sha": "ce51aad9db7f40baadf2f0c6ad05406eddc3b803",
+        "size": 40605
+      },
+      {
+        "path": "icicle-cpu/src/exec/mod.rs",
+        "mode": "100644",
+        "sha": "95d7bfa494c8f65c7703d0bb707d61aaf3e9892b",
+        "size": 58
+      },
+      {
+        "path": "icicle-cpu/src/exit.rs",
+        "mode": "100644",
+        "sha": "c76acca29a17531d52af6b41fa3462b1e76b5e75",
+        "size": 1674
+      },
+      {
+        "path": "icicle-cpu/src/lib.rs",
+        "mode": "100644",
+        "sha": "f67846ab1d3e3982df240eca39c6b9b76f36dd7c",
+        "size": 11112
+      },
+      {
+        "path": "icicle-cpu/src/lifter/mod.rs",
+        "mode": "100644",
+        "sha": "d38fbe481fd69c5708e25d39e2a8fc63fe85c3cf",
+        "size": 32429
+      },
+      {
+        "path": "icicle-cpu/src/lifter/msp430.rs",
+        "mode": "100644",
+        "sha": "14ba80815ad5c6ab04302cee3b38ff2d447c1f1c",
+        "size": 3580
+      },
+      {
+        "path": "icicle-cpu/src/lifter/optimize.rs",
+        "mode": "100644",
+        "sha": "18fc148cc9c2265f24793befd98fb5d6ac3716b7",
+        "size": 19225
+      },
+      {
+        "path": "icicle-cpu/src/lifter/pcodeops.rs",
+        "mode": "100644",
+        "sha": "65c7149039430b589618aec2a801e12137f80aa5",
+        "size": 8043
+      },
+      {
+        "path": "icicle-cpu/src/lifter/rewriter.rs",
+        "mode": "100644",
+        "sha": "013b970d1bb4fa0452f04607e8eecbe43c568863",
+        "size": 10252
+      },
+      {
+        "path": "icicle-cpu/src/pe.rs",
+        "mode": "100644",
+        "sha": "987dbbaa1eb9ef1805440814fa9f9e7296caeed1",
+        "size": 8763
+      },
+      {
+        "path": "icicle-cpu/src/regs.rs",
+        "mode": "100644",
+        "sha": "7f4e1e8ce5cef93f1a03ce3e630e79a9acfc72a6",
+        "size": 13857
+      },
+      {
+        "path": "icicle-cpu/src/trace.rs",
+        "mode": "100644",
+        "sha": "d9f27ee9052a078df28d2df361671e6a73713763",
+        "size": 8390
+      },
+      {
+        "path": "icicle-cpu/src/utils.rs",
+        "mode": "100644",
+        "sha": "dafbf1b869cb4dc5c190b2c4c3e1344f6e5dcf59",
+        "size": 6251
+      },
+      {
+        "path": "icicle-fuzzing/Cargo.toml",
+        "mode": "100644",
+        "sha": "c1b36eb90cc9f814cd24f9e107f0b0744f1d269b",
+        "size": 473
+      },
+      {
+        "path": "icicle-fuzzing/src/config.rs",
+        "mode": "100644",
+        "sha": "e28a11049f2131768a0c2f9eb47d9b6b844b1d3f",
+        "size": 11012
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/cmp_finder.rs",
+        "mode": "100644",
+        "sha": "47bdb791126b41aaa1ca490ecc3b2b3a0b883451",
+        "size": 38709
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/cmplog.rs",
+        "mode": "100644",
+        "sha": "9a121940c7664705d777a0db9143e3485b2b2bd8",
+        "size": 16476
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/cmplog2.rs",
+        "mode": "100644",
+        "sha": "360159f64dcfdbc4c7f02bea3b3396d047cd1c2f",
+        "size": 11906
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/compcov.rs",
+        "mode": "100644",
+        "sha": "8da669615899225d2020efc4dce92152f9859b9f",
+        "size": 11901
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/coverage.rs",
+        "mode": "100644",
+        "sha": "3088030144e0b6d1870d2b38a5bcf1d03fc9e6b8",
+        "size": 18594
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/mod.rs",
+        "mode": "100644",
+        "sha": "9d1c6ee4d995b41bbd18775991b558638e3d1b90",
+        "size": 2749
+      },
+      {
+        "path": "icicle-fuzzing/src/instrumentation/timer.rs",
+        "mode": "100644",
+        "sha": "ff1d6dca42f5f477d222bc254bf967de32dbfa46",
+        "size": 1923
+      },
+      {
+        "path": "icicle-fuzzing/src/lib.rs",
+        "mode": "100644",
+        "sha": "341290a9fad6944bbd31072a3e42410280414756",
+        "size": 27096
+      },
+      {
+        "path": "icicle-fuzzing/src/linux.rs",
+        "mode": "100644",
+        "sha": "3221983762b1a0b99eb2e85eb439893367b9d6fe",
+        "size": 5051
+      },
+      {
+        "path": "icicle-fuzzing/src/log.rs",
+        "mode": "100644",
+        "sha": "bcea404aef3f98b04f510e880ecb08ecadee1342",
+        "size": 1807
+      },
+      {
+        "path": "icicle-fuzzing/src/msp430.rs",
+        "mode": "100644",
+        "sha": "714c737f934f54c290bbc59d458c895b1baaaefb",
+        "size": 8118
+      },
+      {
+        "path": "icicle-fuzzing/src/trace.rs",
+        "mode": "100644",
+        "sha": "8e55c7238532364e14ec88d2c3486a354c146f7d",
+        "size": 2773
+      },
+      {
+        "path": "icicle-fuzzing/src/utils.rs",
+        "mode": "100644",
+        "sha": "8ddb472563a04259ceb72ef744a55552926b03c5",
+        "size": 5193
+      },
+      {
+        "path": "icicle-gdb/Cargo.toml",
+        "mode": "100644",
+        "sha": "c9585dd208a02f1c20f46a510a7c51ba4fae50ee",
+        "size": 519
+      },
+      {
+        "path": "icicle-gdb/src/arch.rs",
+        "mode": "100644",
+        "sha": "aa71633bef3dad66c9bccc4208a17cc65a5cdb80",
+        "size": 10189
+      },
+      {
+        "path": "icicle-gdb/src/lib.rs",
+        "mode": "100644",
+        "sha": "efeb1e73936ed69c06e8bc4fb3da4e05d0c31893",
+        "size": 8978
+      },
+      {
+        "path": "icicle-gdb/src/main.rs",
+        "mode": "100644",
+        "sha": "821f681351ae2077056b8001af880bc9ebfb0562",
+        "size": 2897
+      },
+      {
+        "path": "icicle-gdb/src/stub.rs",
+        "mode": "100644",
+        "sha": "f900fbb6a7d4686311b975ffbd246f8c0fd27eed",
+        "size": 34669
+      },
+      {
+        "path": "icicle-jit/Cargo.toml",
+        "mode": "100644",
+        "sha": "0dd3ee2bb9b2ea1b78f8cce8980860706059a59c",
+        "size": 612
+      },
+      {
+        "path": "icicle-jit/src/debug.rs",
+        "mode": "100644",
+        "sha": "7e43f5eb52821036919d493b72dc5a88d6d57a57",
+        "size": 2351
+      },
+      {
+        "path": "icicle-jit/src/lib.rs",
+        "mode": "100644",
+        "sha": "a3801008110eb0424059147f3776c4a5a11fc8fb",
+        "size": 18339
+      },
+      {
+        "path": "icicle-jit/src/runtime.rs",
+        "mode": "100644",
+        "sha": "4a5159ef0b6b99588ea0dd33bf4ba22be16850dd",
+        "size": 4840
+      },
+      {
+        "path": "icicle-jit/src/translate/mem.rs",
+        "mode": "100644",
+        "sha": "632524d74b2b773340375d07985f4a2a5b384427",
+        "size": 18617
+      },
+      {
+        "path": "icicle-jit/src/translate/mod.rs",
+        "mode": "100644",
+        "sha": "be7143654a13b0e6c4a33d007f678a2307888cbf",
+        "size": 44711
+      },
+      {
+        "path": "icicle-jit/src/translate/ops.rs",
+        "mode": "100644",
+        "sha": "55dc81a6132bfa5226935981a21057e43eb16ef2",
+        "size": 30471
+      },
+      {
+        "path": "icicle-linux/Cargo.toml",
+        "mode": "100644",
+        "sha": "31d4202a5f504b5342d1714f50dc0e1afd511799",
+        "size": 426
+      },
+      {
+        "path": "icicle-linux/build.rs",
+        "mode": "100644",
+        "sha": "80a6261e7d416933cd08c1a36e56700b822b8fbf",
+        "size": 7689
+      },
+      {
+        "path": "icicle-linux/data/errno/generic.txt",
+        "mode": "100644",
+        "sha": "04a3b23c9275a6cba6d08ed7e8d3238a1e0c8781",
+        "size": 2350
+      },
+      {
+        "path": "icicle-linux/data/errno/mips.txt",
+        "mode": "100644",
+        "sha": "de79aa2c7809e773eb6e104c5fff4e0951ec6702",
+        "size": 2029
+      },
+      {
+        "path": "icicle-linux/data/syscalls/arm.txt",
+        "mode": "100644",
+        "sha": "631c00acd3012eab2ccc7d1faac3e2a405abe862",
+        "size": 19348
+      },
+      {
+        "path": "icicle-linux/data/syscalls/generic.txt",
+        "mode": "100644",
+        "sha": "2b31c5e448e2de43d3bb56880feac88fde3f8397",
+        "size": 24276
+      },
+      {
+        "path": "icicle-linux/data/syscalls/i386.txt",
+        "mode": "100644",
+        "sha": "f574aef5c5166d3277f0a9d29cadfd499c031848",
+        "size": 20860
+      },
+      {
+        "path": "icicle-linux/data/syscalls/mips.txt",
+        "mode": "100644",
+        "sha": "b01b4fcc7aaee4374c25056a4599dfd02c4d53c2",
+        "size": 20365
+      },
+      {
+        "path": "icicle-linux/data/syscalls/x64.txt",
+        "mode": "100644",
+        "sha": "3a7dd198c30f7ca7ab7596c824ed5d4b10a3ddc3",
+        "size": 16223
+      },
+      {
+        "path": "icicle-linux/src/arch/aarch64.rs",
+        "mode": "100644",
+        "sha": "60ee98c4164f4cd94917a0b2e2132489258db15e",
+        "size": 1003
+      },
+      {
+        "path": "icicle-linux/src/arch/mips.rs",
+        "mode": "100644",
+        "sha": "0304b18bc33c6d796762d4cf51673471da99f6fa",
+        "size": 7506
+      },
+      {
+        "path": "icicle-linux/src/arch/mod.rs",
+        "mode": "100644",
+        "sha": "ac2cd8f3e0d9e6a40ed7f8588fad09a7c5fb9bde",
+        "size": 15754
+      },
+      {
+        "path": "icicle-linux/src/arch/riscv64.rs",
+        "mode": "100644",
+        "sha": "c7df01db6cefc5867d44350a59862c429e8112d6",
+        "size": 1003
+      },
+      {
+        "path": "icicle-linux/src/arch/x86.rs",
+        "mode": "100644",
+        "sha": "19bac1313c673078405e1b292398a6bd0d6a867e",
+        "size": 4258
+      },
+      {
+        "path": "icicle-linux/src/errno.rs",
+        "mode": "100644",
+        "sha": "04785dc3a904eb49635ce62c772f8890fe72b5b4",
+        "size": 400
+      },
+      {
+        "path": "icicle-linux/src/fs/devices.rs",
+        "mode": "100644",
+        "sha": "972b13f43938cd362a1ebf65a62d6c5c780d5ce2",
+        "size": 10331
+      },
+      {
+        "path": "icicle-linux/src/fs/file.rs",
+        "mode": "100644",
+        "sha": "a82e984e71e1356d38ea1b36a6f8a6055a859f77",
+        "size": 8445
+      },
+      {
+        "path": "icicle-linux/src/fs/host.rs",
+        "mode": "100644",
+        "sha": "7cd7835326775ff28a22d9e4388c5e2904e64c4f",
+        "size": 12740
+      },
+      {
+        "path": "icicle-linux/src/fs/mod.rs",
+        "mode": "100644",
+        "sha": "3a876fc706de32b4b6fb525ab13406a56c607049",
+        "size": 28416
+      },
+      {
+        "path": "icicle-linux/src/fs/socket.rs",
+        "mode": "100644",
+        "sha": "cb56f8690c7a5d7a8c98355147e8c31bcc178b0c",
+        "size": 7222
+      },
+      {
+        "path": "icicle-linux/src/lib.rs",
+        "mode": "100644",
+        "sha": "916d5982d3973e7b9724cbab7e79de2f33f08e60",
+        "size": 50982
+      },
+      {
+        "path": "icicle-linux/src/sys/auxv.rs",
+        "mode": "100644",
+        "sha": "9636e8c5aca1b10773985f145635b8f8293d91cf",
+        "size": 3921
+      },
+      {
+        "path": "icicle-linux/src/sys/mod.rs",
+        "mode": "100644",
+        "sha": "4e159191fc0816ab05e928b752a7d1e215e1b998",
+        "size": 2505
+      },
+      {
+        "path": "icicle-linux/src/sys/prctl.rs",
+        "mode": "100644",
+        "sha": "b12b0441d4fdba3ae77394d3ab75843f0cc60c59",
+        "size": 2596
+      },
+      {
+        "path": "icicle-linux/src/sys/syscall.rs",
+        "mode": "100644",
+        "sha": "c144960eb785e4431341c6b528a0cf71993c342d",
+        "size": 81526
+      },
+      {
+        "path": "icicle-linux/src/types.rs",
+        "mode": "100644",
+        "sha": "00cf8bf64f0f8392faaeadf024f535dba9107976",
+        "size": 27463
+      },
+      {
+        "path": "icicle-linux/src/utils.rs",
+        "mode": "100644",
+        "sha": "d2559fbf591df919ca1b539479b85f5e284be41a",
+        "size": 773
+      },
+      {
+        "path": "icicle-mem/Cargo.toml",
+        "mode": "100644",
+        "sha": "692d0bb25639ed6e55aa559c00585c7c7827abe1",
+        "size": 164
+      },
+      {
+        "path": "icicle-mem/src/lib.rs",
+        "mode": "100644",
+        "sha": "c6540cffdc6c8dc2085d2f74e929a0b8a7f42ac5",
+        "size": 6009
+      },
+      {
+        "path": "icicle-mem/src/mmu.rs",
+        "mode": "100644",
+        "sha": "8462e77077fb2aa22d9bd5b8f104a79c910f233b",
+        "size": 47740
+      },
+      {
+        "path": "icicle-mem/src/perm.rs",
+        "mode": "100644",
+        "sha": "0df4bb94277f5894f288c2616256e3cbf7dd4db3",
+        "size": 7248
+      },
+      {
+        "path": "icicle-mem/src/physical.rs",
+        "mode": "100644",
+        "sha": "2e06fb81d0d98c1b032d30c952cac240d7a49eac",
+        "size": 15337
+      },
+      {
+        "path": "icicle-mem/src/range_map.rs",
+        "mode": "100644",
+        "sha": "6d398f8ef4c96979ee5f86ec5da0771c3b1d491c",
+        "size": 36892
+      },
+      {
+        "path": "icicle-mem/src/tests.rs",
+        "mode": "100644",
+        "sha": "7b217c515291222edb66146366e6f357c0c3a9e5",
+        "size": 16718
+      },
+      {
+        "path": "icicle-mem/src/tlb.rs",
+        "mode": "100644",
+        "sha": "98da0c1b364abeb279fe08bc8f2bbb4e0417e5cb",
+        "size": 7151
+      },
+      {
+        "path": "icicle-test/Cargo.toml",
+        "mode": "100644",
+        "sha": "222e5f312139a536fa23bbf8659be61c8f1e658b",
+        "size": 413
+      },
+      {
+        "path": "icicle-test/README.md",
+        "mode": "100644",
+        "sha": "b1edb66c9ca10a264465a3ae850a3de36d7778f6",
+        "size": 1141
+      },
+      {
+        "path": "icicle-test/src/main.rs",
+        "mode": "100644",
+        "sha": "f7318a020375ba1ad7a0e86690bc074f2a47ce5f",
+        "size": 12086
+      },
+      {
+        "path": "icicle-test/src/parser.rs",
+        "mode": "100644",
+        "sha": "92c6bb502e20dafee766334769780408a0118094",
+        "size": 18918
+      },
+      {
+        "path": "icicle-test/src/tester.rs",
+        "mode": "100644",
+        "sha": "5922ba4bce33eb64549a7d03190984df77ccf79a",
+        "size": 7786
+      },
+      {
+        "path": "icicle-test/tests/aarch64.ins",
+        "mode": "100644",
+        "sha": "6a60c25182688219d54db0134be0dc4ff59818c1",
+        "size": 4516
+      },
+      {
+        "path": "icicle-test/tests/arm.ins",
+        "mode": "100644",
+        "sha": "64a0f4d38cb560cc83167d5536d9a7ff57e60048",
+        "size": 8310
+      },
+      {
+        "path": "icicle-test/tests/fib-static.ins",
+        "mode": "100644",
+        "sha": "113147fdd2a67276cf6b83f1c31f3bc2d08a98a5",
+        "size": 159270
+      },
+      {
+        "path": "icicle-test/tests/m68k.ins",
+        "mode": "100644",
+        "sha": "a58ccdb3a4f041cf8bf7a8d04acf053ec1af6471",
+        "size": 248
+      },
+      {
+        "path": "icicle-test/tests/mips.ins",
+        "mode": "100644",
+        "sha": "503c0bf9d6065793c40024de57ed856132313c56",
+        "size": 859
+      },
+      {
+        "path": "icicle-test/tests/mipsel.ins",
+        "mode": "100644",
+        "sha": "daac4fd888e4a7fb9055dce58847fdc4ad463424",
+        "size": 2881
+      },
+      {
+        "path": "icicle-test/tests/msp430x.ins",
+        "mode": "100644",
+        "sha": "b32c8f17324865cf1d287dd09fb11b782933f91d",
+        "size": 7768
+      },
+      {
+        "path": "icicle-test/tests/pcode/aarch64",
+        "mode": "100644",
+        "sha": "2fc95ccc79b365ef98835c1c0436da7868598880",
+        "size": 4481
+      },
+      {
+        "path": "icicle-test/tests/pcode/arm",
+        "mode": "100644",
+        "sha": "82be3c737114324cd2ddb05728dcab96afef2669",
+        "size": 13102
+      },
+      {
+        "path": "icicle-test/tests/pcode/m68k",
+        "mode": "100644",
+        "sha": "d218353cbaaedf271e29c54e5e96840a2436e5c4",
+        "size": 153
+      },
+      {
+        "path": "icicle-test/tests/pcode/mips",
+        "mode": "100644",
+        "sha": "d8511263e765a8a0cec50b8c0fcc2caec2c6bd09",
+        "size": 1148
+      },
+      {
+        "path": "icicle-test/tests/pcode/mipsel",
+        "mode": "100644",
+        "sha": "bc359d08fe766a7b7156a0c2ab200dffec9ac792",
+        "size": 2995
+      },
+      {
+        "path": "icicle-test/tests/pcode/msp430x",
+        "mode": "100644",
+        "sha": "cdd2c8d9f8655edfa7509c522cf2b44c7d57d688",
+        "size": 17078
+      },
+      {
+        "path": "icicle-test/tests/pcode/powerpc",
+        "mode": "100644",
+        "sha": "8b53b06d5ed1cda301d7f10a18edcf2a5197fdff",
+        "size": 499
+      },
+      {
+        "path": "icicle-test/tests/pcode/riscv64gc",
+        "mode": "100644",
+        "sha": "cf9b507cecf079067a345ea53f5a6cf3ed690f77",
+        "size": 1070
+      },
+      {
+        "path": "icicle-test/tests/pcode/x64",
+        "mode": "100644",
+        "sha": "e165d6acd423b143b66ef4715687b7b45e4db381",
+        "size": 45813
+      },
+      {
+        "path": "icicle-test/tests/pcode/x86",
+        "mode": "100644",
+        "sha": "6c0f0c0fd4810eec53dd3872088009430f244bfc",
+        "size": 4024
+      },
+      {
+        "path": "icicle-test/tests/powerpc.ins",
+        "mode": "100644",
+        "sha": "4c5de233d0e474f6c3dd8aaa097480c8f7828767",
+        "size": 344
+      },
+      {
+        "path": "icicle-test/tests/riscv32gc.ins",
+        "mode": "100644",
+        "sha": "40a7aa13d779ebd03e6c0399d44e570734a3e974",
+        "size": 260
+      },
+      {
+        "path": "icicle-test/tests/riscv64gc.ins",
+        "mode": "100644",
+        "sha": "482d1e13840a32b6505b222e668020dad097c2d4",
+        "size": 1256
+      },
+      {
+        "path": "icicle-test/tests/x64.ins",
+        "mode": "100644",
+        "sha": "026d44fc86f64ed74c9e7a6c50e6b29ed91cafa5",
+        "size": 31666
+      },
+      {
+        "path": "icicle-test/tests/x86.ins",
+        "mode": "100644",
+        "sha": "9c061cc4c0bb3a862d50033f5f3c90715747a416",
+        "size": 1659
+      },
+      {
+        "path": "icicle-vm/Cargo.toml",
+        "mode": "100644",
+        "sha": "e8985a5c25b0a9a4ea6e9bbd057a11b41bf2f94b",
+        "size": 520
+      },
+      {
+        "path": "icicle-vm/src/builder.rs",
+        "mode": "100644",
+        "sha": "87e634df660a41abc1c00479a75dffda223bc3e2",
+        "size": 18784
+      },
+      {
+        "path": "icicle-vm/src/debug.rs",
+        "mode": "100644",
+        "sha": "237d62b8d14332fe5fab26326af45a9d8f0d9b90",
+        "size": 14630
+      },
+      {
+        "path": "icicle-vm/src/elf_dump.rs",
+        "mode": "100644",
+        "sha": "e8cc86a17f40d74fe9159b27b75cb881c9333747",
+        "size": 15880
+      },
+      {
+        "path": "icicle-vm/src/env.rs",
+        "mode": "100644",
+        "sha": "4fb9ae820116cf49c1d4cc97823d7ed5d32008fe",
+        "size": 4880
+      },
+      {
+        "path": "icicle-vm/src/hw.rs",
+        "mode": "100644",
+        "sha": "ab4b92ad9193c473bc00c351397360723c847089",
+        "size": 2462
+      },
+      {
+        "path": "icicle-vm/src/injector.rs",
+        "mode": "100644",
+        "sha": "c7affeae3f26c150cdb80b92500fc2d001cde834",
+        "size": 4852
+      },
+      {
+        "path": "icicle-vm/src/lib.rs",
+        "mode": "100644",
+        "sha": "7f1e3abdfd7a05cc7e6235ed525ca485d93e9c15",
+        "size": 38244
+      },
+      {
+        "path": "icicle-vm/src/msp430/config.rs",
+        "mode": "100644",
+        "sha": "64fdd7ce8296a25777d02d9ff513d1d38c1ffd0f",
+        "size": 3988
+      },
+      {
+        "path": "icicle-vm/src/msp430/env.rs",
+        "mode": "100644",
+        "sha": "88a1205bf97f25f110c5ece1bc9ab6879a3c6dfb",
+        "size": 18437
+      },
+      {
+        "path": "icicle-vm/src/msp430/hw.rs",
+        "mode": "100644",
+        "sha": "85a4c6b27677f42ce29b686f018e0c3239846668",
+        "size": 7492
+      },
+      {
+        "path": "icicle-vm/src/msp430/mod.rs",
+        "mode": "100644",
+        "sha": "1f222dc406055a0adab63ef624354c52b15e8679",
+        "size": 1581
+      },
+      {
+        "path": "icicle-vm/src/tests.rs",
+        "mode": "100644",
+        "sha": "ecbff35652767f893d4aa4020a1e7f8aab875faa",
+        "size": 4686
+      },
+      {
+        "path": "rustfmt.toml",
+        "mode": "100644",
+        "sha": "e0cbf0eb4b5511e25781de8e5139150fa8133d7c",
+        "size": 229
+      },
+      {
+        "path": "sleigh/.gitignore",
+        "mode": "100644",
+        "sha": "648577595ffa0021dd4e710c4caf1c27c5df6994",
+        "size": 14
+      },
+      {
+        "path": "sleigh/pcode/Cargo.toml",
+        "mode": "100644",
+        "sha": "ca488a28091214bb0348a481cff9a50ede5876d7",
+        "size": 76
+      },
+      {
+        "path": "sleigh/pcode/src/display.rs",
+        "mode": "100644",
+        "sha": "5cf6069c68db3628ee052131f333008719189873",
+        "size": 10719
+      },
+      {
+        "path": "sleigh/pcode/src/helpers.rs",
+        "mode": "100644",
+        "sha": "c53faf35ff965f9892e81895c50d8150bf6059ee",
+        "size": 1954
+      },
+      {
+        "path": "sleigh/pcode/src/lib.rs",
+        "mode": "100644",
+        "sha": "1cca636edddafeef7edeece1030df8b462e0bcb5",
+        "size": 124
+      },
+      {
+        "path": "sleigh/pcode/src/ops.rs",
+        "mode": "100644",
+        "sha": "12ac80afad1d0aa428352f1377f3a076b36a173b",
+        "size": 21442
+      },
+      {
+        "path": "sleigh/sleigh-compile/Cargo.toml",
+        "mode": "100644",
+        "sha": "c8ebb3145f74973707702f610933261801e49863",
+        "size": 558
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/constructor/constraints.rs",
+        "mode": "100644",
+        "sha": "dcebd221395a56bcf6a4210e3d1431a65dc3bd36",
+        "size": 11796
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/constructor/disasm_actions.rs",
+        "mode": "100644",
+        "sha": "68f16e38786e07fd1eff34eab1bb51f94b7d9124",
+        "size": 6719
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/constructor/display.rs",
+        "mode": "100644",
+        "sha": "16c88611f9e4556fb3a4d2d34d1986131493aee0",
+        "size": 1516
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/constructor/mod.rs",
+        "mode": "100644",
+        "sha": "a36317ed8d5c80bc980d06cd9a19e676f8c95d50",
+        "size": 9808
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/constructor/semantics.rs",
+        "mode": "100644",
+        "sha": "eac97f06b724487275ad01832a05f29678591095",
+        "size": 49640
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/ldef.rs",
+        "mode": "100644",
+        "sha": "142de81bd2343f744948576f2c336d1522d7b971",
+        "size": 15185
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/lib.rs",
+        "mode": "100644",
+        "sha": "ddcee6c3d8946649ef2e5b18a81685913a374ea5",
+        "size": 19629
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/matcher/cases.rs",
+        "mode": "100644",
+        "sha": "8047150ca3f5a5b7242dc90846abd1d75e0e31e2",
+        "size": 12800
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/matcher/mod.rs",
+        "mode": "100644",
+        "sha": "82ac5162d71b36d90eef099c83c9fccb5246ea3e",
+        "size": 13827
+      },
+      {
+        "path": "sleigh/sleigh-compile/src/symbols.rs",
+        "mode": "100644",
+        "sha": "425fb5ad696c69ad7218a6f6f8d2d67f7f5a71be",
+        "size": 21132
+      },
+      {
+        "path": "sleigh/sleigh-parse/Cargo.toml",
+        "mode": "100644",
+        "sha": "533ca628d28ab8ef265d43509ce61eb4607f2af5",
+        "size": 83
+      },
+      {
+        "path": "sleigh/sleigh-parse/README.md",
+        "mode": "100644",
+        "sha": "9050905ae975bf074db6ebeaf9fe31c4dba89aaf",
+        "size": 130
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/ast.rs",
+        "mode": "100644",
+        "sha": "edae29abaee0dd21f20c65b8ff107177fba3053d",
+        "size": 22758
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/error.rs",
+        "mode": "100644",
+        "sha": "460ecc686a872d3fc770e36aa5842e7a841b2a53",
+        "size": 2103
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/input.rs",
+        "mode": "100644",
+        "sha": "eaebe9bcc4d32280d89371f55484ae91c7c0be14",
+        "size": 1091
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/lexer.rs",
+        "mode": "100644",
+        "sha": "3180d3fb8db5ab9a54150d01d863c2b6b0195461",
+        "size": 19118
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/lib.rs",
+        "mode": "100644",
+        "sha": "e119ed1acd24ec512eee0c249a6635a641cc0694",
+        "size": 876
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/parser.rs",
+        "mode": "100644",
+        "sha": "06cd04df76a8bd61f0322dca6a64f728761f44c0",
+        "size": 60136
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/preprocessor.rs",
+        "mode": "100644",
+        "sha": "3ca205054fed856996f4d2bb54d363f4edb579cb",
+        "size": 10565
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/tests/mod.rs",
+        "mode": "100644",
+        "sha": "49d48bbcddf9940461e56063966f98f84b60dd7f",
+        "size": 30
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/tests/parser.rs",
+        "mode": "100644",
+        "sha": "64a4f89e0ee9a70d092017572eb9ab23263d761e",
+        "size": 22313
+      },
+      {
+        "path": "sleigh/sleigh-parse/src/tests/preprocessor.rs",
+        "mode": "100644",
+        "sha": "f3df6446f9f9080f6bacdf7ed19bae5986fb5897",
+        "size": 4499
+      },
+      {
+        "path": "sleigh/sleigh-runtime/Cargo.toml",
+        "mode": "100644",
+        "sha": "741de3613ea0a88a64feffe51c08c2263f6e013f",
+        "size": 188
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/const_eval.rs",
+        "mode": "100644",
+        "sha": "8eb0411373d8fa4cd9b80e3807ea4ed58842f0a5",
+        "size": 3401
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/debug.rs",
+        "mode": "100644",
+        "sha": "e3903145959038778521a089be034e731a1c75c6",
+        "size": 1915
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/decoder.rs",
+        "mode": "100644",
+        "sha": "b4efedd104f8a881abc9b148e63cea149b14cae0",
+        "size": 27325
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/disasm.rs",
+        "mode": "100644",
+        "sha": "d7551bed7cd3f0bc694039f8a0b66a0fe18a27e0",
+        "size": 2246
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/expr.rs",
+        "mode": "100644",
+        "sha": "24041aebee01dad1a7c1914f327957c87aacc32f",
+        "size": 2525
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/lib.rs",
+        "mode": "100644",
+        "sha": "e23ff10d3158399351849356afa074b33e751795",
+        "size": 23518
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/lifter.rs",
+        "mode": "100644",
+        "sha": "8ddc9ffc8d643a321e859163b2f2d976334e6960",
+        "size": 35472
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/matcher.rs",
+        "mode": "100644",
+        "sha": "76c7cec428ad7333a0a24ef1f32af555f72c954c",
+        "size": 5799
+      },
+      {
+        "path": "sleigh/sleigh-runtime/src/semantics.rs",
+        "mode": "100644",
+        "sha": "31d9ff5ad03296128fbdefbce3df9c61de95fb0c",
+        "size": 2889
+      }
+    ]
+  }
+}

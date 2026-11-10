@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "case026",
+  "base_image": "codingbench-base/ubuntu:24.04",
+  "public": true,
+  "runner": {
+    "install_command": "python3 /env-assets/install.py",
+    "build_command": "mvn -o -B -ntp -DskipTests package"
+  }
+}

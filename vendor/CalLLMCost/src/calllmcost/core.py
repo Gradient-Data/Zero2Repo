@@ -17,7 +17,8 @@ def compute_step_cost_usd(
 ) -> float:
     """Normalize ``raw_usage`` for ``provider`` and return USD for ``model_id``.
 
-    Normalize usage, then apply per-model rates from ``pricing``.
+    This is the same pipeline used in MiniSWERouterBench's router-aware model
+    (``normalize_usage`` + per-model rates from ``pricing``).
     """
 
     buckets = normalize_usage(provider, raw_usage)

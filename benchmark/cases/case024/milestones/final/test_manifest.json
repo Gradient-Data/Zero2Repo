@@ -1,0 +1,129 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_helpers.py",
+    "tests/F01_workflows.py",
+    "tests/F02_helpers.py",
+    "tests/F02_values.py",
+    "tests/F03_files.py",
+    "tests/F03_helpers.py",
+    "tests/F03_services.py",
+    "tests/F04_helpers.py",
+    "tests/F04_scopes.py",
+    "tests/F05_execution.py",
+    "tests/F05_helpers.py",
+    "tests/F06_helpers.py",
+    "tests/F06_history.py",
+    "tests/F07_helpers.py",
+    "tests/F07_tags.py",
+    "tests/F08_helpers.py",
+    "tests/F08_reuse.py",
+    "tests/F09_handles.py",
+    "tests/F09_helpers.py",
+    "tests/F10_controls.py",
+    "tests/F10_helpers.py",
+    "tests/F11_async.py",
+    "tests/F11_helpers.py",
+    "tests/F12_scripts.py",
+    "tests/F13_configuration.py",
+    "tests/F13_helpers.py",
+    "tests/F13_remote.py",
+    "tests/F14_datasets.py",
+    "tests/F14_helpers.py",
+    "tests/F14_spark.py",
+    "tests/F15_helpers.py",
+    "tests/F15_subworkflows.py",
+    "tests/F16_helpers.py",
+    "tests/F16_lifecycle.py",
+    "tests/F17_helpers.py",
+    "tests/F17_history.py",
+    "tests/F18_helpers.py",
+    "tests/F18_repositories.py",
+    "tests/_helpers.py",
+    "tests/conftest.py"
+  ],
+  "test_command": "python3 -m pytest tests/F01_helpers.py tests/F01_workflows.py tests/F02_helpers.py tests/F02_values.py tests/F03_files.py tests/F03_helpers.py tests/F03_services.py tests/F04_helpers.py tests/F04_scopes.py tests/F05_execution.py tests/F05_helpers.py tests/F06_helpers.py tests/F06_history.py tests/F07_helpers.py tests/F07_tags.py tests/F08_helpers.py tests/F08_reuse.py tests/F09_handles.py tests/F09_helpers.py tests/F10_controls.py tests/F10_helpers.py tests/F11_async.py tests/F11_helpers.py tests/F12_scripts.py tests/F13_configuration.py tests/F13_helpers.py tests/F13_remote.py tests/F14_datasets.py tests/F14_helpers.py tests/F14_spark.py tests/F15_helpers.py tests/F15_subworkflows.py tests/F16_helpers.py tests/F16_lifecycle.py tests/F17_helpers.py tests/F17_history.py tests/F18_helpers.py tests/F18_repositories.py tests/_helpers.py tests/conftest.py",
+  "test_command_template": "python3 -m pytest {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py",
+      "tests/conftest.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_workflows.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_values.py"
+    ],
+    "F03": [
+      "tests/F03_files.py",
+      "tests/F03_helpers.py",
+      "tests/F03_services.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_scopes.py"
+    ],
+    "F05": [
+      "tests/F05_execution.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_history.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_tags.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_reuse.py"
+    ],
+    "F09": [
+      "tests/F09_handles.py",
+      "tests/F09_helpers.py"
+    ],
+    "F10": [
+      "tests/F10_controls.py",
+      "tests/F10_helpers.py"
+    ],
+    "F11": [
+      "tests/F11_async.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_scripts.py"
+    ],
+    "F13": [
+      "tests/F13_configuration.py",
+      "tests/F13_helpers.py",
+      "tests/F13_remote.py"
+    ],
+    "F14": [
+      "tests/F14_datasets.py",
+      "tests/F14_helpers.py",
+      "tests/F14_spark.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_subworkflows.py"
+    ],
+    "F16": [
+      "tests/F16_helpers.py",
+      "tests/F16_lifecycle.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_history.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_repositories.py"
+    ]
+  }
+}

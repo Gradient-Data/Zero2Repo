@@ -1,0 +1,125 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F01_helpers.py",
+    "tests/F01_metadata.py",
+    "tests/F02_dtypes.py",
+    "tests/F02_helpers.py",
+    "tests/F03_helpers.py",
+    "tests/F03_storage.py",
+    "tests/F04_cache.py",
+    "tests/F04_helpers.py",
+    "tests/F05_encoding.py",
+    "tests/F05_helpers.py",
+    "tests/F06_config.py",
+    "tests/F06_helpers.py",
+    "tests/F07_arrays.py",
+    "tests/F07_helpers.py",
+    "tests/F08_helpers.py",
+    "tests/F08_selection.py",
+    "tests/F09_shards.py",
+    "tests/F10_resize.py",
+    "tests/F11_groups.py",
+    "tests/F11_helpers.py",
+    "tests/F12_attributes.py",
+    "tests/F12_helpers.py",
+    "tests/F13_consolidated.py",
+    "tests/F13_helpers.py",
+    "tests/F14_copies.py",
+    "tests/F14_helpers.py",
+    "tests/F15_helpers.py",
+    "tests/F15_migration.py",
+    "tests/F16_coordinates.py",
+    "tests/F16_helpers.py",
+    "tests/F17_helpers.py",
+    "tests/F17_projection.py",
+    "tests/F18_helpers.py",
+    "tests/F18_lazy_views.py",
+    "tests/F19_helpers.py",
+    "tests/F19_http.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "PYTHONPATH=/app/.codingbench-site CUPY_CACHE_DIR=/tmp/cupy-cache HYPOTHESIS_STORAGE_DIRECTORY=/tmp/hypothesis python3 -m pytest -c /dev/null -p no:cacheprovider tests/F01_helpers.py tests/F01_metadata.py tests/F02_dtypes.py tests/F02_helpers.py tests/F03_helpers.py tests/F03_storage.py tests/F04_cache.py tests/F04_helpers.py tests/F05_encoding.py tests/F05_helpers.py tests/F06_config.py tests/F06_helpers.py tests/F07_arrays.py tests/F07_helpers.py tests/F08_helpers.py tests/F08_selection.py tests/F09_shards.py tests/F10_resize.py tests/F11_groups.py tests/F11_helpers.py tests/F12_attributes.py tests/F12_helpers.py tests/F13_consolidated.py tests/F13_helpers.py tests/F14_copies.py tests/F14_helpers.py tests/F15_helpers.py tests/F15_migration.py tests/F16_coordinates.py tests/F16_helpers.py tests/F17_helpers.py tests/F17_projection.py tests/F18_helpers.py tests/F18_lazy_views.py tests/F19_helpers.py tests/F19_http.py tests/_helpers.py",
+  "test_command_template": "PYTHONPATH=/app/.codingbench-site CUPY_CACHE_DIR=/tmp/cupy-cache HYPOTHESIS_STORAGE_DIRECTORY=/tmp/hypothesis python3 -m pytest -c /dev/null -p no:cacheprovider {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_metadata.py"
+    ],
+    "F02": [
+      "tests/F02_dtypes.py",
+      "tests/F02_helpers.py"
+    ],
+    "F03": [
+      "tests/F03_helpers.py",
+      "tests/F03_storage.py"
+    ],
+    "F04": [
+      "tests/F04_cache.py",
+      "tests/F04_helpers.py"
+    ],
+    "F05": [
+      "tests/F05_encoding.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_config.py",
+      "tests/F06_helpers.py"
+    ],
+    "F07": [
+      "tests/F07_arrays.py",
+      "tests/F07_helpers.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_selection.py"
+    ],
+    "F09": [
+      "tests/F09_shards.py"
+    ],
+    "F10": [
+      "tests/F10_resize.py"
+    ],
+    "F11": [
+      "tests/F11_groups.py",
+      "tests/F11_helpers.py"
+    ],
+    "F12": [
+      "tests/F12_attributes.py",
+      "tests/F12_helpers.py"
+    ],
+    "F13": [
+      "tests/F13_consolidated.py",
+      "tests/F13_helpers.py"
+    ],
+    "F14": [
+      "tests/F14_copies.py",
+      "tests/F14_helpers.py"
+    ],
+    "F15": [
+      "tests/F15_helpers.py",
+      "tests/F15_migration.py"
+    ],
+    "F16": [
+      "tests/F16_coordinates.py",
+      "tests/F16_helpers.py"
+    ],
+    "F17": [
+      "tests/F17_helpers.py",
+      "tests/F17_projection.py"
+    ],
+    "F18": [
+      "tests/F18_helpers.py",
+      "tests/F18_lazy_views.py"
+    ],
+    "F19": [
+      "tests/F19_helpers.py",
+      "tests/F19_http.py"
+    ]
+  }
+}

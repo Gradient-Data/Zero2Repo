@@ -1,0 +1,91 @@
+{
+  "schema_version": 3,
+  "step": "final",
+  "workdir": ".",
+  "test_files": [
+    "tests/F00_observations.py",
+    "tests/F01_helpers.py",
+    "tests/F01_search.py",
+    "tests/F02_helpers.py",
+    "tests/F02_matching.py",
+    "tests/F03_details.py",
+    "tests/F03_helpers.py",
+    "tests/F03_layout.py",
+    "tests/F03_ordering.py",
+    "tests/F04_helpers.py",
+    "tests/F04_ignore_and_globs.py",
+    "tests/F04_types_and_limits.py",
+    "tests/F05_binary_encoding.py",
+    "tests/F05_helpers.py",
+    "tests/F06_helpers.py",
+    "tests/F06_index_build.py",
+    "tests/F07_helpers.py",
+    "tests/F07_indexed_search.py",
+    "tests/F08_helpers.py",
+    "tests/F08_listing_counting.py",
+    "tests/F08_ordering.py",
+    "tests/F09_helpers.py",
+    "tests/F09_lifecycle.py",
+    "tests/F09_options.py",
+    "tests/F09_protocol.py",
+    "tests/F09_refresh.py",
+    "tests/F10_helpers.py",
+    "tests/F10_status.py",
+    "tests/_helpers.py"
+  ],
+  "test_command": "PATH=/app/target/debug:$PATH python3 -m pytest -p no:cacheprovider -q tests/F00_observations.py tests/F01_helpers.py tests/F01_search.py tests/F02_helpers.py tests/F02_matching.py tests/F03_details.py tests/F03_helpers.py tests/F03_layout.py tests/F03_ordering.py tests/F04_helpers.py tests/F04_ignore_and_globs.py tests/F04_types_and_limits.py tests/F05_binary_encoding.py tests/F05_helpers.py tests/F06_helpers.py tests/F06_index_build.py tests/F07_helpers.py tests/F07_indexed_search.py tests/F08_helpers.py tests/F08_listing_counting.py tests/F08_ordering.py tests/F09_helpers.py tests/F09_lifecycle.py tests/F09_options.py tests/F09_protocol.py tests/F09_refresh.py tests/F10_helpers.py tests/F10_status.py tests/_helpers.py",
+  "test_command_template": "PATH=/app/target/debug:$PATH python3 -m pytest -p no:cacheprovider -q {test_files}",
+  "execution_groups": {
+    "F00": [
+      "tests/F00_observations.py",
+      "tests/_helpers.py"
+    ],
+    "F01": [
+      "tests/F01_helpers.py",
+      "tests/F01_search.py"
+    ],
+    "F02": [
+      "tests/F02_helpers.py",
+      "tests/F02_matching.py"
+    ],
+    "F03": [
+      "tests/F03_details.py",
+      "tests/F03_helpers.py",
+      "tests/F03_layout.py",
+      "tests/F03_ordering.py"
+    ],
+    "F04": [
+      "tests/F04_helpers.py",
+      "tests/F04_ignore_and_globs.py",
+      "tests/F04_types_and_limits.py"
+    ],
+    "F05": [
+      "tests/F05_binary_encoding.py",
+      "tests/F05_helpers.py"
+    ],
+    "F06": [
+      "tests/F06_helpers.py",
+      "tests/F06_index_build.py"
+    ],
+    "F07": [
+      "tests/F07_helpers.py",
+      "tests/F07_indexed_search.py"
+    ],
+    "F08": [
+      "tests/F08_helpers.py",
+      "tests/F08_listing_counting.py",
+      "tests/F08_ordering.py"
+    ],
+    "F09": [
+      "tests/F09_helpers.py",
+      "tests/F09_lifecycle.py",
+      "tests/F09_options.py",
+      "tests/F09_protocol.py",
+      "tests/F09_refresh.py"
+    ],
+    "F10": [
+      "tests/F10_helpers.py",
+      "tests/F10_status.py"
+    ]
+  }
+}

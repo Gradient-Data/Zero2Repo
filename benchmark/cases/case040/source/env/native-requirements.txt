@@ -1,0 +1,1 @@
+PyGObject==3.50.0 --hash=sha256:4500ad3dbf331773d8dedf7212544c999a76fc96b63a91b3dcac1e5925a1d103

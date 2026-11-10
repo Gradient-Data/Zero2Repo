@@ -1,0 +1,6 @@
+{
+  "asset": "F09_powershell-7.4.7-linux-x64.tar.gz",
+  "sha256": "cfd57927b7a0d9f2da400471ea8dadc3ceb52f5e4a4a9a51c20495b4071f055a",
+  "source": "https://github.com/PowerShell/PowerShell/releases/download/v7.4.7/powershell-7.4.7-linux-x64.tar.gz",
+  "shell": "pwsh"
+}
