@@ -45,7 +45,11 @@ def test_classical_all_limiting_and_sampled_margins():
     for interval, wanted in [((.01, 100), expected), ((.5, 2),
             ([], expected[1][1:], [], [], expected[4][1:], []))]:
         response = ct.frd(model, np.geomspace(*interval, 5000))
-        assert_margin_pairs(ct.stability_margins(response, returnall=True), wanted)
+        # The documents require a continuous interpolation that reproduces the
+        # samples (affine between samples is allowed), not a particular order.
+        # Linear interpolation of these samples is within 5.31e-4 of the exact
+        # margins; reading crossings off the nearest sample is 2.2e-3 away.
+        assert_margin_pairs(ct.stability_margins(response, returnall=True), wanted, rtol=6e-4)
     # The closest logarithmic gain factor is the second crossing, not the first.
     high_order = 2000/(s+1)**7
     full = ([.00103753203, 18.508613469779], [48.122279519110], [.644025231380],

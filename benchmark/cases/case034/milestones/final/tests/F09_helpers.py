@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 from scipy.optimize import brentq, minimize_scalar
 
 
-def assert_margin_pairs(actual, expected, atol=2e-5):
+def assert_margin_pairs(actual, expected, atol=2e-5, rtol=2e-5):
     """Compare paired margin/frequency sets without requiring enumeration order."""
     assert len(actual) == 6
     for i in range(3):
@@ -13,8 +13,8 @@ def assert_margin_pairs(actual, expected, atol=2e-5):
         want_values, want_frequencies = np.asarray(expected[i]), np.asarray(expected[i+3])
         assert values.shape == frequencies.shape == want_values.shape == want_frequencies.shape
         order, wanted = np.argsort(frequencies), np.argsort(want_frequencies)
-        assert_allclose(frequencies[order], want_frequencies[wanted], atol=atol, rtol=2e-5)
-        assert_allclose(values[order], want_values[wanted], atol=atol, rtol=2e-5)
+        assert_allclose(frequencies[order], want_frequencies[wanted], atol=atol, rtol=rtol)
+        assert_allclose(values[order], want_values[wanted], atol=atol, rtol=rtol)
 
 
 def disk_geometry(alpha, skew):
