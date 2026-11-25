@@ -37,8 +37,9 @@ __all__ = [
     "load_denylist",
     "require_denylist",
     "normalize_pkg_name",
-    "render_pip_shim",
-    "render_conda_shim",
+    "render_installer_shim",
+    "render_install_check",
+    "SHIMMED_INSTALLERS",
     "line_imports_token",
     "scan_workspace_imports",
     "validate_denylist_artifact",
@@ -49,7 +50,6 @@ __all__ = [
     "is_probeable_import_root",
     "denylist_hashes_from_payload",
     "render_strip_script",
-    "render_npm_shim",
     "render_pip_module_hook",
     "probe_spec_from_payload",
     "probe_banned_imports",
@@ -1155,118 +1155,38 @@ def build_access_fix_instruction(base_instruction: str, events: list[dict]) -> s
     return "\n".join(lines)
 
 
-_PIP_SHIM = r"""#!/bin/bash
-set -eu
-HASHES="/opt/cbrun/denylist.hashes"
-SHIM_DIR="/opt/cbrun/bin"
-if [[ ! -f "$HASHES" ]]; then
-  REAL="$(type -ap pip 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-  exec "${REAL:-/usr/bin/pip}" "$@"
-fi
-python3 - "$@" <<'PY'
+# The install check every PATH shim runs before the real tool. It reads the hash file and the
+# command line, refuses a banned package the command names for installing or running, and
+# never decides which program runs: the shim always runs the tool it was called as.
+# argv: <hashes file> <tool name> <tool arguments...>
+_INSTALL_CHECK = r'''
 import hashlib, re, sys
 from pathlib import Path
 
-# Each line is "<kind> <digest>" or, from an older image, a bare digest.
-ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
+HASHES, TOOL, ARGV = sys.argv[1], sys.argv[2], sys.argv[3:]
 
-def norm(name: str) -> str:
+# Each line is "<kind> <digest>" or, from an older image, a bare digest.
+ban = {ln.split()[-1] for ln in Path(HASHES).read_text().splitlines() if ln.split()}
+
+
+def block(name: str) -> None:
+    print(f"[cbrun denylist] blocked install of upstream package: {name}", file=sys.stderr)
+    print("[cbrun denylist] implement this functionality yourself; do not reuse the upstream product.", file=sys.stderr)
+    sys.exit(1)
+
+
+def py_norm(name: str) -> str:
     name = name.strip().lower().split("[", 1)[0].split("@", 1)[0]
     name = re.sub(r"[^a-z0-9._-]+", "-", name)
     return name.replace("_", "-").replace(".", "-")
 
-def check(name: str) -> None:
-    digest = hashlib.sha256(norm(name).encode()).hexdigest()
-    if digest in ban:
-        print(f"[cbrun denylist] blocked install of upstream package: {name}", file=sys.stderr)
-        print("[cbrun denylist] implement this functionality yourself; do not reuse the upstream product.", file=sys.stderr)
-        sys.exit(1)
 
-argv = sys.argv[1:]
-i = 0
-install_cmds = {"install", "i", "add", "download", "wheel"}
-while i < len(argv):
-    tok = argv[i]
-    if tok in install_cmds:
-        i += 1
-        while i < len(argv):
-            arg = argv[i]
-            if arg.startswith("-"):
-                if arg in ("-r", "--requirement") and i + 1 < len(argv):
-                    req = Path(argv[i + 1])
-                    if req.is_file():
-                        for line in req.read_text().splitlines():
-                            line = line.strip()
-                            if line and not line.startswith("#"):
-                                check(line.split(";", 1)[0].strip())
-                    i += 2
-                    continue
-                i += 1
-                continue
-            check(arg)
-            i += 1
-        break
-    i += 1
-PY
-REAL="$(type -ap pip 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-exec "${REAL:-/usr/bin/pip}" "$@"
-"""
+def py_check(name: str) -> None:
+    if hashlib.sha256(py_norm(name).encode()).hexdigest() in ban:
+        block(name)
 
-_CONDA_SHIM = r"""#!/bin/bash
-set -eu
-HASHES="/opt/cbrun/denylist.hashes"
-SHIM_DIR="/opt/cbrun/bin"
-if [[ ! -f "$HASHES" ]]; then
-  REAL="$(type -ap conda 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-  exec "${REAL:-conda}" "$@"
-fi
-python3 - "$@" <<'PY'
-import hashlib, re, sys
-from pathlib import Path
 
-# Each line is "<kind> <digest>" or, from an older image, a bare digest.
-ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
-
-def norm(name: str) -> str:
-    name = name.strip().lower().split("[", 1)[0].split("@", 1)[0]
-    name = re.sub(r"[^a-z0-9._-]+", "-", name)
-    return name.replace("_", "-").replace(".", "-")
-
-def check(name: str) -> None:
-    digest = hashlib.sha256(norm(name).encode()).hexdigest()
-    if digest in ban:
-        print(f"[cbrun denylist] blocked install of upstream package: {name}", file=sys.stderr)
-        print("[cbrun denylist] implement this functionality yourself; do not reuse the upstream product.", file=sys.stderr)
-        sys.exit(1)
-
-argv = sys.argv[1:]
-if argv and argv[0] in ("install", "create"):
-    for arg in argv[1:]:
-        if arg.startswith("-"):
-            continue
-        check(arg)
-PY
-REAL="$(type -ap conda 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-exec "${REAL:-conda}" "$@"
-"""
-
-_NPM_SHIM = r"""#!/bin/bash
-set -eu
-HASHES="/opt/cbrun/denylist.hashes"
-SHIM_DIR="/opt/cbrun/bin"
-SELF="$(basename "$0")"
-if [[ ! -f "$HASHES" ]]; then
-  REAL="$(type -ap "$SELF" 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-  exec "${REAL:-$SELF}" "$@"
-fi
-python3 - "$@" <<'PY'
-import hashlib, re, sys
-from pathlib import Path
-
-# Each line is "<kind> <digest>" or, from an older image, a bare digest.
-ban = {ln.split()[-1] for ln in Path("/opt/cbrun/denylist.hashes").read_text().splitlines() if ln.split()}
-
-def norm(name: str) -> str:
+def node_norm(name: str) -> str:
     name = name.strip().lower().split("[", 1)[0]
     if name.startswith("@"):
         return name.split("?", 1)[0]
@@ -1274,34 +1194,219 @@ def norm(name: str) -> str:
     name = re.sub(r"[^a-z0-9._-]+", "-", name)
     return name.replace("_", "-").replace(".", "-")
 
-def check(name: str) -> None:
-    digest = hashlib.sha256(norm(name).encode()).hexdigest()
+
+def node_check(name: str) -> None:
+    digest = hashlib.sha256(node_norm(name).encode()).hexdigest()
     raw = hashlib.sha256(name.strip().lower().encode()).hexdigest()
     if digest in ban or raw in ban:
-        print(f"[cbrun denylist] blocked install of upstream package: {name}", file=sys.stderr)
-        print("[cbrun denylist] implement this functionality yourself; do not reuse the upstream product.", file=sys.stderr)
-        sys.exit(1)
+        block(name)
 
-argv = sys.argv[1:]
-i = 0
-install_cmds = {"install", "i", "add"}
-while i < len(argv):
-    tok = argv[i]
-    if tok in install_cmds:
-        i += 1
-        while i < len(argv):
-            arg = argv[i]
+
+def requirement_specs(path: str, depth: int = 0) -> list[str]:
+    """Specs a requirements file lists, following nested ``-r`` files.
+
+    A path that is not a file names nothing to install; the real tool reports it.
+    """
+    req = Path(path)
+    if not req.is_file():
+        return []
+    specs: list[str] = []
+    for raw in req.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.split(" #", 1)[0].strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith(("-r ", "--requirement ")) and depth < 5:
+            specs.extend(requirement_specs(str(req.parent / line.split(None, 1)[1].strip()), depth + 1))
+            continue
+        if line.startswith("-"):
+            continue
+        specs.append(line.split(";", 1)[0].strip())
+    return specs
+
+
+def conda_main(argv: list[str]) -> None:
+    if argv and argv[0] in ("install", "create"):
+        for arg in argv[1:]:
             if arg.startswith("-"):
-                i += 1
                 continue
-            check(arg)
+            py_check(arg)
+
+
+def node_main(argv: list[str]) -> None:
+    i = 0
+    install_cmds = {"install", "i", "add"}
+    while i < len(argv):
+        tok = argv[i]
+        if tok in install_cmds:
             i += 1
-        break
-    i += 1
-PY
-REAL="$(type -ap "$SELF" 2>/dev/null | grep -v "$SHIM_DIR" | head -1 || true)"
-exec "${REAL:-$SELF}" "$@"
+            while i < len(argv):
+                arg = argv[i]
+                if arg.startswith("-"):
+                    i += 1
+                    continue
+                node_check(arg)
+                i += 1
+            break
+        i += 1
+
+
+# Options that take a value, so the value is never read as a package or a subcommand.
+PIP_VALUE_OPTS = frozenset({
+    "-r", "--requirement", "-c", "--constraint", "-e", "--editable", "-i", "--index-url",
+    "--extra-index-url", "-f", "--find-links", "-t", "--target", "--prefix", "--root", "--python",
+    "--proxy", "--cache-dir", "--src", "--upgrade-strategy", "--platform", "--python-version",
+    "--implementation", "--abi", "--only-binary", "--no-binary", "-d", "--dest", "-w", "--wheel-dir",
+    "--log", "--trusted-host", "--cert", "--client-cert", "--timeout", "--retries", "--progress-bar",
+    "-C", "--config-settings", "--global-option", "--report", "--exists-action",
+})
+UV_VALUE_OPTS = frozenset({
+    "-p", "--python", "--from", "-w", "--with", "--with-editable", "--with-requirements", "--index",
+    "-i", "--index-url", "--extra-index-url", "--default-index", "-f", "--find-links", "--cache-dir",
+    "--directory", "--project", "--config-file", "--color", "--python-preference", "--index-strategy",
+    "--keyring-provider", "--resolution", "--prerelease", "--exclude-newer", "--link-mode",
+    "--refresh-package", "--reinstall-package", "-P", "--upgrade-package", "--no-binary-package",
+    "--no-build-package", "--env-file", "--extra", "--group", "--only-group", "--no-group",
+    "--package", "-c", "--constraints", "--constraint", "--overrides", "-b", "--build-constraints",
+    "-r", "--requirement", "--requirements", "-e", "--editable", "-t", "--target", "--prefix",
+    "--python-platform", "--python-version", "--allow-insecure-host", "-C", "--config-setting",
+    "--script", "--optional", "-m", "--marker", "--tag", "--branch", "--rev", "--bounds", "--name",
+    "--build-backend",
+})
+LOCAL_PREFIXES = (".", "/", "~")
+SPEC_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+
+
+def split_args(args: list[str], value_opts: frozenset) -> tuple[list[str], dict[str, list[str]]]:
+    """Positional arguments, and the values of the options that take one."""
+    positional: list[str] = []
+    values: dict[str, list[str]] = {}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--":
+            positional.extend(args[i + 1:])
+            break
+        if arg.startswith("-") and arg != "-":
+            name, eq, value = arg.partition("=")
+            if eq:
+                values.setdefault(name, []).append(value)
+            elif name in value_opts and i + 1 < len(args):
+                values.setdefault(name, []).append(args[i + 1])
+                i += 1
+            i += 1
+            continue
+        positional.append(arg)
+        i += 1
+    return positional, values
+
+
+def opts(values: dict[str, list[str]], *names: str) -> list[str]:
+    return [v for n in names for v in values.get(n, [])]
+
+
+def reqs(paths: list[str]) -> list[str]:
+    return [spec for path in paths for spec in requirement_specs(path)]
+
+
+def uv_runner_specs(pos: list[str], values: dict[str, list[str]]) -> list[str]:
+    """What ``uvx`` / ``uv tool run`` / ``uv tool install`` fetch: the package (or ``--from``) and ``--with``."""
+    return pos[:1] + opts(values, "--from", "--with", "-w") + reqs(opts(values, "--with-requirements"))
+
+
+def pip_specs(argv: list[str]) -> list[str]:
+    pos, values = split_args(argv, PIP_VALUE_OPTS)
+    if not pos or pos[0] not in ("install", "download", "wheel"):
+        return []
+    return pos[1:] + reqs(opts(values, "-r", "--requirement"))
+
+
+def uv_specs(tool: str, argv: list[str]) -> list[str]:
+    pos, values = split_args(argv, UV_VALUE_OPTS)
+    if tool == "uvx":
+        return uv_runner_specs(pos, values)
+    if not pos:
+        return []
+    verb, rest = pos[0], pos[1:]
+    files = reqs(opts(values, "-r", "--requirement", "--requirements"))
+    if verb == "pip" and rest:
+        if rest[0] in ("install", "download", "wheel"):
+            return rest[1:] + files
+        if rest[0] == "sync":
+            return reqs(rest[1:]) + files
+        return []
+    if verb == "add":
+        return rest + files
+    if verb == "tool" and rest and rest[0] in ("install", "run"):
+        return uv_runner_specs(rest[1:], values)
+    if verb == "run":
+        return opts(values, "--with", "-w") + reqs(opts(values, "--with-requirements"))
+    return []
+
+
+def spec_names(spec: str) -> list[str]:
+    """Names a Python package spec may install: the spec, its leading name, and for a URL the
+    repository name and its ``owner/repo`` slug. A local path is the agent's own code."""
+    text = spec.strip()
+    if not text or text.startswith(LOCAL_PREFIXES):
+        return []
+    names = [text]
+    match = SPEC_NAME.match(text)
+    if match:
+        names.append(match.group(0))
+    if "://" in text:
+        path = text.split("#", 1)[0].split("?", 1)[0].rstrip("/")
+        parts = [p for p in path.split("://", 1)[1].split("/")[1:] if p]
+        if parts:
+            repo = parts[-1][:-4] if parts[-1].endswith(".git") else parts[-1]
+            names.append(repo)
+            if len(parts) >= 2:
+                names.append(parts[-2] + "/" + repo)
+    return names
+
+
+if TOOL in ("pip", "pip3", "uv", "uvx"):
+    for spec in pip_specs(ARGV) if TOOL in ("pip", "pip3") else uv_specs(TOOL, ARGV):
+        for name in spec_names(spec):
+            py_check(name)
+elif TOOL in ("conda", "mamba"):
+    conda_main(ARGV)
+elif TOOL in ("npm", "npx", "pnpm", "yarn"):
+    node_main(ARGV)
+else:
+    sys.exit(f"[cbrun denylist] install check does not know the package manager {TOOL!r}")
+'''
+
+# One wrapper for every package manager on PATH. It runs the tool it was called as, found
+# by its own name on PATH past the shim directory, after the install check.
+_INSTALLER_SHIM = (
+    r"""#!/bin/bash
+set -eu
+SELF="$(basename "$0")"
+SHIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+HASHES="/opt/cbrun/denylist.hashes"
+REAL=""
+while IFS= read -r cand; do
+  [[ "$(cd "$(dirname "$cand")" && pwd -P)" == "$SHIM_DIR" ]] && continue
+  REAL="$cand"
+  break
+done < <(type -ap "$SELF" 2>/dev/null || true)
+if [[ -z "$REAL" ]]; then
+  echo "$SELF: command not found" >&2
+  exit 127
+fi
+if [[ -f "$HASHES" ]]; then
+  python3 -I - "$HASHES" "$SELF" "$@" <<'PY'
 """
+    + _INSTALL_CHECK.strip("\n")
+    + r"""
+PY
+fi
+exec "$REAL" "$@"
+"""
+)
+
+# Package managers the shim wraps.
+SHIMMED_INSTALLERS = ("pip", "pip3", "uv", "uvx", "conda", "mamba", "npm", "npx", "pnpm", "yarn")
 
 # Shared by the strip script and the access monitor: find image artefacts whose
 # names hash to the denylist set. Never contains plaintext product names.
@@ -2633,16 +2738,12 @@ check_orig_argv()
 '''
 
 
-def render_pip_shim() -> str:
-    return _PIP_SHIM
+def render_installer_shim() -> str:
+    return _INSTALLER_SHIM
 
 
-def render_conda_shim() -> str:
-    return _CONDA_SHIM
-
-
-def render_npm_shim() -> str:
-    return _NPM_SHIM
+def render_install_check() -> str:
+    return _INSTALL_CHECK
 
 
 def render_strip_script() -> str:
@@ -2693,27 +2794,12 @@ def write_shim_assets(
         path.chmod(0o644)
     shim_dir = build_ctx / "shims"
     shim_dir.mkdir(exist_ok=True)
-    pip_shim = render_pip_shim()
-    conda_shim = render_conda_shim()
-    npm_shim = render_npm_shim()
-    for name, content in (
-        ("pip", pip_shim),
-        ("pip3", pip_shim),
-        ("conda", conda_shim),
-        ("mamba", conda_shim),
-        ("uv", pip_shim),
-        ("npm", npm_shim),
-        ("npx", npm_shim),
-        ("pnpm", npm_shim),
-        ("yarn", npm_shim),
-    ):
+    shim = render_installer_shim()
+    for name in SHIMMED_INSTALLERS:
         dest = shim_dir / name
-        dest.write_text(content, encoding="utf-8")
+        dest.write_text(shim, encoding="utf-8")
         dest.chmod(0o755)
-    bins = " ".join(
-        f"{SHIM_BIN_DIR}/{name}"
-        for name in ("pip", "pip3", "conda", "mamba", "uv", "npm", "npx", "pnpm", "yarn")
-    )
+    bins = " ".join(f"{SHIM_BIN_DIR}/{name}" for name in SHIMMED_INSTALLERS)
     return (
         f"COPY denylist.hashes {CONTAINER_DENYLIST_HASHES_PATH}\n"
         f"COPY strip_banned.py {CONTAINER_STRIP_SCRIPT_PATH}\n"

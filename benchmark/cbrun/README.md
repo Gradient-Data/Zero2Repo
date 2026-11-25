@@ -247,9 +247,12 @@ whole prompt into one argv slot and fails once it exceeds 128KiB.
   upstream product). It is tracked with the case. The file never enters the
   solve container: the `:agent` image carries only name hashes plus the
   install shims, and the plaintext is read on the host for the post-submit
-  scan and in the judge container after the agent has exited. pip/conda
-  install shims in the `:agent` image reject those packages inline (warning
-  only, no scoring).
+  scan and in the judge container after the agent has exited. Install shims
+  in the `:agent` image wrap pip, pip3, uv, uvx, conda, mamba, npm, npx, pnpm
+  and yarn: each runs the tool it was called as, after rejecting a banned
+  package the command line names for installing or running (warning only,
+  no scoring). Commands that install nothing (`uv venv`, `uv run` without `--with`) pass
+  through untouched.
 * Building an image removes the upstream product from it by what the package
   managers say it owns, never by matching names against files. Each hash the
   image carries says whether it names a distribution (a package a manager can
