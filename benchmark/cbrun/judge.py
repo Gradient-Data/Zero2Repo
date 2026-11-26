@@ -197,7 +197,7 @@ def _install_node_gate(container: Container, env: dict[str, str]) -> None:
     _probe_node_gate(container, env, real_node)
 
 
-def _node_gate_probe_script(token: str | None, real_node: str) -> str:
+def _node_gate_probe_script(token: str, real_node: str) -> str:
     """Shell that exits non-zero unless both hooks refuse *token* and the shim wins PATH.
 
     The banned import is expected to make node exit 1, so the probe captures
@@ -210,17 +210,16 @@ def _node_gate_probe_script(token: str | None, real_node: str) -> str:
         "trap 'rm -rf \"$D\"' EXIT",
         'mkdir -p "$D/app"',
     ]
-    if token is not None:
-        node = f"{_shq(real_node)} {_NODE_PRELOAD_FLAGS}"
-        lines += [
-            f'printf \'import "%s";\\n\' {_shq(token)} > "$D/app/p.mjs"',
-            f'printf \'require("%s");\\n\' {_shq(token)} > "$D/app/p.cjs"',
-            f'export CODING_BENCH_WORKSPACE="$D/app" CODING_BENCH_IMPORT_BAN={_shq(token)}',
-            f'out="$({node} "$D/app/p.mjs" 2>&1 || true)"',
-            'case "$out" in *CODING_BENCH_IMPORT_BAN*) ;; *) echo "esm hook inactive: $out"; exit 3;; esac',
-            f'out="$({node} "$D/app/p.cjs" 2>&1 || true)"',
-            'case "$out" in *CODING_BENCH_IMPORT_BAN*) ;; *) echo "cjs hook inactive: $out"; exit 4;; esac',
-        ]
+    node = f"{_shq(real_node)} {_NODE_PRELOAD_FLAGS}"
+    lines += [
+        f'printf \'import "%s";\\n\' {_shq(token)} > "$D/app/p.mjs"',
+        f'printf \'require("%s");\\n\' {_shq(token)} > "$D/app/p.cjs"',
+        f'export CODING_BENCH_WORKSPACE="$D/app" CODING_BENCH_IMPORT_BAN={_shq(token)}',
+        f'out="$({node} "$D/app/p.mjs" 2>&1 || true)"',
+        'case "$out" in *CODING_BENCH_IMPORT_BAN*) ;; *) echo "esm hook inactive: $out"; exit 3;; esac',
+        f'out="$({node} "$D/app/p.cjs" 2>&1 || true)"',
+        'case "$out" in *CODING_BENCH_IMPORT_BAN*) ;; *) echo "cjs hook inactive: $out"; exit 4;; esac',
+    ]
     lines += [
         f'found="$(PATH={CONTAINER_NODE_SHIM_DIR}:$PATH command -v node)"',
         f'[ "$found" = {_shq(CONTAINER_NODE_SHIM_PATH)} ] || {{ echo "node shim not first on PATH: $found"; exit 5; }}',
@@ -269,10 +268,15 @@ def _probe_pip_gate(container: Container) -> None:
         )
 
 
+# The probe bans a name of its own: it proves the hooks are loaded and refuse a banned bare
+# import on this Node. A case's own list may hold entries the hooks match only after
+# resolution (absolute paths, package subpaths) or none at all, so its first entry is no
+# reliable sample of what the hooks enforce.
+_NODE_GATE_PROBE_TOKEN = "cbrun-node-gate-probe"
+
+
 def _probe_node_gate(container: Container, env: dict[str, str], real_node: str) -> None:
-    banned = [x for x in env.get("CODING_BENCH_IMPORT_BAN", "").split(",") if x and not x.endswith("/")]
-    token = banned[0] if banned else None
-    res = container.exec(_node_gate_probe_script(token, real_node), timeout_sec=120.0)
+    res = container.exec(_node_gate_probe_script(_NODE_GATE_PROBE_TOKEN, real_node), timeout_sec=120.0)
     if res.exit_code != 0:
         raise RuntimeError(
             f"Node import-ban gate probe failed (exit {res.exit_code}): {(res.tail or '').strip()[-400:]}"
